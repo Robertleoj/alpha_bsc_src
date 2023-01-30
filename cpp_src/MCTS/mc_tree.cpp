@@ -26,7 +26,10 @@ void MCTree::delete_tree(MCNode * node){
 
 void MCTree::move(int move_idx){
 
-    // auto child_map = &this->root->children;
+    delete_tree(this->root);
+    this->root = nullptr;
+    return;
+
     if(this->root == nullptr){
         return;
     }

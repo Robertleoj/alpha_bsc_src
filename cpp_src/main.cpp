@@ -20,22 +20,13 @@ void play_a_game(game::IGame& game)
     cout << endl;
     auto agent = Agent(game, pp::First);
     while(!game.is_terminal()) {
-        
-        // for (auto it = ml->begin(), end = ml->end(); it != end; ++it) {
-        //     cout << ' ' << game.move_as_str(it);
-        // }
-        
 
-        // cout << endl;
-        // std::uniform_int_distribution<int> distribution(0, ml->get_size()-1);
-        // auto n = distribution(generator);
-        //
-        // game.make(ml->begin() + n);
-        
-        agent.get_move(1000);
+        auto mv = agent.get_move(1000);
 
         game.display(cout);
-        
+        cout << endl;
+
+        cout << "Move :" << game.move_as_str(mv) << endl;
         cout << endl;
     }
     cout << str(game.outcome(First)) << endl;
@@ -43,6 +34,7 @@ void play_a_game(game::IGame& game)
 
 int main()
 {
+    srand(time(NULL));
 
     auto game = make_unique<Connect4>();
     play_a_game(*game.get());

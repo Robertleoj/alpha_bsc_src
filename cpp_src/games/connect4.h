@@ -81,8 +81,14 @@ namespace games {
 
         bool make(game::move_iterator it) override {
             auto col = it.as<Move>()->col - 1;
+
+            if(col >= 7){
+                throw std::runtime_error("stupid col");
+            }
+
             bb::Bitboard move = 1ULL << square(col, m.height[col]++);
             m.board[m.counter++ & 1] ^= move;
+            // m.board[m.counter++ & 1] += move;
             return true;
         }
 

@@ -192,6 +192,7 @@ void Agent::backpropagation(MCNode * node, out::Outcome sim_res){
 }
 
 int Agent::get_current_best_move(){
+    // return 0;
     double highest = -10000;
     auto root_children = this->tree->root->children;
     double score;
@@ -212,7 +213,9 @@ int Agent::get_current_best_move(){
             best_move = i;
         }
     }
-
+    if (best_move == -1) {
+        throw std::runtime_error("No best move");
+    }
     return best_move;
 }
 
@@ -231,6 +234,7 @@ game::move_iterator Agent::get_move(int playout_cap){
     // Get best move
     printf("Performed %d iterations\n", i);
     auto ret_move = this->get_current_best_move();
+    auto mv = this->tree->root->move_list->begin() +  ret_move;
     update(ret_move);
-    return this->tree->root->move_list->begin() +  ret_move;
+    return mv;
 }
