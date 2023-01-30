@@ -11,7 +11,7 @@ Agent::Agent(game::IGame & game, pp::Player player)
 }
 
 void Agent::switch_sides(){ 
-    this->player = this->player == pp::First ? pp::Second: pp::First;
+    // this->player = this->player == pp::First ? pp::Second: pp::First;
 }
 
 Agent::~Agent(){
@@ -48,9 +48,9 @@ double Agent::UCT(MCNode * node, MCNode * childnode){
     double N = node->plays;
     double c = sqrt(2);
     
-    if(this->player == pp::Second){
-        w = n - w;
-    }
+    // if(this->player == pp::Second){
+    //     w = n - w;
+    // }
     
     return (w / n) + c * sqrt(log(N) / n);
 
@@ -134,7 +134,7 @@ MCNode * Agent::selection(){
 
 out::Outcome Agent::simulation(MCNode *selected_node) {
     int cnt = 0;
-    int num_moves;
+    // int num_moves;
     int rand_idx;
     out::Outcome wincond;
     
@@ -147,7 +147,7 @@ out::Outcome Agent::simulation(MCNode *selected_node) {
             if(cnt == 0) {
                 selected_node->is_terminal = true;
             }
-            wincond = this->game.outcome(this->player);
+            wincond = this->game.outcome(pp::First);
             break;
         }
 
@@ -172,13 +172,15 @@ void Agent::backpropagation(MCNode * node, out::Outcome sim_res){
                 break;
 
             case out::Outcome::Win:
-                node->wins += 1;
+                node->wins += this->game.get_to_move() == pp::Second;
                 break;
+
+            case out::Outcome::Loss:
+                node->wins += this->game.get_to_move() == pp::First;
             
             default:
                 break;
         }
-
 
         if (node->parent == nullptr) {
             break;

@@ -18,7 +18,7 @@ void play_a_game(game::IGame& game)
 {
     game.display(cout);
     cout << endl;
-    auto agent1 = Agent(game, pp::First);
+    auto agent = Agent(game, pp::First);
     while(!game.is_terminal()) {
         
         // for (auto it = ml->begin(), end = ml->end(); it != end; ++it) {
@@ -32,9 +32,9 @@ void play_a_game(game::IGame& game)
         //
         // game.make(ml->begin() + n);
         
-        agent1.get_move(1000);
+        agent.get_move(1000);
+
         game.display(cout);
-        
         
         cout << endl;
     }
@@ -43,27 +43,6 @@ void play_a_game(game::IGame& game)
 
 int main()
 {
-    // std::cout << "BScProject Abstract Board Games (8x8)" << std::endl;
-
-    // const int SEARCH_DEPTH_C4 = 10;
-    // const int SEARCH_DEPTH_BT = 6;
-    // const int NUM_SIMULATIONS = 100000;
-
-    // std::vector<RunGameEntry> run_games;
-
-    // run_games.emplace_back(
-    //     "Connect4",      
-    //     make_unique<Connect4>(), 
-    //     SEARCH_DEPTH_C4, 
-    //     NUM_SIMULATIONS
-    // );
-
-    // run_games.emplace_back(
-    //     "Breakthrough ", 
-    //     make_unique<Breakthrough>(), 
-    //     SEARCH_DEPTH_BT, 
-    //     NUM_SIMULATIONS
-    // );
 
     auto game = make_unique<Connect4>();
     play_a_game(*game.get());

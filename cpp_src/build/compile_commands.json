@@ -1,0 +1,42 @@
+[
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/main.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/main.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/main.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/games/game.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/games/game.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/games/game.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/games/breakthrough.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/games/breakthrough.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/games/breakthrough.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/games/connect4.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/games/connect4.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/games/connect4.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/misc/perft.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/misc/perft.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/misc/perft.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/MCTS/agent.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/MCTS/agent.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/MCTS/agent.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/MCTS/mc_node.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/MCTS/mc_node.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/MCTS/mc_node.cpp"
+},
+{
+  "directory": "/home/bigbrainman/alpha_bsc/cpp_src/build",
+  "command": "/usr/bin/c++   -Wall -O3 -DNDEBUG -Wextra -g -o CMakeFiles/AlphaBSc.dir/MCTS/mc_tree.cpp.o -c /home/bigbrainman/alpha_bsc/cpp_src/MCTS/mc_tree.cpp",
+  "file": "/home/bigbrainman/alpha_bsc/cpp_src/MCTS/mc_tree.cpp"
+}
+]
