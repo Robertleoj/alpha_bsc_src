@@ -1,9 +1,7 @@
 //
 // Created by Yngvi Björnsson on 7.5.2022.
 //
-
-#ifndef ABG8X8_GAME_H
-#define ABG8X8_GAME_H
+#pragma once
 
 #include <memory>
 #include <functional>
@@ -77,4 +75,3 @@ namespace game {
 
 }
 
-#endif //ABG8X8_GAME_H

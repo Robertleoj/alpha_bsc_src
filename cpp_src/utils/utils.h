@@ -1,9 +1,8 @@
+#pragma once
 //
 // Created by Yngvi Björnsson on 7.5.2022.
 //
 
-#ifndef ABG8X8_UTILS_H
-#define ABG8X8_UTILS_H
 #include <vector>
 #include <chrono>
 #include <memory>
@@ -165,4 +164,3 @@ namespace utils {
 
 
 
-#endif //ABG8X8_UTILS_H

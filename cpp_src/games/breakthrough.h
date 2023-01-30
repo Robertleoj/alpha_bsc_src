@@ -5,8 +5,7 @@
 //  - Not symmetrical move-generation order for White and Black (builtin find and clear)
 
 
-#ifndef ABG8X8_BREAKTHROUGH_H
-#define ABG8X8_BREAKTHROUGH_H
+#pragma once
 #include <ostream>
 #include <string>
 #include "../base/types.h"
@@ -109,5 +108,3 @@ namespace games {
     };
 
 }
-
-#endif //ABG8X8_BREAKTHROUGH_H

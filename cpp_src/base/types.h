@@ -2,8 +2,7 @@
 // Created by Yngvi Björnsson on 7.5.2022.
 //
 
-#ifndef ABG8X8_TYPES_H
-#define ABG8X8_TYPES_H
+#pragma once
 
 #include <iostream>
 #include <sstream>
@@ -241,5 +240,3 @@ namespace state {
 
 }
 using namespace state;
-
-#endif //ABG8X8_TYPES_H
