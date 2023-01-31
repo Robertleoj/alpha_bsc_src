@@ -25,10 +25,9 @@ void play_a_game(game::IGame& game)
 
     while(!game.is_terminal()) {
 
-        // if(agent_turn){
         auto mv = agent.get_move(10000);
-        // cout << "Agent" << endl;
         std::cout << "Move :" << game.move_as_str(mv) << std::endl;
+
         // } else {
         //     auto ml = game.moves();
         //     int rand_idx = rand() % ml->get_size();
@@ -37,6 +36,7 @@ void play_a_game(game::IGame& game)
         //     agent.update_tree(rand_idx);
         //     cout << "Move :" << game.move_as_str(mv) << endl;
         // }
+        
         game.display(std::cout);
         
         agent_turn = !agent_turn;

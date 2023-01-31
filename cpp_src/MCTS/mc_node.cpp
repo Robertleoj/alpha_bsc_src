@@ -16,3 +16,4 @@ MCNode::MCNode(MCNode * parent, game::MovelistPtr move_list, int idx_in_parent){
 MCNode::~MCNode(){
     // Nothing to destroy
 }
+
