@@ -29,6 +29,11 @@ void Agent::update(
     tree->move(move_idx);
 }
 
+void Agent::update_tree(int move_idx) {
+    this->tree->move(move_idx);
+}
+
+
 double Agent::UCT(MCNode * node, MCNode * childnode){
     /*
     UCT(node, move) = 
@@ -47,17 +52,14 @@ double Agent::UCT(MCNode * node, MCNode * childnode){
     double n = childnode->plays;
     double N = node->plays;
     double c = sqrt(2);
-    
-    // if(this->player == pp::Second){
-    //     w = n - w;
-    // }
-    
+
     return (w / n) + c * sqrt(log(N) / n);
 
 }
 
 MCNode * Agent::selection(){
 
+    // If root doesn't exist, create it
     if (this->tree->root == nullptr)
     {
         MCNode *new_node = new MCNode(
@@ -94,16 +96,18 @@ MCNode * Agent::selection(){
 
         for(int i = 0; i < move_list->get_size(); i++){
             if(children[i] == nullptr){
+
+                // update state
+                this->game.make(move_list->begin() + i);
+
                 // Make new node 
                 MCNode * new_node = new MCNode(
                     current_node,
                     this->game.moves(),
                     i
                 );
+
                 children[i] = new_node;
-                
-                // update state
-                this->game.make(move_list->begin() + i);
 
                 // return new node
                 return new_node;
@@ -153,8 +157,9 @@ out::Outcome Agent::simulation(MCNode *selected_node) {
 
         // Select random move
         
-        rand_idx = rand() % selected_node->move_list->get_size();
-        this->game.make(selected_node->move_list->begin() + rand_idx);
+        auto ml = game.moves();
+        rand_idx = rand() % ml->get_size();
+        this->game.make(ml->begin() + rand_idx);
         cnt ++;
     }
     
@@ -177,6 +182,7 @@ void Agent::backpropagation(MCNode * node, out::Outcome sim_res){
 
             case out::Outcome::Loss:
                 node->wins += this->game.get_to_move() == pp::First;
+                break;
             
             default:
                 break;
@@ -195,7 +201,7 @@ int Agent::get_current_best_move(){
     // return 0;
     double highest = -10000;
     auto root_children = this->tree->root->children;
-    double score;
+    int score;
     int best_move = -1;
     
     for(int i = 0; i < root_children.size(); i++){
@@ -213,9 +219,11 @@ int Agent::get_current_best_move(){
             best_move = i;
         }
     }
+
     if (best_move == -1) {
         throw std::runtime_error("No best move");
     }
+
     return best_move;
 }
 
@@ -224,10 +232,14 @@ game::move_iterator Agent::get_move(int playout_cap){
 
     int i;
     for(i = 0; i < playout_cap; i++){
+        // std::cout << "Playout " << i << std::endl;
+        // std::cout << "selection" << std::endl;
         MCNode * selected_node = this->selection();
 
+        // std::cout << "Simulation" << std::endl;
         out::Outcome sim_res = this->simulation(selected_node);
 
+        // std::cout << "Backpropagation" << std::endl;
         this->backpropagation(selected_node, sim_res);
     }
 

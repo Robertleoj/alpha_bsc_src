@@ -12,6 +12,7 @@ public:
     ~Agent();
 
     void update(int move_idx);
+    void update_tree(int move_idx);
     game::move_iterator get_move(int playout_cap);
     void switch_sides();
 
