@@ -23,6 +23,7 @@ namespace game {
         virtual  MovelistPtr moves() = 0;
 
         virtual Board get_board() const = 0;
+
         virtual bool make(move_iterator mi) = 0;
         virtual void retract(move_iterator mi) = 0;
         virtual void push() = 0;
@@ -50,7 +51,11 @@ namespace game {
         [[nodiscard]] virtual Player get_to_move() const = 0;
 
         // Other methods.
-        virtual void display(std::ostream& os, const std::string& delimiter = default_delimiter) const = 0;
+        virtual void display(
+            std::ostream& os, 
+            const std::string& delimiter = default_delimiter
+        ) const = 0;
+
         [[nodiscard]] virtual std::string move_as_str(move_iterator it) const = 0;
         [[nodiscard]] virtual std::string move_as_str(move_id id) const = 0;
 
@@ -61,10 +66,13 @@ namespace game {
     };
 
 
-    inline bool make_move_if_legal(IGame& game, const std::string& move_str)
-    {
+    inline bool make_move_if_legal(
+        IGame& game, 
+        const std::string& move_str
+    ) {
         auto moves = game.moves();
         for(auto it = moves->begin(); it != moves->end(); ++it) {
+
             if(game.move_as_str(it) == move_str) {
                 game.make(it);
                 return true;

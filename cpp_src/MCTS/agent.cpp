@@ -4,10 +4,11 @@
 #include <stdexcept>
 
 
-Agent::Agent(game::IGame & game, pp::Player player)
+Agent::Agent(game::IGame & game, pp::Player player, nn::NN * neural_net)
 : game(game), player(player)
 {  
     this->tree = new MCTree();
+    this->neural_net = neural_net;
 }
 
 void Agent::switch_sides(){ 
@@ -34,43 +35,75 @@ void Agent::update_tree(int move_idx) {
 }
 
 
-double Agent::UCT(MCNode * node, MCNode * childnode){
+double Agent::PUCT(MCNode * node, MCNode * childnode){
     /*
-    UCT(node, move) = 
-        (w / n) + c * sqrt(ln(N) / n)
+    PUCT(s, a) = 
+        V + c * P(a|s)(\sqrt{N} / (1 + n))
+        
 
-    w = wins for child node after move
+    V = evaluations for the child node
     n = number of simulations for child node
     N = simulations for current node
-    c = sqrt(2)
+    c = 4
     */
     if(childnode == nullptr){
         throw std::runtime_error("No child node");
     }
-
-    double w = childnode->wins;
+    
+    double V = childnode->value_approx;
     double n = childnode->plays;
+    double P = node->p[childnode->idx_in_parent];
     double N = node->plays;
-    double c = sqrt(2);
 
-    return (w / n) + c * sqrt(log(N) / n);
+    // TODO: put in config file
+    double c = 4; 
 
+    return V + c *P * sqrt(N) / (1 + n);
 }
 
-MCNode * Agent::selection(){
+double Agent::outcome_to_value(out::Outcome oc){
+    switch(oc){
+        case out::Outcome::Loss:
+            return 0;
+        case out::Outcome::Win:
+            return 1;
+        case out::Outcome::Tie:
+            return 0.5;
+        default:
+            throw std::runtime_error("Undecided outcome");
+    }
+}
+
+std::pair<MCNode *, double> Agent::selection(){
 
     // If root doesn't exist, create it
     if (this->tree->root == nullptr)
     {
-        MCNode *new_node = new MCNode(
-            nullptr,
-            this->game.moves(),
-            -1
-        );
+        MCNode * new_node = nullptr;
+        double v = 0;
+        if(game.is_terminal()){
+            v = this->outcome_to_value(game.outcome(pp::First));
+            new_node = new MCNode(
+                nullptr,
+                -1,
+                v
+            );
+        } else {
+            nn::NNOut evaluation = this->neural_net->eval_state(this->game.get_board());
+
+            new_node = new MCNode(
+                nullptr,
+                this->game.moves(),
+                -1,
+                evaluation
+            );
+            
+            v = evaluation.v;
+        }
         
         this->tree->root = new_node;
 
-        return new_node;
+        return std::make_pair(new_node, v);
     }
 
     MCNode * current_node = tree->root;
@@ -85,7 +118,7 @@ MCNode * Agent::selection(){
     while(true){
         // find best node
         if(current_node->is_terminal){
-            return current_node;
+            return std::make_pair(current_node, current_node->value_approx);
         }
 
         max_uct = -100000;
@@ -99,24 +132,40 @@ MCNode * Agent::selection(){
 
                 // update state
                 this->game.make(move_list->begin() + i);
+                
+                MCNode * new_node;
+                double v;
+                if(game.is_terminal()){
+                    v = this->outcome_to_value(game.outcome(pp::First));
+                    new_node = new MCNode(
+                        current_node,
+                        i,
+                        v
+                    );
+                } else {
 
-                // Make new node 
-                MCNode * new_node = new MCNode(
-                    current_node,
-                    this->game.moves(),
-                    i
-                );
+                    nn::NNOut evaluation = this->neural_net->eval_state(this->game.get_board());
+
+                    // Make new node 
+                    new_node = new MCNode(
+                        current_node,
+                        this->game.moves(),
+                        i,
+                        evaluation
+                    );
+                    v = evaluation.v;
+                }
 
                 children[i] = new_node;
 
                 // return new node
-                return new_node;
+                return std::make_pair(new_node, v);
     
             } else {
                 
                 // Get uct value
                 child_node = children[i];
-                uct = UCT(current_node, child_node);
+                uct = PUCT(current_node, child_node);
 
                 // Update 
                 if(uct > max_uct){
@@ -136,57 +185,16 @@ MCNode * Agent::selection(){
 }
 
 
-out::Outcome Agent::simulation(MCNode *selected_node) {
-    int cnt = 0;
-    // int num_moves;
-    int rand_idx;
-    out::Outcome wincond;
-    
-    this->game.push();
-
-    while (true) {
-        
-        if(this->game.is_terminal()){
-            // if counter == 0, update selected node to be terminal
-            if(cnt == 0) {
-                selected_node->is_terminal = true;
-            }
-            wincond = this->game.outcome(pp::First);
-            break;
-        }
-
-        // Select random move
-        
-        auto ml = game.moves();
-        rand_idx = rand() % ml->get_size();
-        this->game.make(ml->begin() + rand_idx);
-        cnt ++;
-    }
-    
-    this->game.pop();
-
-    return wincond;
-};
-
-void Agent::backpropagation(MCNode * node, out::Outcome sim_res){
+void Agent::backpropagation(MCNode * node, double v){
     while(true){
         node->plays++;
-        switch(sim_res){
-            case out::Outcome::Tie:
-                node->wins += 0.5;
-                break;
+        double val = v;
 
-            case out::Outcome::Win:
-                node->wins += this->game.get_to_move() == pp::Second;
-                break;
-
-            case out::Outcome::Loss:
-                node->wins += this->game.get_to_move() == pp::First;
-                break;
-            
-            default:
-                break;
+        if(this->game.get_to_move() == pp::Second){
+            val = 1 - v;
         }
+        
+        node->update_eval(val);
 
         if (node->parent == nullptr) {
             break;
@@ -234,13 +242,12 @@ game::move_iterator Agent::get_move(int playout_cap){
     for(i = 0; i < playout_cap; i++){
         // std::cout << "Playout " << i << std::endl;
         // std::cout << "selection" << std::endl;
-        MCNode * selected_node = this->selection();
-
-        // std::cout << "Simulation" << std::endl;
-        out::Outcome sim_res = this->simulation(selected_node);
+        std::pair<MCNode *, double> selection_result = this->selection();
+        auto created_node = selection_result.first;
+        double v = selection_result.second;
 
         // std::cout << "Backpropagation" << std::endl;
-        this->backpropagation(selected_node, sim_res);
+        this->backpropagation(created_node, v);
     }
 
     // Get best move

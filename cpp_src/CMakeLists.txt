@@ -9,9 +9,10 @@ add_executable(AlphaBSc
         base/types.h    
         base/bitboard.h
         utils/utils.h
+        utils/random.h
+        utils/random.cpp
         games/move.h
         games/game.h
-        games/game.cpp
         games/breakthrough.h
         games/breakthrough.cpp
         games/connect4.h
@@ -25,4 +26,6 @@ add_executable(AlphaBSc
         MCTS/mc_node.h
         MCTS/mc_tree.cpp
         MCTS/mc_tree.h
+        NN/connect4_nn.h
+        NN/nn.h
 )

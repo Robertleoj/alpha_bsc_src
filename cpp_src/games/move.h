@@ -33,9 +33,18 @@ namespace game {
     public:
         Movelist() : len_(0) {}
 
-        [[nodiscard]] bool is_move_none(move_iterator mi) override { return *(mi.as<T>()) == this->no_move; }
-        [[nodiscard]] bool empty() const override { return len_ == 0; }
-        [[nodiscard]] int get_size() const override { return len_; }
+        [[nodiscard]] bool is_move_none(move_iterator mi) override { 
+            return *(mi.as<T>()) == this->no_move; 
+        }
+
+        [[nodiscard]] bool empty() const override { 
+            return len_ == 0; 
+        }
+
+        [[nodiscard]] int get_size() const override { 
+            return len_; 
+        }
+
         void place_first(move_id id) override {
             T move(id);
             for (unsigned int i=0 ; i < len_; ++i) {
@@ -45,14 +54,23 @@ namespace game {
                 }
             }
         }
-        [[nodiscard]] game::move_iterator begin() override { return {&(moves_[0]), sizeof(T)}; }
-        [[nodiscard]] game::move_iterator end() override { return {&(moves_[len_]), sizeof(T)}; }
+
+        [[nodiscard]] game::move_iterator begin() override {
+            return {&(moves_[0]), sizeof(T)}; 
+        }
+
+        [[nodiscard]] game::move_iterator end() override { 
+            return {&(moves_[len_]), sizeof(T)}; 
+        }
+
         [[nodiscard]] move_id as_move_id(move_iterator mi) const override {
             return static_cast<move_id>(*(mi.as<T>()));
         }
 
         // Others.
-        [[nodiscard]] T get_move(int n) const { return moves_[n]; }
+        [[nodiscard]] T get_move(int n) const { 
+            return moves_[n]; 
+        }
 
         bool add(const T& move) {
             if (len_ < SIZE) {
@@ -96,16 +114,37 @@ namespace mm {
     public:
         Move() = default;
         explicit Move(game::move_id mid) : id(mid) {}
-        Move(Square from, Square to, bool capture = false) :
-                m({(uint16_t) from, (uint16_t) to, (uint16_t) capture}) {}  //NOTE casting from square
-        [[nodiscard]] inline Square from() const { return (Square) m.from; }
-        [[nodiscard]] inline Square to() const { return (Square) m.to; }
-        [[nodiscard]] inline bool is_capture() const { return (bool) m.capture; }
 
-        [[nodiscard]] explicit operator game::move_id() const { return id; }
+        Move(
+            Square from, 
+            Square to, 
+            bool capture = false
+        ) : m({
+            (uint16_t) from, 
+            (uint16_t) to, 
+            (uint16_t) capture
+        }) {}  //NOTE casting from square
+
+        [[nodiscard]] inline Square from() const { 
+            return (Square) m.from; 
+        }
+
+        [[nodiscard]] inline Square to() const { 
+            return (Square) m.to; 
+        }
+
+        [[nodiscard]] inline bool is_capture() const { 
+            return (bool) m.capture; 
+        }
+
+        [[nodiscard]] explicit operator game::move_id() const { 
+            return id; 
+        }
 
         bool operator==(const Move& rhs) const {
-            return (m.from == rhs.m.from) && (m.to == rhs.m.to) && (m.capture == rhs.m.capture);
+            return (m.from == rhs.m.from) 
+                && (m.to == rhs.m.to) 
+                && (m.capture == rhs.m.capture);
         }
 
     private:
@@ -123,20 +162,33 @@ namespace mm {
     const Move no_move = Move(ss::Square::a1, ss::Square::a1, false);
 
     inline std::string to_string(const Move& move) {
+
         std::stringstream ss;
-        ss << move.from() << (move.is_capture() ? 'x' : '-') << move.to();
+
+        ss << move.from() 
+           << (move.is_capture() ? 'x' : '-') 
+           << move.to();
+
         return ss.str();
     }
 
-    inline std::ostream& operator<<(std::ostream& os, const Move& move) {
+    inline std::ostream& operator<<(
+        std::ostream& os, 
+        const Move& move
+    ) {
         os << to_string(move);
         return os;
     }
 
-    inline std::istream& operator>>(std::istream& is, Move& move) {
+    inline std::istream& operator>>(
+        std::istream& is, 
+        Move& move
+    ) {
         Square from, to;
         char c ='\0';
+
         is >> from >> c >> to;
+
         switch ( c ) {
             case '-' :  move = Move(from, to); break;
             case 'x' :  move = Move(from, to, true); break;

@@ -249,30 +249,6 @@ games/connect4.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/games/connect4.cpp.s
 .PHONY : games/connect4.cpp.s
 
-games/game.o: games/game.cpp.o
-.PHONY : games/game.o
-
-# target to build an object file
-games/game.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/games/game.cpp.o
-.PHONY : games/game.cpp.o
-
-games/game.i: games/game.cpp.i
-.PHONY : games/game.i
-
-# target to preprocess a source file
-games/game.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/games/game.cpp.i
-.PHONY : games/game.cpp.i
-
-games/game.s: games/game.cpp.s
-.PHONY : games/game.s
-
-# target to generate assembly for a file
-games/game.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/games/game.cpp.s
-.PHONY : games/game.cpp.s
-
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -321,6 +297,30 @@ misc/perft.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/misc/perft.cpp.s
 .PHONY : misc/perft.cpp.s
 
+utils/random.o: utils/random.cpp.o
+.PHONY : utils/random.o
+
+# target to build an object file
+utils/random.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/utils/random.cpp.o
+.PHONY : utils/random.cpp.o
+
+utils/random.i: utils/random.cpp.i
+.PHONY : utils/random.i
+
+# target to preprocess a source file
+utils/random.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/utils/random.cpp.i
+.PHONY : utils/random.cpp.i
+
+utils/random.s: utils/random.cpp.s
+.PHONY : utils/random.s
+
+# target to generate assembly for a file
+utils/random.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/utils/random.cpp.s
+.PHONY : utils/random.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -345,15 +345,15 @@ help:
 	@echo "... games/connect4.o"
 	@echo "... games/connect4.i"
 	@echo "... games/connect4.s"
-	@echo "... games/game.o"
-	@echo "... games/game.i"
-	@echo "... games/game.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
 	@echo "... misc/perft.o"
 	@echo "... misc/perft.i"
 	@echo "... misc/perft.s"
+	@echo "... utils/random.o"
+	@echo "... utils/random.i"
+	@echo "... utils/random.s"
 .PHONY : help
 
 

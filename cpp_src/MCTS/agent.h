@@ -2,14 +2,16 @@
 
 #include "./mc_tree.h"
 #include "../games/game.h"
-// #include "../games/move.h"
 #include "../base/types.h"
+#include "../NN/nn.h"
 
 class Agent {
 public:
-    Agent(game::IGame & game, pp::Player player);
+    Agent(game::IGame & game, pp::Player player, nn::NN* neural_net);
 
     ~Agent();
+    
+    nn::NN * neural_net;
 
     void update(int move_idx);
     void update_tree(int move_idx);
@@ -29,15 +31,15 @@ private:
 
     // board_idx move_to_board_idx(Move m);
 
-    MCNode * selection();
+    std::pair<MCNode *, double> selection();
 
-    out::Outcome simulation(MCNode * node);
-
-    void backpropagation(MCNode *node, out::Outcome sim_res);
+    void backpropagation(MCNode *node, double v);
 
     int get_current_best_move();
 
-    double UCT(MCNode *node, MCNode * childnode);
+    double PUCT(MCNode *node, MCNode * childnode);
+    
+    double outcome_to_value(out::Outcome);
 
 };
 

@@ -7,6 +7,7 @@
 #include "games/breakthrough.h"
 #include "misc/perft.h"
 #include "MCTS/agent.h"
+#include "NN/connect4_nn.h"
 
 // using namespace std;
 using namespace game;
@@ -18,7 +19,11 @@ void play_a_game(game::IGame& game)
 {
     game.display(std::cout);
     std::cout << std::endl;
-    auto agent = Agent(game, pp::First);
+    auto connect4_nn = nn::Connect4NN();
+    
+    
+
+    auto agent = Agent(game, pp::First, (nn::NN*)&connect4_nn);
     
     bool agent_turn = true;
     int num_moves = 0;
@@ -53,8 +58,8 @@ int main()
 {
     srand(time(NULL));
 
-    // auto game = make_unique<Connect4>();
-    auto game = std::make_unique<Breakthrough>();
+    auto game = std::make_unique<Connect4>();
+    // auto game = std::make_unique<Breakthrough>();
     play_a_game(*game.get());
 
     return 0;

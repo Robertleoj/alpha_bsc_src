@@ -3,12 +3,16 @@
 #include <map>
 #include "../games/game.h"
 #include "../games/move.h"
+#include "../NN/nn.h"
 #include <vector>
 
 class MCNode{
 public:
     int plays;
-    double wins;
+    double value_approx;
+    
+    std::vector<double> p;
+
     MCNode * parent;
     bool is_terminal;
 
@@ -19,7 +23,23 @@ public:
     std::vector<MCNode*> children;
     // std::map<int, MCNode*> children;
 
-    ~MCNode();
+    MCNode(
+        MCNode * parent, 
+        game::MovelistPtr, 
+        int idx_in_parent, 
+        nn::NNOut nn_evaluation
+    );
+    
+    // terminal constructor
+    MCNode(
+        MCNode * parent,
+        int idx_in_parent,
+        double terminal_eval
+    );
+    
+    void update_eval(double v);
 
-    MCNode(MCNode * parent, game::MovelistPtr, int);
+private:
+    void make_evaluation(nn::NNOut * nn_evaluation);
+
 };
