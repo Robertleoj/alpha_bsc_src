@@ -2,8 +2,7 @@
 // Created by Yngvi Björnsson on 7.5.2022.
 //
 
-#ifndef ABG8X8_CONNECT4_H
-#define ABG8X8_CONNECT4_H
+#pragma once
 
 #include <ostream>
 #include <assert.h>
@@ -82,8 +81,21 @@ namespace games {
 
         bool make(game::move_iterator it) override {
             auto col = it.as<Move>()->col - 1;
+
+            if(col >= 7){
+                throw std::runtime_error("stupid col");
+            }
+            
+            if(m.height[col] >= NUM_ROWS){
+                this->display(std::cout);
+                std::cout << std::endl;
+                std::cout << "Played column" << col << std::endl;
+                throw std::runtime_error("invalid move");
+            }
+
             bb::Bitboard move = 1ULL << square(col, m.height[col]++);
             m.board[m.counter++ & 1] ^= move;
+            // m.board[m.counter++ & 1] += move;
             return true;
         }
 
@@ -152,15 +164,19 @@ namespace games {
         void display(std::ostream& os, const std::string& delimiter = IGame::default_delimiter) const override
         {
             for (int row = NUM_ROWS-1; row >= 0; --row) {
+                os << '|';
                 for (int col = 0; col < NUM_COLS; ++col) {
                     int sqr = square(col, row);
                     if ((m.board[0] & (1ULL << sqr)) != 0ULL) {
-                        os << 'x';
+                        // os << 'x';
+                        os << 'X';
                     }
                     else if ((m.board[1] & (1ULL << sqr)) != 0ULL) {
-                        os << 'o';
+                        // os << 'o';
+                        os << 'O';
                     }
-                    else { os << '.'; }
+                    else { os << ' '; }
+                    os << '|';
                 }
                 os << delimiter;
             }
@@ -226,5 +242,3 @@ namespace games {
     };
 
 }
-
-#endif //ABG8X8_CONNECT4_H

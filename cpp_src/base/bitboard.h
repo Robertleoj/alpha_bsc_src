@@ -2,9 +2,7 @@
 // Created by Yngvi Björnsson on 7.5.2022.
 //
 
-#ifndef ABG8X8_BITBOARD_H
-#define ABG8X8_BITBOARD_H
-
+#pragma once
 #include "types.h"
 #include <assert.h>
 
@@ -198,4 +196,3 @@ namespace bb {
 
 }
 
-#endif //ABG8X8_BITBOARD_H

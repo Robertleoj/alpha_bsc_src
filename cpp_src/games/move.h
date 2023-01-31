@@ -2,9 +2,7 @@
 // Created by Yngvi Björnsson on 11.5.2022.
 //
 
-#ifndef ABG8X8_MOVE_H
-#define ABG8X8_MOVE_H
-
+#pragma once
 #include "../base/types.h"
 #include "../utils/utils.h"
 
@@ -156,4 +154,3 @@ namespace mm {
 }
 using namespace mm;
 
-#endif //ABG8X8_MOVE_H

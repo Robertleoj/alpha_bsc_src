@@ -6,99 +6,56 @@
 #include "games/connect4.h"
 #include "games/breakthrough.h"
 #include "misc/perft.h"
+#include "MCTS/agent.h"
 
-using namespace std;
+// using namespace std;
 using namespace game;
 using namespace games;
 
-using RunGameEntry = tuple<string,unique_ptr<game::IGame>,int, int>;
+using RunGameEntry = std::tuple<std::string,std::unique_ptr<game::IGame>,int, int>;
 
-
-[[maybe_unused]]
 void play_a_game(game::IGame& game)
 {
-    std::default_random_engine generator(42);
-    game.display(cout);
-    cout << endl;
+    game.display(std::cout);
+    std::cout << std::endl;
+    auto agent = Agent(game, pp::First);
+    
+    bool agent_turn = true;
+    int num_moves = 0;
+
     while(!game.is_terminal()) {
-        auto ml = game.moves();
-        for (auto it = ml->begin(), end = ml->end(); it != end; ++it) {
-            cout << ' ' << game.move_as_str(it);
-        }
-        cout << endl;
-        std::uniform_int_distribution<int> distribution(0, ml->get_size()-1);
-        auto n = distribution(generator);
-        game.make(ml->begin() + n);
-        game.display(cout);
-        cout << endl;
+
+        auto mv = agent.get_move(10000);
+        std::cout << "Move :" << game.move_as_str(mv) << std::endl;
+
+        // } else {
+        //     auto ml = game.moves();
+        //     int rand_idx = rand() % ml->get_size();
+        //     auto mv = ml->begin() + rand_idx;
+        //     game.make(mv);
+        //     agent.update_tree(rand_idx);
+        //     cout << "Move :" << game.move_as_str(mv) << endl;
+        // }
+        
+        game.display(std::cout);
+        
+        agent_turn = !agent_turn;
+
+        std::cout << std::endl;
+        std::cout << "Move " << ++num_moves << std::endl;
+
+        std::cout << std::endl;
     }
-    cout << str(game.outcome(First)) << endl;
+    std::cout << str(game.outcome(First)) << std::endl;
 }
 
-
-[[maybe_unused]]
-int play_moves(game::IGame& game, std::vector<std::string>& moves)
-{
-    int n = 0;
-    for (const auto& move_str : moves) {
-        if (game::make_move_if_legal(game, move_str)) {
-            ++n;
-        }
-        else { break; }
-    }
-    return n;
-}
-
-
-[[maybe_unused]]
-void test_performance(const RunGameEntry& g)
-{
-    do_perft_test( *get<1>(g), get<2>(g));
-    do_flat_mc_test( *get<1>(g), get<3>(g));
-}
-
-
-[[maybe_unused]]
-vector<string> split(const string &s, char delim) {
-    vector<string> result;
-    stringstream ss (s);
-    string item;
-    while (getline (ss, item, delim)) {
-        result.push_back (item);
-    }
-    return result;
-}
-
-
-[[maybe_unused]]
 int main()
 {
-    std::cout << "BScProject Abstract Board Games (8x8)" << std::endl;
+    srand(time(NULL));
 
-    const int SEARCH_DEPTH_C4 = 10;
-    const int SEARCH_DEPTH_BT = 6;
-    const int NUM_SIMULATIONS = 100000;
-
-    std::vector<RunGameEntry> run_games;
-
-    run_games.emplace_back(
-        "Connect4",      
-        make_unique<Connect4>(), 
-        SEARCH_DEPTH_C4, 
-        NUM_SIMULATIONS
-    );
-
-    run_games.emplace_back(
-        "Breakthrough ", 
-        make_unique<Breakthrough>(), 
-        SEARCH_DEPTH_BT, 
-        NUM_SIMULATIONS
-    );
-
-    for (auto& rg : run_games) {
-        cout << get<0>(rg)  << endl;
-        test_performance(rg);
-    }
+    // auto game = make_unique<Connect4>();
+    auto game = std::make_unique<Breakthrough>();
+    play_a_game(*game.get());
 
     return 0;
 }

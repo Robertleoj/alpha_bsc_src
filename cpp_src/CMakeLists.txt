@@ -17,4 +17,12 @@ add_executable(AlphaBSc
         games/connect4.h
         games/connect4.cpp
         misc/perft.h
-        misc/perft.cpp base/board.h)
+        misc/perft.cpp 
+        base/board.h
+        MCTS/agent.cpp
+        MCTS/agent.h
+        MCTS/mc_node.cpp
+        MCTS/mc_node.h
+        MCTS/mc_tree.cpp
+        MCTS/mc_tree.h
+)

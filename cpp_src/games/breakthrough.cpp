@@ -107,11 +107,13 @@ void Breakthrough::display(std::ostream& os, const std::string& delimiter) const
         if (rank != rank_end) {
             os << delimiter;
         }
+        os << '|';
         for (auto file=File::file_a; file<=file_end; ++file) {
             Square sq = ss::square(file, rank);
-            if      (m.bb_pieces[First] & bb::square(sq))  { os << 'w'; }
-            else if (m.bb_pieces[Second] & bb::square(sq)) { os << 'b'; }
-            else                                          { os << '.'; }
+            if      (m.bb_pieces[First] & bb::square(sq))  { os << 'W'; }
+            else if (m.bb_pieces[Second] & bb::square(sq)) { os << 'B'; }
+            else                                          { os << ' '; }
+            os << '|';
         }
     }
     os << ' ' << ((m.to_move==First) ? 'w' : 'b');

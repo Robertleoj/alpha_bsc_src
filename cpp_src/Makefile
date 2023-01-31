@@ -129,6 +129,78 @@ AlphaBSc/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/build
 .PHONY : AlphaBSc/fast
 
+MCTS/agent.o: MCTS/agent.cpp.o
+.PHONY : MCTS/agent.o
+
+# target to build an object file
+MCTS/agent.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/agent.cpp.o
+.PHONY : MCTS/agent.cpp.o
+
+MCTS/agent.i: MCTS/agent.cpp.i
+.PHONY : MCTS/agent.i
+
+# target to preprocess a source file
+MCTS/agent.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/agent.cpp.i
+.PHONY : MCTS/agent.cpp.i
+
+MCTS/agent.s: MCTS/agent.cpp.s
+.PHONY : MCTS/agent.s
+
+# target to generate assembly for a file
+MCTS/agent.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/agent.cpp.s
+.PHONY : MCTS/agent.cpp.s
+
+MCTS/mc_node.o: MCTS/mc_node.cpp.o
+.PHONY : MCTS/mc_node.o
+
+# target to build an object file
+MCTS/mc_node.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_node.cpp.o
+.PHONY : MCTS/mc_node.cpp.o
+
+MCTS/mc_node.i: MCTS/mc_node.cpp.i
+.PHONY : MCTS/mc_node.i
+
+# target to preprocess a source file
+MCTS/mc_node.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_node.cpp.i
+.PHONY : MCTS/mc_node.cpp.i
+
+MCTS/mc_node.s: MCTS/mc_node.cpp.s
+.PHONY : MCTS/mc_node.s
+
+# target to generate assembly for a file
+MCTS/mc_node.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_node.cpp.s
+.PHONY : MCTS/mc_node.cpp.s
+
+MCTS/mc_tree.o: MCTS/mc_tree.cpp.o
+.PHONY : MCTS/mc_tree.o
+
+# target to build an object file
+MCTS/mc_tree.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_tree.cpp.o
+.PHONY : MCTS/mc_tree.cpp.o
+
+MCTS/mc_tree.i: MCTS/mc_tree.cpp.i
+.PHONY : MCTS/mc_tree.i
+
+# target to preprocess a source file
+MCTS/mc_tree.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_tree.cpp.i
+.PHONY : MCTS/mc_tree.cpp.i
+
+MCTS/mc_tree.s: MCTS/mc_tree.cpp.s
+.PHONY : MCTS/mc_tree.s
+
+# target to generate assembly for a file
+MCTS/mc_tree.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_tree.cpp.s
+.PHONY : MCTS/mc_tree.cpp.s
+
 games/breakthrough.o: games/breakthrough.cpp.o
 .PHONY : games/breakthrough.o
 
@@ -258,6 +330,15 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AlphaBSc"
+	@echo "... MCTS/agent.o"
+	@echo "... MCTS/agent.i"
+	@echo "... MCTS/agent.s"
+	@echo "... MCTS/mc_node.o"
+	@echo "... MCTS/mc_node.i"
+	@echo "... MCTS/mc_node.s"
+	@echo "... MCTS/mc_tree.o"
+	@echo "... MCTS/mc_tree.i"
+	@echo "... MCTS/mc_tree.s"
 	@echo "... games/breakthrough.o"
 	@echo "... games/breakthrough.i"
 	@echo "... games/breakthrough.s"
