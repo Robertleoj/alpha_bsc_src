@@ -57,7 +57,8 @@ void play_a_game(game::IGame& game)
 
 int main()
 {
-    auto t = torch::ones({1, 2, 3});
+    // test putting a tensor on gpu
+    auto t = torch::ones({1, 2, 3}).cuda();
 
     srand(time(NULL));
 
