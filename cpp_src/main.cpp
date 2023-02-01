@@ -9,6 +9,8 @@
 #include "MCTS/agent.h"
 #include "NN/connect4_nn.h"
 #include <torch/script.h>
+// like import *
+#include <torch/all.h>
 
 // using namespace std;
 using namespace game;
@@ -58,7 +60,7 @@ void play_a_game(game::IGame& game)
 int main()
 {
     // test putting a tensor on gpu
-    auto t = torch::ones({1, 2, 3}).cuda();
+    // auto t = torch::ones({1, 2, 3}).cuda();
 
     srand(time(NULL));
 
