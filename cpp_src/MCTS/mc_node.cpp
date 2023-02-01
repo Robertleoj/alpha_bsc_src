@@ -38,11 +38,19 @@ void MCNode::make_evaluation(nn::NNOut * nn_evaluation) {
     this->p = std::vector<double>(this->children.size());
 
     auto &mp = nn_evaluation->p;
+    
+    double prob_sum = 0;
 
     for(int i = 0; i < this->children.size(); i++){
         auto mv = this->move_list->begin() + i;
         auto mv_id = this->move_list->as_move_id(mv);
-        this->p[i] = mp.at(mv_id);
+        double prob = mp.at(mv_id);
+        this->p[i] = prob;
+        prob_sum += prob;
+    }
+    
+    for(int i = 0; i < this->p.size(); i++){
+        this->p[i] /= prob_sum;
     }
 }
 
