@@ -5,7 +5,6 @@ project(AlphaBSc)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -O3 -DNDEBUG -Wextra")
 
-# set(CUDA_HOME "/usr/local/cuda-11.7")
 set(LIBTORCH ".libs/libtorch/")
 
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${LIBTORCH}")
@@ -44,15 +43,4 @@ add_executable(AlphaBSc
 
 target_link_libraries(AlphaBSc
     ${TORCH_LIBRARIES}
-    # ${CUDA_LIBRARIES}
 )
-# target_link_libraries(AlphaBSc PRIVATE -lm
-#         -Wl,--whole-archive "${TORCH_LIBRARIES}"
-#         -Wl,--no-whole-archive
-#         -lpthread
-#         ${CMAKE_DL_LIBS}
-# )
-# ${CUDA_LIBRARIES}
-
-
-# target_link_libraries(AlphaBSc "${TORCH_LIBRARIES}")
