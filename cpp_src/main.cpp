@@ -8,6 +8,7 @@
 #include "misc/perft.h"
 #include "MCTS/agent.h"
 #include "NN/connect4_nn.h"
+#include <torch/script.h>
 
 // using namespace std;
 using namespace game;
@@ -56,6 +57,8 @@ void play_a_game(game::IGame& game)
 
 int main()
 {
+    auto t = torch::ones({1, 2, 3});
+
     srand(time(NULL));
 
     auto game = std::make_unique<Connect4>();
