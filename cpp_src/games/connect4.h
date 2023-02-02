@@ -272,7 +272,7 @@ namespace games {
 
             static constexpr bb::Bitboard rightmost = ~file(NUM_COLS-1);
 
-            static constexpr bb::Bitboard leftmost3 = ~(
+            static constexpr bb::Bitboard leftmost3 =~(
                 file(0) 
                 | file(1) 
                 | file(2)

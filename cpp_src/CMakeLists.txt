@@ -38,6 +38,7 @@ add_executable(AlphaBSc
         MCTS/mc_tree.cpp
         MCTS/mc_tree.h
         NN/connect4_nn.h
+        NN/connect4_nn.cpp
         NN/nn.h
 )
 

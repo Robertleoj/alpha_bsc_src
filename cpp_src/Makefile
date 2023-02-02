@@ -201,6 +201,30 @@ MCTS/mc_tree.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/MCTS/mc_tree.cpp.s
 .PHONY : MCTS/mc_tree.cpp.s
 
+NN/connect4_nn.o: NN/connect4_nn.cpp.o
+.PHONY : NN/connect4_nn.o
+
+# target to build an object file
+NN/connect4_nn.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/NN/connect4_nn.cpp.o
+.PHONY : NN/connect4_nn.cpp.o
+
+NN/connect4_nn.i: NN/connect4_nn.cpp.i
+.PHONY : NN/connect4_nn.i
+
+# target to preprocess a source file
+NN/connect4_nn.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/NN/connect4_nn.cpp.i
+.PHONY : NN/connect4_nn.cpp.i
+
+NN/connect4_nn.s: NN/connect4_nn.cpp.s
+.PHONY : NN/connect4_nn.s
+
+# target to generate assembly for a file
+NN/connect4_nn.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AlphaBSc.dir/build.make CMakeFiles/AlphaBSc.dir/NN/connect4_nn.cpp.s
+.PHONY : NN/connect4_nn.cpp.s
+
 games/breakthrough.o: games/breakthrough.cpp.o
 .PHONY : games/breakthrough.o
 
@@ -339,6 +363,9 @@ help:
 	@echo "... MCTS/mc_tree.o"
 	@echo "... MCTS/mc_tree.i"
 	@echo "... MCTS/mc_tree.s"
+	@echo "... NN/connect4_nn.o"
+	@echo "... NN/connect4_nn.i"
+	@echo "... NN/connect4_nn.s"
 	@echo "... games/breakthrough.o"
 	@echo "... games/breakthrough.i"
 	@echo "... games/breakthrough.s"

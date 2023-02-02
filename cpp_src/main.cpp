@@ -22,7 +22,7 @@ void play_a_game(game::IGame& game)
 {
     game.display(std::cout);
     std::cout << std::endl;
-    auto connect4_nn = nn::Connect4NN();
+    auto connect4_nn = nn::Connect4NN("../models/test_model.pt");
     
     
 
