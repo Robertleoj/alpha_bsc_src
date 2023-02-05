@@ -47,6 +47,8 @@ add_executable(AlphaBSc
         NN/nn.h
         DB/db.h
         DB/db.cpp
+        self-play/selfplay.h
+        self-play/selfplay.cpp
 )
 
 target_link_libraries(AlphaBSc

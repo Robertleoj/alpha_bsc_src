@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 
-Agent::Agent(game::IGame & game, pp::Player player, nn::NN * neural_net)
+Agent::Agent(game::IGame * game, pp::Player player, nn::NN * neural_net)
 : game(game), player(player)
 {  
     this->tree = new MCTree();
@@ -21,17 +21,11 @@ Agent::~Agent(){
     }
 }
 
-void Agent::update(
-    int move_idx
+void Agent::update_tree(
+    game::move_id move_id
 ){
-    // game move
-    auto move = this->tree->root->move_list->begin() + move_idx;
-    game.make(move);
+    int move_idx = this->tree->root->move_idx_of(move_id);
     tree->move(move_idx);
-}
-
-void Agent::update_tree(int move_idx) {
-    this->tree->move(move_idx);
 }
 
 
@@ -81,19 +75,19 @@ std::pair<MCNode *, double> Agent::selection(){
     {
         MCNode * new_node = nullptr;
         double v = 0;
-        if(game.is_terminal()){
-            v = this->outcome_to_value(game.outcome(pp::First));
+        if(game->is_terminal()){
+            v = this->outcome_to_value(game->outcome(pp::First));
             new_node = new MCNode(
                 nullptr,
                 -1,
                 v
             );
         } else {
-            nn::NNOut evaluation = this->neural_net->eval_state(this->game.get_board());
+            nn::NNOut evaluation = this->neural_net->eval_state(this->game->get_board());
 
             new_node = new MCNode(
                 nullptr,
-                this->game.moves(),
+                this->game->moves(),
                 -1,
                 evaluation
             );
@@ -131,12 +125,12 @@ std::pair<MCNode *, double> Agent::selection(){
             if(children[i] == nullptr){
 
                 // update state
-                this->game.make(move_list->begin() + i);
+                this->game->make(move_list->begin() + i);
                 
                 MCNode * new_node;
                 double v;
-                if(game.is_terminal()){
-                    v = this->outcome_to_value(game.outcome(pp::First));
+                if(game->is_terminal()){
+                    v = this->outcome_to_value(game->outcome(pp::First));
                     new_node = new MCNode(
                         current_node,
                         i,
@@ -144,12 +138,12 @@ std::pair<MCNode *, double> Agent::selection(){
                     );
                 } else {
 
-                    nn::NNOut evaluation = this->neural_net->eval_state(this->game.get_board());
+                    nn::NNOut evaluation = this->neural_net->eval_state(this->game->get_board());
 
                     // Make new node 
                     new_node = new MCNode(
                         current_node,
-                        this->game.moves(),
+                        this->game->moves(),
                         i,
                         evaluation
                     );
@@ -176,7 +170,7 @@ std::pair<MCNode *, double> Agent::selection(){
             }
         }
 
-        this->game.make(move_list->begin() + best_move);
+        this->game->make(move_list->begin() + best_move);
 
         current_node = next_node;
         next_node = nullptr;
@@ -190,7 +184,7 @@ void Agent::backpropagation(MCNode * node, double v){
         node->plays++;
         double val = v;
 
-        if(this->game.get_to_move() == pp::Second){
+        if(this->game->get_to_move() == pp::Second){
             val = 1 - v;
         }
         
@@ -199,7 +193,7 @@ void Agent::backpropagation(MCNode * node, double v){
         if (node->parent == nullptr) {
             break;
         } else {
-            this->game.retract(node->parent->move_list->begin() + node->idx_in_parent);
+            this->game->retract(node->parent->move_list->begin() + node->idx_in_parent);
             node = node->parent;
         }
     }
@@ -236,9 +230,10 @@ int Agent::get_current_best_move(){
 }
 
 
-game::move_iterator Agent::get_move(int playout_cap){
+std::map<game::move_id, int> Agent::search(int playout_cap){
 
     int i;
+
     for(i = 0; i < playout_cap; i++){
         // std::cout << "Playout " << i << std::endl;
         // std::cout << "selection" << std::endl;
@@ -252,8 +247,12 @@ game::move_iterator Agent::get_move(int playout_cap){
 
     // Get best move
     printf("Performed %d iterations\n", i);
-    auto ret_move = this->get_current_best_move();
-    auto mv = this->tree->root->move_list->begin() +  ret_move;
-    update(ret_move);
-    return mv;
+
+    return this->tree->root->visit_count_map();
+
+    // auto ret_move = this->get_current_best_move();
+
+    // auto mv = this->tree->root->move_list->begin() +  ret_move;
+    // update(ret_move);
+    // return mv;
 }

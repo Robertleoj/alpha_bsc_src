@@ -4,27 +4,31 @@
 #include "../games/game.h"
 #include "../base/types.h"
 #include "../NN/nn.h"
+#include <map>
 
 class Agent {
 public:
-    Agent(game::IGame & game, pp::Player player, nn::NN* neural_net);
+    Agent(game::IGame * game, pp::Player player, nn::NN* neural_net);
 
     ~Agent();
     
     nn::NN * neural_net;
 
     void update(int move_idx);
-    void update_tree(int move_idx);
-    game::move_iterator get_move(int playout_cap);
+
+    void update_tree(game::move_id move_id);
+
+    std::map<game::move_id, int> search(int playout_cap);
+
     void switch_sides();
+    MCTree * tree = nullptr;
 
 private:
-    game::IGame & game;
+    game::IGame * game;
     pp::Player player;
 
     // Move ** move_buffer = nullptr;
     
-    MCTree * tree = nullptr;
     // AgentState * state = nullptr;
 
     // Move * board_idx_to_move(board_idx b);

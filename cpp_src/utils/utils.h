@@ -9,6 +9,7 @@
 #include <memory>
 #include <limits>
 #include "./random.h"
+#include "./strings.h"
 
 
 namespace utils {

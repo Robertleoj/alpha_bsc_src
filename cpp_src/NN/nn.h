@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../base/board.h"
 #include "../games/game.h"
 #include <map>
