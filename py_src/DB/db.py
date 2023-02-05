@@ -21,7 +21,6 @@ class DB:
             port=3306,
             database='self_play'
         )
-
     
 
 
