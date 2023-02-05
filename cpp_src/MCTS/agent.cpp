@@ -230,7 +230,7 @@ int Agent::get_current_best_move(){
 }
 
 
-std::map<game::move_id, int> Agent::search(int playout_cap){
+void Agent::search(int playout_cap){
 
     int i;
 
@@ -247,12 +247,8 @@ std::map<game::move_id, int> Agent::search(int playout_cap){
 
     // Get best move
     printf("Performed %d iterations\n", i);
+}
 
+std::map<game::move_id, int> Agent::root_visit_counts(){
     return this->tree->root->visit_count_map();
-
-    // auto ret_move = this->get_current_best_move();
-
-    // auto mv = this->tree->root->move_list->begin() +  ret_move;
-    // update(ret_move);
-    // return mv;
 }

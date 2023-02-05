@@ -12,7 +12,7 @@ namespace nn{
 
     NNOut Connect4NN::eval_state(Board board) {
         
-        auto btensor = this->board_to_tensor(board).cuda();
+        auto btensor = this->state_to_tensor(board).cuda();
         // std::cout << btensor.sizes() << std::endl;
         
         std::vector<torch::jit::IValue> inp({btensor});
@@ -42,7 +42,7 @@ namespace nn{
 
     }
     
-    torch::Tensor Connect4NN::board_to_tensor(Board board){
+    at::Tensor Connect4NN::state_to_tensor(Board board){
         
         int rows = 6;
         int cols = 7;
@@ -80,5 +80,35 @@ namespace nn{
         }
 
         return out.unsqueeze(0);
+    }
+
+
+    at::Tensor Connect4NN::visit_count_to_policy_tensor(
+        std::map<game::move_id, int> visit_counts
+    ) {
+
+        std::cout << "Initializing plicy tensor" << std::endl;
+        at::Tensor policy = torch::zeros({7});
+        std::cout << "Done initializing plicy tensor" << std::endl;
+
+
+        // maintain sum to normalize
+        double sm = 0;
+
+
+        for(auto &p : visit_counts){
+            // mvoe id is col + 1
+            int idx = p.first - 1;
+            int cnt = p.second;
+            sm += cnt;
+            policy[idx] = (double) cnt;
+        }
+
+
+        for(int i = 0; i < 7; i++){
+            policy[i] /= sm;
+        }
+
+        return policy;
     }
 }

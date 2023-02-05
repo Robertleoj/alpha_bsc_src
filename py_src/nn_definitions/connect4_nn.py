@@ -28,4 +28,3 @@ class Connect4NN(NNBase):
         x = self.out(x)
         return x
 
-    

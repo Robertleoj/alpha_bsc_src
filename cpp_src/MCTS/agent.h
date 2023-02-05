@@ -8,20 +8,23 @@
 
 class Agent {
 public:
+    nn::NN * neural_net;
+    MCTree * tree = nullptr;
+
+
     Agent(game::IGame * game, pp::Player player, nn::NN* neural_net);
 
     ~Agent();
     
-    nn::NN * neural_net;
-
     void update(int move_idx);
 
     void update_tree(game::move_id move_id);
 
-    std::map<game::move_id, int> search(int playout_cap);
+    void search(int playout_cap);
+    std::map<game::move_id, int> root_visit_counts();
 
     void switch_sides();
-    MCTree * tree = nullptr;
+    double outcome_to_value(out::Outcome);
 
 private:
     game::IGame * game;
@@ -43,7 +46,6 @@ private:
 
     double PUCT(MCNode *node, MCNode * childnode);
     
-    double outcome_to_value(out::Outcome);
 
 };
 
