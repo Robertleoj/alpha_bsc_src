@@ -11,6 +11,8 @@
 #include <torch/script.h>
 // like import *
 #include <torch/all.h>
+#include <mariadb/conncpp.hpp>
+#include "./DB/db.h"
 
 // using namespace std;
 using namespace game;
@@ -24,7 +26,6 @@ void play_a_game(game::IGame& game)
     std::cout << std::endl;
     auto connect4_nn = nn::Connect4NN("../models/test_model.pt");
     
-    
 
     auto agent = Agent(game, pp::First, (nn::NN*)&connect4_nn);
     
@@ -33,7 +34,7 @@ void play_a_game(game::IGame& game)
 
     while(!game.is_terminal()) {
 
-        auto mv = agent.get_move(10000);
+        auto mv = agent.get_move(100);
         std::cout << "Move :" << game.move_as_str(mv) << std::endl;
 
         // } else {
@@ -57,6 +58,8 @@ void play_a_game(game::IGame& game)
     std::cout << str(game.outcome(First)) << std::endl;
 }
 
+
+
 int main()
 {
     // test putting a tensor on gpu
@@ -64,9 +67,34 @@ int main()
 
     srand(time(NULL));
 
+    auto conn = db::DB();
+
+    auto res = conn.conn->prepareStatement("select * from generations")->executeQuery();
+
+    while(res->next()){
+        std::cout << "Generation num: " << res->getInt("generation_num") << std::endl;
+    }
+
+
     auto game = std::make_unique<Connect4>();
     // auto game = std::make_unique<Breakthrough>();
     play_a_game(*game.get());
+
+    auto t = torch::randn({10, 10});
+
+    // std::cout << "t1" << std::endl;
+    // std::cout << t << std::endl;
+
+    std::stringstream ss;
+    
+    torch::save(t,ss);
+
+    at::Tensor t2;
+
+    torch::load(t2, ss);
+
+    std::cout << "t2" << std::endl;
+    std::cout << t2 << std::endl;
 
     return 0;
 }

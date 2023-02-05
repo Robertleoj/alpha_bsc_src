@@ -2,6 +2,7 @@
 #include "./connect4_nn.h"
 #include "../base/types.h"
 
+
 namespace nn{
     
     Connect4NN::Connect4NN(std::string model_path){

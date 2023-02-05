@@ -20,9 +20,7 @@ class Connect4NN(NNBase):
         # output is 3 x 8 x 8
         
         self.out = nn.Linear(3 * 8 * 8, COLS)
-        
-    
-        
+
     def forward(self, x):
         # Input has shape 3 x ROWS x COLS
         x = self.inp_nn(x)

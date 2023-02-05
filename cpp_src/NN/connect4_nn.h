@@ -13,8 +13,6 @@ namespace nn {
     public:
         NNOut eval_state(Board board) override;
         Connect4NN(std::string model_path);
-        
-    private:
         torch::Tensor board_to_tensor(Board board);
     };
 }

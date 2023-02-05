@@ -13,6 +13,11 @@ include_directories(".libs/libtorch/include")
 
 find_package(Torch REQUIRED)
 
+include_directories("/usr/include/mariadb") #path to include folder
+add_library(mariadbcpp STATIC IMPORTED)
+set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/usr/lib/libmariadbcpp.so") #path to libmariadbcpp.so
+
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 add_executable(AlphaBSc
@@ -40,8 +45,11 @@ add_executable(AlphaBSc
         NN/connect4_nn.h
         NN/connect4_nn.cpp
         NN/nn.h
+        DB/db.h
+        DB/db.cpp
 )
 
 target_link_libraries(AlphaBSc
     ${TORCH_LIBRARIES}
+    mariadbcpp
 )
