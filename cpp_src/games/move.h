@@ -138,7 +138,7 @@ namespace mm {
         }
 
         [[nodiscard]] explicit operator game::move_id() const { 
-            return id; 
+            return (m.from << 6) | m.to;
         }
 
         bool operator==(const Move& rhs) const {
