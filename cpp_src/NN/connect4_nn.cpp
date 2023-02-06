@@ -32,7 +32,6 @@ namespace nn{
         };
 
         // 7 columns in connect4
-        // auto random_multinomial = utils::multinomial(7);
 
         for(int i = 0; i < 7; i++){
             p[all_moves[i]] = pol_tensor[i].item().toDouble();

@@ -2,10 +2,14 @@
 #include <math.h>
 #include <random>
 #include <stdexcept>
+#include "../hyperparams.h"
 
 
-Agent::Agent(game::IGame * game, pp::Player player, nn::NN * neural_net)
-: game(game), player(player)
+Agent::Agent(
+    game::IGame * game, 
+    pp::Player player, 
+    nn::NN * neural_net
+) : game(game), player(player)
 {  
     this->tree = new MCTree();
     this->neural_net = neural_net;
@@ -49,8 +53,7 @@ double Agent::PUCT(MCNode * node, MCNode * childnode){
     double P = node->p[childnode->idx_in_parent];
     double N = node->plays;
 
-    // TODO: put in config file
-    double c = 4; 
+    double c = hp::PUCT_c; 
 
     return V + c *P * sqrt(N) / (1 + n);
 }

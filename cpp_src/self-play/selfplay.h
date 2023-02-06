@@ -4,7 +4,11 @@
 #include "../DB/db.h"
 #include "../NN/nn.h"
 #include <string>
+#include "../base/types.h"
+#include <queue>
+#include <mutex>
 
+typedef std::pair<int, Board> eval_request;
 
 class SelfPlay {
 public:
@@ -15,4 +19,11 @@ public:
     SelfPlay(std::string game);
 
     void play_game();
+
+    void self_play();
+    void thread_play(
+        int thread_idx, 
+        std::queue<eval_request> * eval_q,
+        std::mutex * q_mutex
+    );
 };
