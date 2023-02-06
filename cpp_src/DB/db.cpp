@@ -98,8 +98,6 @@ namespace db {
 
     void DB::insert_training_samples(std::vector<nn::TrainingSample> &samples) {
 
-
-
         for(auto &sample : samples){
 
             auto stmt = this->conn->prepareStatement(R"(

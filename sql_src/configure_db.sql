@@ -15,7 +15,8 @@ create table generations (
     generation_num int not null,
     created_at timestamp default current_timestamp,
     primary key (id),
-    unique (game_id, generation_num)
+    unique (game_id, generation_num),
+    foreign key (game_id) references games (id)
 );
 
 insert into generations (game_id, generation_num)

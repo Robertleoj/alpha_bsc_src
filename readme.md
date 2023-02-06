@@ -15,6 +15,7 @@ install C++ connector from [here](https://mariadb.com/docs/skysql/connect/progra
 
 ## Database
 We use a MariaDB database. Using docker, create the image with
+
 ```
 docker run --name alpha_db -p 127.0.0.1:3306:3306 -e MARIADB_USER=user  -e MARIADB_PASSWORD=password -e MARIADB_ROOT_PASSWORD=password -d mariadb 
 
