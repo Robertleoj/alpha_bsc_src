@@ -1,3 +1,5 @@
+GRANT ALL PRIVILEGES ON  *.* to 'user'@'%' WITH GRANT OPTION;
+
 create database self_play;
 
 use self_play;
