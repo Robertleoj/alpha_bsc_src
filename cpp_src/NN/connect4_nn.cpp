@@ -17,10 +17,10 @@ namespace nn{
         
         std::vector<torch::jit::IValue> inp({btensor});
         
-        auto net_out = this->net.forward(inp);
+        auto net_out = this->net.forward(inp).toTuple()->elements();
+        auto pol_tensor = net_out.at(0).toTensor().squeeze(0);
+        auto val_tensor = net_out.at(1).toTensor().squeeze(0);
         
-        at::Tensor out_tensor = net_out.toTensor();
-        out_tensor = out_tensor.squeeze(0);
         
         std::map<game::move_id, double> p;
 
@@ -32,12 +32,12 @@ namespace nn{
         // auto random_multinomial = utils::multinomial(7);
 
         for(int i = 0; i < 7; i++){
-            p[all_moves[i]] = out_tensor[i].item().toDouble();
+            p[all_moves[i]] = pol_tensor[i].item().toDouble();
         }
 
         return  NNOut {
             p,
-            utils::normalized_double()
+            val_tensor.item().toDouble()
         };
 
     }
@@ -51,7 +51,7 @@ namespace nn{
             .dtype(torch::kFloat32);
 
         auto out = torch::zeros(
-            {3, rows + 1, cols}, torchopt
+            {3, rows, cols}, torchopt
         );
         
         uint64_t x_board = board.bbs[0];
@@ -87,10 +87,7 @@ namespace nn{
         std::map<game::move_id, int> visit_counts
     ) {
 
-        std::cout << "Initializing plicy tensor" << std::endl;
         at::Tensor policy = torch::zeros({7});
-        std::cout << "Done initializing plicy tensor" << std::endl;
-
 
         // maintain sum to normalize
         double sm = 0;
