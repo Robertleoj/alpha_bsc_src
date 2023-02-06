@@ -6,13 +6,19 @@
 #include "../NN/nn.h"
 #include <map>
 
+typedef std::function<std::unique_ptr<nn::NNOut>(Board)> eval_f;
+
 class Agent {
 public:
-    nn::NN * neural_net;
     MCTree * tree = nullptr;
+    eval_f eval_func;
 
 
-    Agent(game::IGame * game, pp::Player player, nn::NN* neural_net);
+    Agent(
+        game::IGame * game, 
+        pp::Player player, 
+        eval_f eval_func
+    );
 
     ~Agent();
     

@@ -8,11 +8,11 @@
 Agent::Agent(
     game::IGame * game, 
     pp::Player player, 
-    nn::NN * neural_net
+    eval_f eval_func
 ) : game(game), player(player)
 {  
+    this->eval_func = eval_func;
     this->tree = new MCTree();
-    this->neural_net = neural_net;
 }
 
 void Agent::switch_sides(){ 
@@ -86,16 +86,16 @@ std::pair<MCNode *, double> Agent::selection(){
                 v
             );
         } else {
-            nn::NNOut evaluation = this->neural_net->eval_state(this->game->get_board());
+            auto evaluation = this->eval_func(this->game->get_board());
 
             new_node = new MCNode(
                 nullptr,
                 this->game->moves(),
                 -1,
-                evaluation
+                *evaluation
             );
             
-            v = evaluation.v;
+            v = evaluation->v;
         }
         
         this->tree->root = new_node;
@@ -141,16 +141,16 @@ std::pair<MCNode *, double> Agent::selection(){
                     );
                 } else {
 
-                    nn::NNOut evaluation = this->neural_net->eval_state(this->game->get_board());
+                    auto evaluation = this->eval_func(this->game->get_board());
 
                     // Make new node 
                     new_node = new MCNode(
                         current_node,
                         this->game->moves(),
                         i,
-                        evaluation
+                        *evaluation
                     );
-                    v = evaluation.v;
+                    v = evaluation->v;
                 }
 
                 children[i] = new_node;
