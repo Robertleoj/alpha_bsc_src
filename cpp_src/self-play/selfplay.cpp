@@ -61,7 +61,7 @@ void SelfPlay::play_game(){
         auto policy_tensor =this->neural_net->visit_count_to_policy_tensor(visit_counts);
 
         // std::cout << "Making state tensor" << std::endl;
-        auto state_tensor = this->neural_net->state_to_tensor(game->get_board());    Agent agent = Agent(game, pp::First, this->neural_net.get());
+        auto state_tensor = this->neural_net->state_to_tensor(game->get_board());    
 
 
         nn::TrainingSample ts = {

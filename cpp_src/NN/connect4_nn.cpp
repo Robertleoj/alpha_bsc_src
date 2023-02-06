@@ -18,8 +18,11 @@ namespace nn{
         std::vector<torch::jit::IValue> inp({btensor});
         
         auto net_out = this->net.forward(inp).toTuple()->elements();
-        auto pol_tensor = net_out.at(0).toTensor().squeeze(0);
-        auto val_tensor = net_out.at(1).toTensor().squeeze(0);
+        auto pol_tensor = net_out.at(0).toTensor().cpu().squeeze(0);
+
+        pol_tensor = torch::softmax(pol_tensor, 0);
+        auto val_tensor = net_out.at(1).toTensor().cpu().squeeze(0);
+        val_tensor = torch::sigmoid(val_tensor);
         
         
         std::map<game::move_id, double> p;
