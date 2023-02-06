@@ -1,4 +1,5 @@
 #pragma once
+
 //
 // Created by Yngvi Björnsson on 7.5.2022.
 //
@@ -7,6 +8,8 @@
 #include <chrono>
 #include <memory>
 #include <limits>
+#include "./random.h"
+#include "./strings.h"
 
 
 namespace utils {

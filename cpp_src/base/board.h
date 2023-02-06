@@ -1,7 +1,3 @@
-//
-// Created by Yngvi Björnsson on 30.1.2023.
-//
-
 #pragma once
 #include <vector>
 #include "types.h"
