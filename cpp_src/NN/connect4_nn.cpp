@@ -10,7 +10,34 @@ namespace nn{
         this->net.to(at::kCUDA);
     }
 
-    NNOut Connect4NN::eval_state(Board board) {
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_states(std::vector<Board> * boards){
+
+        std::vector<torch::jit::IValue> inp;
+        for(auto &b: *boards){
+            inp.push_back(this->state_to_tensor(b));
+        }
+
+        auto net_out = this->net.forward(inp).toTuple()->elements();
+
+        auto pol_tensors = net_out.at(0).toTensor();
+        pol_tensors = pol_tensors.softmax(1).cpu();
+
+        auto val_tensors = net_out.at(1).toTensor();
+        val_tensors = val_tensors.sigmoid().cpu();
+
+        std::vector<std::unique_ptr<NNOut>> out;
+        for(int i = 0; i < boards->size(); i++){
+            auto nnout = this->make_nnout_from_tensors(
+                pol_tensors[i], val_tensors[i]
+            );
+            out.push_back(std::move(nnout));
+        }
+        
+        return out;
+
+    };
+
+    std::unique_ptr<NNOut> Connect4NN::eval_state(Board board) {
         
         auto btensor = this->state_to_tensor(board).cuda();
         // std::cout << btensor.sizes() << std::endl;
@@ -23,8 +50,12 @@ namespace nn{
         pol_tensor = torch::softmax(pol_tensor, 0);
         auto val_tensor = net_out.at(1).toTensor().cpu().squeeze(0);
         val_tensor = torch::sigmoid(val_tensor);
-        
-        
+
+        return std::move(this->make_nnout_from_tensors(pol_tensor, val_tensor));
+    }
+
+    std::unique_ptr<NNOut> Connect4NN::make_nnout_from_tensors(at::Tensor pol_tensor, at::Tensor val_tensor){
+
         std::map<game::move_id, double> p;
 
         game::move_id all_moves[7] = {
@@ -37,11 +68,10 @@ namespace nn{
             p[all_moves[i]] = pol_tensor[i].item().toDouble();
         }
 
-        return  NNOut {
+        return std::unique_ptr<NNOut>(new NNOut{
             p,
             val_tensor.item().toDouble()
-        };
-
+        });
     }
     
     at::Tensor Connect4NN::state_to_tensor(Board board){

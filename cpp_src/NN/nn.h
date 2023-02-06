@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <torch/torch.h>
+#include <vector>
 
 
 namespace nn {
@@ -22,10 +23,12 @@ namespace nn {
 
     class NN {
     public:
-        virtual NNOut eval_state(Board board){};
+        virtual std::unique_ptr<NNOut> eval_state(Board board){};
+        virtual std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards){};
         virtual at::Tensor state_to_tensor(Board board){}
         virtual at::Tensor visit_count_to_policy_tensor(
             std::map<game::move_id, int>
         ){}
+        virtual std::unique_ptr<NNOut> make_nnout_from_tensors(at::Tensor policy, at::Tensor value){}
     };
 }

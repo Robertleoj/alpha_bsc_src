@@ -31,7 +31,6 @@ SelfPlay::SelfPlay(std::string game) {
 
 void SelfPlay::self_play(){
     int num_threads = hp::num_parallel_games;
-    int batch_size = hp::batch_size;
 
     std::mutex queue_mutex;
     std::mutex db_mutex;
@@ -48,8 +47,54 @@ void SelfPlay::self_play(){
 
     std::unique_ptr<nn::NNOut> evaluations[num_threads];
 
-    std::condition_variable * eval_cv;
+    std::condition_variable eval_cv;
 
+    std::condition_variable nn_q_wait_cv;
+
+    for(int i = 0; i < num_threads; i++){
+        threads[i] = std::thread(
+            &SelfPlay::thread_play, this,
+            i, 
+            &eval_requests,
+            &queue_mutex,
+            &db_mutex,
+            (bool *) request_completed,
+            &req_comp_mutex,
+            (std::unique_ptr<nn::NNOut> *) evaluations,
+            &eval_cv,
+            &nn_q_wait_cv
+        );
+    }
+
+    while(1){
+        std::unique_lock<std::mutex> nn_q_lock(queue_mutex);
+        nn_q_wait_cv.wait(nn_q_lock, [eval_requests](){
+            return eval_requests.size() >= hp::batch_size;
+        });
+        std::vector<int> thread_indices;
+        std::vector<Board> states;
+
+        for(int i = 0; i < hp::batch_size; i++){
+            auto p = eval_requests.front();
+            thread_indices.push_back(p.first);
+            states.push_back(p.second);
+            eval_requests.pop();
+        }
+
+        nn_q_lock.unlock();
+
+        auto result = this->neural_net->eval_states(&states);
+        for(int i = 0; i < thread_indices.size(); i++){
+            int thread_idx = thread_indices[i];
+            evaluations[thread_idx] = std::move(result[i]);
+
+            // req_comp_mutex.lock();
+            request_completed[thread_idx] = true;
+            // req_comp_mutex.unlock();
+        }
+
+        eval_cv.notify_all();
+    }
 }
 
 void SelfPlay::thread_play(
@@ -57,10 +102,11 @@ void SelfPlay::thread_play(
     std::queue<eval_request>* q,
     std::mutex * q_mutex,
     std::mutex * db_mutex,
-    bool req_completed[],
+    bool * req_completed,
     std::mutex * req_comp_mutex,
-    std::unique_ptr<nn::NNOut> evaluations[],
-    std::condition_variable * eval_cv
+    std::unique_ptr<nn::NNOut> * evaluations,
+    std::condition_variable * eval_cv,
+    std::condition_variable * nn_q_wait_cv
 ){
     game::IGame* game;
 
@@ -78,13 +124,15 @@ void SelfPlay::thread_play(
         req_completed,
         req_comp_mutex,
         evaluations,
-        eval_cv
+        eval_cv,
+        nn_q_wait_cv
     ](Board b){
         
         // Put item in queue
         q_mutex->lock();
         q->push({thread_idx, b});
         q_mutex->unlock();
+        nn_q_wait_cv->notify_one();
 
         // Wait for result
         std::unique_lock<std::mutex> lq(*req_comp_mutex);

@@ -31,24 +31,24 @@ int main()
     srand(time(NULL));
 
     auto selfplayer = SelfPlay("connect4");
-    selfplayer.play_game();
+    selfplayer.self_play();
 
 
-    auto t = torch::randn({10, 10});
+    // auto t = torch::randn({10, 10});
 
     // std::cout << "t1" << std::endl;
     // std::cout << t << std::endl;
 
-    std::stringstream ss;
+    // std::stringstream ss;
     
-    torch::save(t,ss);
+    // torch::save(t,ss);
 
-    at::Tensor t2;
+    // at::Tensor t2;
 
-    torch::load(t2, ss);
+    // torch::load(t2, ss);
 
-    std::cout << "t2" << std::endl;
-    std::cout << t2 << std::endl;
+    // std::cout << "t2" << std::endl;
+    // std::cout << t2 << std::endl;
 
     return 0;
 }
