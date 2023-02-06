@@ -12,10 +12,16 @@ namespace nn{
 
     std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_states(std::vector<Board> * boards){
 
-        std::vector<torch::jit::IValue> inp;
+        std::vector<at::Tensor> btensors;
         for(auto &b: *boards){
-            inp.push_back(this->state_to_tensor(b));
+            btensors.push_back(this->state_to_tensor(b));
         }
+
+        auto inp_tensor = torch::stack(btensors, 0).cuda();
+        // std::cout << "\u001b[36mINP TENSOR SHAPE\u001b[0m" << inp_tensor.sizes() << std::endl;
+
+
+        std::vector<torch::jit::IValue> inp({inp_tensor});
 
         auto net_out = this->net.forward(inp).toTuple()->elements();
 
@@ -39,7 +45,7 @@ namespace nn{
 
     std::unique_ptr<NNOut> Connect4NN::eval_state(Board board) {
         
-        auto btensor = this->state_to_tensor(board).cuda();
+        auto btensor = this->state_to_tensor(board).unsqueeze(0).cuda();
         // std::cout << btensor.sizes() << std::endl;
         
         std::vector<torch::jit::IValue> inp({btensor});
@@ -111,7 +117,7 @@ namespace nn{
             out[2] += 1;
         }
 
-        return out.unsqueeze(0);
+        return out;
     }
 
 

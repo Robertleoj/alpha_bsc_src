@@ -32,6 +32,7 @@ public:
         std::mutex *req_completed_mutex,
         std::unique_ptr<nn::NNOut> *evaluations,
         std::condition_variable * eval_cv,
-        std::condition_variable * nn_q_wait_cv    
+        std::condition_variable * nn_q_wait_cv    ,
+        std::mutex * results_mutex
     );
 };

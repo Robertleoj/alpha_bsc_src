@@ -22,7 +22,6 @@ public:
     game::MovelistPtr move_list;
 
     std::vector<MCNode*> children;
-    // std::map<int, MCNode*> children;
 
     MCNode(
         MCNode * parent, 
@@ -37,6 +36,8 @@ public:
         int idx_in_parent,
         double terminal_eval
     );
+
+    ~MCNode();
 
     int move_idx_of(game::move_id);
     

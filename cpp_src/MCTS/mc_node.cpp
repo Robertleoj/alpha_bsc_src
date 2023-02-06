@@ -2,6 +2,9 @@
 #include <bits/stdc++.h>
 
 
+MCNode::~MCNode(){
+    this->move_list.release();
+}
 
 // non-terminal constructor
 MCNode::MCNode(
@@ -47,13 +50,14 @@ MCNode::MCNode(
     this->is_terminal = true;
     this->idx_in_parent = idx_in_parent;
     this->value_approx = terminal_eval;
+    this->children = std::vector<MCNode *>();
 }
 
 void MCNode::make_evaluation(nn::NNOut * nn_evaluation) {
     
     this->p = std::vector<double>(this->children.size());
 
-    auto &mp = nn_evaluation->p;
+    auto mp = nn_evaluation->p;
     
     double prob_sum = 0;
 

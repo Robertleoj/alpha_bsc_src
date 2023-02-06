@@ -249,7 +249,7 @@ void Agent::search(int playout_cap){
     }
 
     // Get best move
-    printf("Performed %d iterations\n", i);
+    // printf("Performed %d iterations\n", i);
 }
 
 std::map<game::move_id, int> Agent::root_visit_counts(){

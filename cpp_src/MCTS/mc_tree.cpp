@@ -15,7 +15,7 @@ void MCTree::delete_tree(MCNode * node){
     }
 
     // recursively delete children
-    for(auto &c: node->children){
+    for(auto c: node->children){
         delete_tree(c);
     }
 
