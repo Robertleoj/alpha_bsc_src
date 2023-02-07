@@ -33,8 +33,8 @@ add_executable(AlphaBSc
         games/breakthrough.cpp
         games/connect4.h
         games/connect4.cpp
-        misc/perft.h
-        misc/perft.cpp 
+        # misc/perft.h
+        # misc/perft.cpp 
         base/board.h
         MCTS/agent.cpp
         MCTS/agent.h

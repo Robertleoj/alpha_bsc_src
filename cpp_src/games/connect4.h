@@ -55,15 +55,11 @@ namespace games {
             }
         };
 
-        using Movelist = game::MovelistPooled<Move,NUM_COLS>;
-
-
         explicit Connect4() {
             clear();
         }
 
         ~Connect4() {
-            Movelist::clear_pooled();  // NOTE.
         }
 
         void setup() override {
@@ -90,22 +86,22 @@ namespace games {
             return true;
         }
 
-        game::MovelistPtr moves() override {
+        std::vector<game::move_id> moves() override {
 
-            auto ml_p = Movelist::new_pooled();
+            std::vector<game::move_id> moves;
 
             for (unsigned int i = 0; i < NUM_COLS; i++) {
                 auto col = order[i];
                 if (m.height[col] < NUM_ROWS) {
-                    ml_p->add(Move(col+1));
+                    moves.push_back(col+1);
                 }
             }
-            return ml_p;
+            return moves;
 
         }
 
-        bool make(game::move_iterator it) override {
-            auto col = it.as<Move>()->col - 1;
+        bool make(game::move_id mid) override {
+            auto col = mid - 1;
 
             if(col >= 7){
                 throw std::runtime_error("stupid col");
@@ -133,8 +129,8 @@ namespace games {
             return true;
         }
 
-        void retract(game::move_iterator it) override {
-            auto col = it.as<Move>()->col - 1;
+        void retract(game::move_id mid) override {
+            auto col = mid - 1;
 
             bb::Bitboard move = 1ULL << square(
                 col, --m.height[col]
@@ -144,19 +140,9 @@ namespace games {
         }
 
         [[nodiscard]] std::string move_as_str(
-            game::move_iterator it
+            game::move_id mid
         ) const override {
-
-            auto col = it.as<Move>()->col - 1;
-            return std::to_string(col + 1);
-        }
-
-        [[nodiscard]] std::string move_as_str(
-            game::move_id id
-        ) const override {
-
-            auto col = id;
-            return std::to_string(col);
+            return std::to_string(mid);
         }
 
         [[nodiscard]] bool is_terminal(

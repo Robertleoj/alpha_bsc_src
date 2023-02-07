@@ -28,8 +28,7 @@ Agent::~Agent(){
 void Agent::update_tree(
     game::move_id move_id
 ){
-    int move_idx = this->tree->root->move_idx_of(move_id);
-    tree->move(move_idx);
+    tree->move(move_id);
 }
 
 
@@ -50,7 +49,7 @@ double Agent::PUCT(MCNode * node, MCNode * childnode){
     
     double V = childnode->value_approx;
     double n = childnode->plays;
-    double P = node->p[childnode->idx_in_parent];
+    double P = node->p_map[childnode->move_from_parent];
     double N = node->plays;
 
     double c = hp::PUCT_c; 
@@ -108,7 +107,7 @@ std::pair<MCNode *, double> Agent::selection(){
     double max_uct;
     double uct;
     MCNode * next_node = nullptr;
-    int best_move;
+    game::move_id best_move;
 
     MCNode * child_node = nullptr;
 
@@ -120,15 +119,15 @@ std::pair<MCNode *, double> Agent::selection(){
 
         max_uct = -100000;
 
-        auto &move_list = current_node->move_list;
+        auto &legal_moves = current_node->legal_moves;
 
         auto &children = current_node->children;
 
-        for(int i = 0; i < move_list->get_size(); i++){
-            if(children[i] == nullptr){
+        for(auto mv: legal_moves){
+            if(children[mv] == nullptr){
 
                 // update state
-                this->game->make(move_list->begin() + i);
+                this->game->make(mv);
                 
                 MCNode * new_node;
                 double v;
@@ -136,7 +135,7 @@ std::pair<MCNode *, double> Agent::selection(){
                     v = this->outcome_to_value(game->outcome(pp::First));
                     new_node = new MCNode(
                         current_node,
-                        i,
+                        mv,
                         v
                     );
                 } else {
@@ -147,13 +146,13 @@ std::pair<MCNode *, double> Agent::selection(){
                     new_node = new MCNode(
                         current_node,
                         this->game->moves(),
-                        i,
+                        mv,
                         *evaluation
                     );
                     v = evaluation->v;
                 }
 
-                children[i] = new_node;
+                children[mv] = new_node;
 
                 // return new node
                 return std::make_pair(new_node, v);
@@ -161,19 +160,19 @@ std::pair<MCNode *, double> Agent::selection(){
             } else {
                 
                 // Get uct value
-                child_node = children[i];
+                child_node = children[mv];
                 uct = PUCT(current_node, child_node);
 
                 // Update 
                 if(uct > max_uct){
                     max_uct = uct;
                     next_node = child_node;
-                    best_move = i;
+                    best_move = mv;
                 }
             }
         }
 
-        this->game->make(move_list->begin() + best_move);
+        this->game->make(best_move);
 
         current_node = next_node;
         next_node = nullptr;
@@ -196,7 +195,7 @@ void Agent::backpropagation(MCNode * node, double v){
         if (node->parent == nullptr) {
             break;
         } else {
-            this->game->retract(node->parent->move_list->begin() + node->idx_in_parent);
+            this->game->retract(node->move_from_parent);
             node = node->parent;
         }
     }

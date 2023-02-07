@@ -8,7 +8,7 @@ public:
     MCTree();
     ~MCTree();
 
-    void move(int move_idx);
+    void move(game::move_id move_id);
 
 private:
     void delete_tree(MCNode * node);
