@@ -88,19 +88,15 @@ void SelfPlay::self_play(){
 
         nn_q_lock.unlock();
 
-        // std::cout << "Running neural network on " << states.size() << " inputs" << std::endl;
+        std::cout << "Running neural network on " << states.size() << " inputs" << std::endl;
 
         auto result = this->neural_net->eval_states(&states);
         for(int i = 0; i < (int)thread_indices.size(); i++){
             int thread_idx = thread_indices[i];
 
-            results_mutex.lock();
             evaluations[thread_idx] = std::move(result[i]);
-            results_mutex.unlock();
 
-            req_comp_mutex.lock();
             request_completed[thread_idx] = true;
-            req_comp_mutex.unlock();
         }
 
         eval_cv.notify_all();
