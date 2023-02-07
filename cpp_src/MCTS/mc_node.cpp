@@ -4,6 +4,9 @@
 
 MCNode::~MCNode(){
     this->move_list.release();
+
+    // deallocation does not work - put this when it does
+    // this->move_list.reset();
 }
 
 // non-terminal constructor
