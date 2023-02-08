@@ -19,7 +19,6 @@ Breakthrough::Breakthrough()
 
 Breakthrough::~Breakthrough()
 {
-    Movelist::clear_pooled();
 }
 
 
@@ -188,8 +187,8 @@ Outcome Breakthrough::outcome() const {
 }
 
 
-int Breakthrough::generate(Movelist& move_list) const {
-    return m.to_move == First ? generate<First>(move_list) : generate<Second>(move_list);
+std::vector<Move> Breakthrough::generate() const {
+    return m.to_move == First ? generate<First>() : generate<Second>();
 }
 
 
@@ -213,13 +212,15 @@ bool Breakthrough::is_legal() const
 
 bool Breakthrough::is_legal(const std::string& move_str, mm::Move& move) const
 {
-    Movelist move_list;
-    generate(move_list);
-    for (auto i = 0, len = move_list.get_size(); i < len; ++i) {
-        if (str(move_list.get_move(i)) == move_str) {
-            move = move_list.get_move(i);
+    auto legal_moves = generate();
+
+    for (int i = 0, len = legal_moves.size(); i < len; ++i) {
+
+        if (str(legal_moves[i]) == move_str) {
+            move = legal_moves[i];
             return true;
         }
+
     }
     return false;
 }
@@ -273,8 +274,10 @@ bool Breakthrough::set(const std::string& )  {
 
 
 template<Player Pl>
-int Breakthrough::generate(Movelist& move_list) const
+std::vector<Move> Breakthrough::generate() const
 {
+    std::vector<Move> move_list;
+
     constexpr Player player = set_side<Pl>(First, Second);
     constexpr Player other = set_side<Pl>(Second, First);
     constexpr Direction Forward = set_side<Pl>(dN, dS);
@@ -289,12 +292,12 @@ int Breakthrough::generate(Movelist& move_list) const
     bb::Bitboard bb = bb::shift(bb_pieces_except_leftmost_file, ForwardLeft) & m.bb_pieces[other];
     while (bb) {
         Square sq_to = bb::pop_lsb(bb);
-        move_list.add(Move(Square((int)sq_to - ForwardLeft), sq_to, true));
+        move_list.push_back(Move(Square((int)sq_to - ForwardLeft), sq_to, true));
     }
     bb = bb::shift(bb_pieces_except_rightmost_file, ForwardRight) & m.bb_pieces[other];
     while (bb) {
         Square sq_to = bb::pop_lsb(bb);
-        move_list.add(Move(Square((int)sq_to - ForwardRight), sq_to, true));
+        move_list.push_back(Move(Square((int)sq_to - ForwardRight), sq_to, true));
     }
 
     // Non-captures
@@ -302,20 +305,20 @@ int Breakthrough::generate(Movelist& move_list) const
     bb = bb::shift(bb_pieces_except_leftmost_file, ForwardLeft) & bb_empty_sq;
     while (bb) {
         Square sq_to = bb::pop_lsb(bb);
-        move_list.add(Move(Square((int)sq_to - ForwardLeft), sq_to));
+        move_list.push_back(Move(Square((int)sq_to - ForwardLeft), sq_to));
     }
     bb = bb::shift(m.bb_pieces[player], Forward) & bb_empty_sq;
     while (bb) {
         Square sq_to = bb::pop_lsb(bb);
-        move_list.add(Move(Square((int)sq_to - Forward), sq_to));
+        move_list.push_back(Move(Square((int)sq_to - Forward), sq_to));
     }
     bb = bb::shift(bb_pieces_except_rightmost_file, ForwardRight) & bb_empty_sq;
     while (bb) {
         Square sq_to = bb::pop_lsb(bb);
-        move_list.add(Move(Square((int)sq_to - ForwardRight), sq_to));
+        move_list.push_back(Move(Square((int)sq_to - ForwardRight), sq_to));
     }
 
-    return move_list.get_size();
+    return move_list;
 }
 
 

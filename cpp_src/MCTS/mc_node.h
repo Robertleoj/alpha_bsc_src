@@ -11,35 +11,29 @@ class MCNode{
 public:
     int plays;
     double value_approx;
-    
-    std::vector<double> p;
 
     MCNode * parent;
+
     bool is_terminal;
-
-    int idx_in_parent;
-
-    game::MovelistPtr move_list;
-
-    std::vector<MCNode*> children;
-    // std::map<int, MCNode*> children;
+    std::vector<game::move_id> legal_moves;
+    game::move_id move_from_parent;
+    std::map<game::move_id, double> p_map;
+    std::map<game::move_id, MCNode*> children;
 
     MCNode(
         MCNode * parent, 
-        game::MovelistPtr, 
-        int idx_in_parent, 
+        std::vector<game::move_id> legal_moves,
+        game::move_id move_from_parent, 
         nn::NNOut nn_evaluation
     );
     
     // terminal constructor
     MCNode(
         MCNode * parent,
-        int idx_in_parent,
+        game::move_id move_from_parent,
         double terminal_eval
     );
 
-    int move_idx_of(game::move_id);
-    
     void update_eval(double v);
     std::map<game::move_id, int> visit_count_map();
 

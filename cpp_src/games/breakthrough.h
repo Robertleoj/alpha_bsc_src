@@ -21,7 +21,6 @@ namespace games {
     public:
 
         static constexpr int MAX_MOVES = 3 * 2 * FILES;
-        using Movelist = game::MovelistPooled<Move,MAX_MOVES>;
 
         explicit Breakthrough();
 
@@ -40,7 +39,7 @@ namespace games {
         [[nodiscard]] Outcome outcome(Player pl) const override;
         [[nodiscard]] Outcome outcome() const override;
 
-        int generate(Movelist& move_list) const;
+        std::vector<Move> generate() const;
 
         [[nodiscard]] bool is_terminal() const override;
         [[nodiscard]] bool is_terminal(const Move& move) const;
@@ -58,28 +57,24 @@ namespace games {
         Board get_board() const override;
 
         // IGame compatibility layer.
-        game::MovelistPtr moves() override {
-            auto ml_p = Movelist::new_pooled();
-            generate(*ml_p);
-            return ml_p;
+        std::vector<game::move_id> moves() override {
+            
+            auto moves = generate();
+            return std::vector<game::move_id>(moves.begin(), moves.end());
         }
 
-        bool make(game::move_iterator it) override {
-            make(*it.as<Move>());
+        bool make(game::move_id it) override {
+            auto move = Move(it);
+            make(move);
             return true;
         }
 
-        void retract(game::move_iterator it) override {
-            retract(*it.as<Move>());
+        void retract(game::move_id id) override {
+            retract(Move(id));
         }
 
-        [[nodiscard]] std::string move_as_str(game::move_iterator it) const override {
-            return mm::to_string(*it.as<Move>());
-        }
-
-        [[nodiscard]] std::string move_as_str(game::move_id id) const override {
-            Move move(id);
-            return mm::to_string(move);
+        [[nodiscard]] std::string move_as_str(game::move_id mid) const override {
+            return mm::to_string(Move(mid));
         }
 
         ~Breakthrough();
@@ -95,7 +90,7 @@ namespace games {
         [[nodiscard]] bool is_terminal(const Move& move) const;
 
         template<Player Pl>
-        int generate(Movelist& move_list) const;
+        std::vector<Move> generate() const;
 
         template<Player Pl>
         [[nodiscard]] int get_piece_count() const;
