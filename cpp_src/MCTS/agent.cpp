@@ -3,6 +3,7 @@
 #include <random>
 #include <stdexcept>
 #include "../hyperparams.h"
+#include "../utils/utils.h"
 
 
 Agent::Agent(
@@ -29,6 +30,15 @@ void Agent::update_tree(
     game::move_id move_id
 ){
     tree->move(move_id);
+
+    if(!this->game->is_terminal() && this->tree->root != nullptr){
+        auto dir_noise = utils::dirichlet_dist(
+            hp::dirichlet_alpha, 
+            this->tree->root->legal_moves.size()
+        );
+
+        this->tree->root->add_noise(dir_noise);
+    }
 }
 
 
@@ -93,6 +103,10 @@ std::pair<MCNode *, double> Agent::selection(){
                 -1,
                 *evaluation
             );
+            
+            auto dir_dist = utils::dirichlet_dist(hp::dirichlet_alpha, new_node->legal_moves.size());
+
+            new_node->add_noise(dir_dist);
             
             v = evaluation->v;
         }

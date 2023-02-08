@@ -1,5 +1,6 @@
 #include "./mc_node.h"
 #include <bits/stdc++.h>
+#include "../hyperparams.h"
 
 
 // non-terminal constructor
@@ -37,6 +38,14 @@ MCNode::MCNode(
     this->move_from_parent = move_from_parent;
     this->value_approx = terminal_eval;
     this->children = std::map<game::move_id, MCNode *>();
+}
+
+void MCNode::add_noise(std::vector<double> noise){
+    int i = 0;
+    double lam = hp::dirichlet_lambda;
+    for(auto &p : this->p_map){
+        p.second = (1 - lam) * p.second + lam * noise[i];
+    }
 }
 
 void MCNode::make_evaluation(nn::NNOut * nn_evaluation) {

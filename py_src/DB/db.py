@@ -65,6 +65,32 @@ class DB:
         conn.close()
         return res
 
+    def get_training_sample(self, id):
+        query = f"""
+            select 
+                state, policy, outcome
+            from 
+                training_data 
+            where
+                id = {id}
+        """
+
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(query)
+
+        for (state, policy, outcome) in cursor:
+            state_t = tensor_from_blob(state)
+            policy_t = tensor_from_blob(policy)
+            outcome_t = torch.tensor(outcome)
+            break
+
+        cursor.close()
+        conn.close()
+
+        return state_t, policy_t, outcome_t
+
+
     def get_training_samples(self, ids):
         query = f"""
             select 
