@@ -1,7 +1,3 @@
-//
-// Created by Yngvi Björnsson on 11.5.2022.
-//
-
 #pragma once
 #include "../base/types.h"
 #include "../utils/utils.h"

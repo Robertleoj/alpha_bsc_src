@@ -1,6 +1,3 @@
-//
-// Created by Yngvi Björnsson on 7.5.2022.
-//
 #pragma once
 
 #include <memory>
