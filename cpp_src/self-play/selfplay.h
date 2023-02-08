@@ -8,6 +8,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 typedef std::pair<int, Board> eval_request;
 
@@ -33,6 +34,8 @@ public:
         std::unique_ptr<nn::NNOut> *evaluations,
         std::condition_variable * eval_cv,
         std::condition_variable * nn_q_wait_cv    ,
-        std::mutex * results_mutex
+        std::mutex * results_mutex,
+        std::atomic<int> * games_left,
+        std::atomic<int> * num_active_threads
     );
 };
