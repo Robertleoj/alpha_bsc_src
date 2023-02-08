@@ -7,3 +7,5 @@ AlphaBSc
 build/
 .libs
 Makefile
+*.cu
+*.cc
