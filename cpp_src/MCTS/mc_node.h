@@ -37,6 +37,8 @@ public:
     void update_eval(double v);
     std::map<game::move_id, int> visit_count_map();
 
+    void add_noise(std::vector<double> dirich_noise);
+
 private:
     void make_evaluation(nn::NNOut * nn_evaluation);
 

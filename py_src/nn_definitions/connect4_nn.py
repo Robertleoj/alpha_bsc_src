@@ -11,7 +11,9 @@ class Connect4ValueHead(nn.Module):
         super().__init__()
         self.out = nn.Sequential(
             nn.Flatten(1),
-            nn.Linear(3 * 7 * 7, 1)
+            nn.Linear(12 * 7 * 7, 512),
+            nn.ReLU(),
+            nn.Linear(512, 1)
         )
 
         # output is 1
@@ -23,7 +25,11 @@ class Connect4PolicyHead(nn.Module):
         super().__init__()
         self.out = nn.Sequential(
             nn.Flatten(1),
-            nn.Linear(3 * 7 * 7, COLS)
+            nn.Linear(12 * 7 * 7, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, COLS)
         )
        
     def forward(self, x):
@@ -49,7 +55,7 @@ class Connect4NN(nn.Module):
         )
 
 
-        self.middle = Middle([6, 12, 12, 6, 3])
+        self.middle = Middle([6, 24, 24, 24, 24, 24, 24, 12])
 
         self.policy_head = Connect4PolicyHead()
         self.value_head = Connect4ValueHead()

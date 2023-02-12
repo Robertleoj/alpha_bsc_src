@@ -5,6 +5,7 @@
 #include <memory>
 #include <limits>
 #include "./random.h"
+#include "./dirichlet.h"
 #include "./strings.h"
 
 

@@ -28,14 +28,14 @@ add_executable(AlphaBSc
     utils/utils.h
     utils/random.h
     utils/random.cpp
+    utils/dirichlet.h
+    utils/dirichlet.cpp
     games/move.h
     games/game.h
     games/breakthrough.h
     games/breakthrough.cpp
     games/connect4.h
     games/connect4.cpp
-    # misc/perft.h
-    # misc/perft.cpp 
     base/board.h
     MCTS/agent.cpp
     MCTS/agent.h
@@ -55,4 +55,6 @@ add_executable(AlphaBSc
 target_link_libraries(AlphaBSc
     ${TORCH_LIBRARIES}
     mariadbcpp
+    gsl 
+    gslcblas
 )
