@@ -9,8 +9,7 @@ device = 'cuda'
 
 
 model = torch.jit.load("../models/connect4/0.pt").to(device)
-db = DB()
-dl = get_dataloader(db, 'connect4', 0)
+dl = get_dataloader('connect4', 0)
 
 optimizer = torch.optim.Adam(
     model.parameters(), 

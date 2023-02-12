@@ -1,4 +1,5 @@
 buffer_generations = 20
+
 batch_size = 1024
 dl_num_workers = 8
 value_loss_ratio = 2.0

@@ -2,40 +2,39 @@ from torch.utils.data import IterableDataset
 from torch.utils.data import DataLoader
 
 from DB.db import DB
-from random import choice
+import random
 import config
+from prefetch import load_generations
 
 class DS(IterableDataset):
-    def __init__(self, generation:int, game: str, db: DB) -> None:
-        self.db = db
-        self.db_ids = db.get_ids(generation, game)
+    def __init__(self, generation:int, game: str) -> None:
+        db = DB()
+        
+        min_gen = max(generation - config.buffer_generations, 0)
+
+        training_generations = list(range(min_gen, generation + 1))
+
+        self.data = load_generations(game, training_generations)
+
+        self.size = self.data[0].shape[0]
 
     def __iter__(self):
-        # while True:
-        #     rand_idx = choice(self.db_ids)
-
-        #     yield self.db.get_training_sample(rand_idx)
 
         while True:
-            yield choice(self.db_ids)
+            idx = random.randint(0, self.size - 1)
+            yield self.data[0][idx], self.data[1][idx], self.data[2][idx]
 
-
-class Collate:
-    def __init__(self, db: DB):
-        self.db = db
-        
-    def __call__(self, lis):
-        return self.db.get_training_samples(lis)  
 
 
 def get_dataloader(
-    db: DB,
     game: str, 
     generation: int
 ):
+
+    dataset = DS(generation, game)
+
     return DataLoader(
-        collate_fn=Collate(db), 
-        dataset=DS(generation, game, db), 
+        dataset=dataset, 
         batch_size=config.batch_size, 
         num_workers=config.dl_num_workers, 
         pin_memory=True,
