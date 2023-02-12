@@ -2,14 +2,36 @@ import mariadb
 import torch
 import io
 import config
+import os
+import numpy as np
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
+
+if os.name == 'posix':
+    os.system('ulimit -n 64000')
 
 
+# def make_tensor(state, policy, outcome):
+#     return (
+#         np.array(tensor_from_blob(state)),
+#         np.array(tensor_from_blob(policy)),
+#         # torch.tensor(outcome).detach().clone()
+#         np.array(outcome)
+#     )
+
+def read_tensors(arg):
+    state, policy, outcome = arg
+    return (
+        np.array(tensor_from_blob(state)),
+        np.array(tensor_from_blob(policy)),
+        # torch.tensor(outcome).detach().clone()
+        np.array(outcome)
+    )
 
 def tensor_from_blob(blob) -> torch.Tensor:
 
-    bytesio = io.BytesIO(blob)
-
-    module_wrapper = torch.jit.load(bytesio)
+    with io.BytesIO(blob) as bytesio:
+        module_wrapper = torch.jit.load(bytesio, 'cpu')
 
     return list(module_wrapper.parameters())[0]
 
@@ -25,17 +47,39 @@ class DB:
             database='self_play'
         )
 
+    def prefetch_generation(self, game:str, generation:int):
+        query = f"""
+            select 
+                t.state, 
+                t.policy, 
+                t.outcome 
+            from 
+                games g
+                join generations gens
+                    on gens.game_id = g.id
+                join training_data t
+                    on t.generation_id = gens.id
+            where
+                g.game_name = "{game}"
+                and gens.generation_num = {generation}
+        """
 
-    def __init__(self):
-        pass
-        # self.conn = mariadb.connect(
-        #     user='user',
-        #     password='password',
-        #     host='127.0.0.1',
-        #     port=3306,
-        #     database='self_play'
-        # )
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(query)
 
+        res = list(cursor)
+        print(f"Fetched {len(res)} rows")
+
+        with Pool(cpu_count()) as p:
+            result = list(tqdm(p.imap_unordered(read_tensors, res, chunksize=16), total=len(res), desc="Making tensors"))
+        
+        result = tuple(
+            map(np.stack, zip(*result))
+        )
+      
+        return map(torch.tensor, result)
+        
     def get_ids(self, generation: int, game: str) -> list[int]:
 
         min_gen = max(generation - config.buffer_generations, 0)

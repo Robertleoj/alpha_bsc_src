@@ -20,7 +20,7 @@ sudo apt install libgsl-dev
 ```
 On Fedora, use 
 ```
-<!-- sudo dnf install gsl -->
+sudo dnf install gsl
 ```
 
 ## Database
