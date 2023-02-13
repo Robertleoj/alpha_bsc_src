@@ -38,6 +38,7 @@ def tensor_from_blob(blob) -> torch.Tensor:
 
 class DB:
 
+
     def connect(self):
         return mariadb.connect(
             user='user',
@@ -46,6 +47,61 @@ class DB:
             port=3306,
             database='self_play'
         )
+
+    def add_generation(self, game:str, generation_num:int):
+
+        game_id = self.get_game_id(game)
+
+        query = f"""
+            insert into generations (game_id, generation_num)
+            values ({game_id}, {generation_num})
+        """
+        self.mutating_query(query)
+
+    def get_game_id(self, game:str):
+        query = f"""
+            select id from games where game_name = "{game}"
+        """
+
+        res = self.query(query)
+        return res[0][0]
+
+
+    def mutating_query(self, query):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(query)
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+    def query(self, query):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(query)
+        res = list(cursor)
+        cursor.close()
+        conn.close()
+        return res
+
+
+    def newest_generation(self, game:str) -> int:
+        query = f"""
+            select 
+                max(gens.generation_num)
+            from
+                generations gens
+                join games g
+                    on g.id = gens.game_id
+            where
+                g.game_name = "{game}"
+        """
+
+        res = self.query(query)
+
+        return res[0][0]
+
+
 
     def prefetch_generation(self, game:str, generation:int):
         query = f"""
@@ -64,11 +120,8 @@ class DB:
                 and gens.generation_num = {generation}
         """
 
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute(query)
+        res = self.query(query)
 
-        res = list(cursor)
         print(f"Fetched {len(res)} rows")
 
         with Pool(cpu_count()) as p:
@@ -78,7 +131,7 @@ class DB:
             map(np.stack, zip(*result))
         )
       
-        return map(torch.tensor, result)
+        return tuple(map(torch.tensor, result))
         
     def get_ids(self, generation: int, game: str) -> list[int]:
 
@@ -98,15 +151,9 @@ class DB:
                 and g.game_name = "{game}"
         """
 
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute(query)
+        res = self.query(query)
+        res = [c[0] for c in res]
 
-        # print(results)
-
-        res = [c[0] for c in cursor]
-        cursor.close()
-        conn.close()
         return res
 
     def get_training_sample(self, id):
@@ -119,18 +166,13 @@ class DB:
                 id = {id}
         """
 
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute(query)
+        res = self.query(query)
 
-        for (state, policy, outcome) in cursor:
+        for (state, policy, outcome) in res:
             state_t = tensor_from_blob(state)
             policy_t = tensor_from_blob(policy)
             outcome_t = torch.tensor(outcome)
             break
-
-        cursor.close()
-        conn.close()
 
         return state_t, policy_t, outcome_t
 
@@ -148,16 +190,13 @@ class DB:
         """
 
 
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute(query)
+        res = self.query(query)
 
         states = []
         policies = []
         outcomes = []
 
-        # print("making tensors")
-        for (state, policy, outcome) in cursor:
+        for (state, policy, outcome) in res:
             state_t = tensor_from_blob(state)
             policy_t = tensor_from_blob(policy)
             outcome_t = torch.tensor(outcome)
@@ -165,11 +204,6 @@ class DB:
             states.append(state_t)
             policies.append(policy_t)
             outcomes.append(outcome_t)
-
-        cursor.close()
-        conn.close()
-        # print("made tensors")
-
 
         states = torch.stack(states, 0)
         policies = torch.stack(policies, 0)

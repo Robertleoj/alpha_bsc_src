@@ -11,11 +11,7 @@ device = 'cuda'
 model = torch.jit.load("../models/connect4/0.pt").to(device)
 dl = get_dataloader('connect4', 0)
 
-optimizer = torch.optim.Adam(
-    model.parameters(), 
-    lr=config.learning_rate,
-    weight_decay=config.weight_decay
-)
+
 
 iteration = 0
 
@@ -42,8 +38,6 @@ for states, policies, outcomes in dl:
     # print("policies")
     # print(nn_pol.shape)
     # print(policies.shape)
-    
-
 
     loss = loss_fn(nn_val, nn_pol, outcomes, policies)    
     loss.backward()
@@ -67,3 +61,4 @@ plt.savefig("./figures/losses.png")
 # plt.show()
 
 # torch.jit.save(model, "../models/connect4/1.pt")
+

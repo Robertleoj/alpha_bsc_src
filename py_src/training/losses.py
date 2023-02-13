@@ -13,7 +13,13 @@ def policy_loss(
     search_result is
         batch x policy_dim
     """
+
+    assert target_policy.sum(dim=1).allclose(torch.ones(nn_policy.shape[0], device=target_policy.device))
+
+    assert (target_policy >= 0).all()
+
     out = nn_policy * target_policy
+
     return -out.sum(dim=1).mean()
 
 
