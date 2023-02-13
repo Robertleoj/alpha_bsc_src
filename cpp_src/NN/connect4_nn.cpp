@@ -6,6 +6,7 @@
 namespace nn{
     
     Connect4NN::Connect4NN(std::string model_path){
+        std::cout << "loading model from " << model_path << std::endl;
         this->net = torch::jit::load(model_path);
         this->net.to(at::kCUDA);
     }
