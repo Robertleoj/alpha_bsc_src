@@ -7,6 +7,7 @@
 #include "./random.h"
 #include "./dirichlet.h"
 #include "./strings.h"
+#include "./thread_queue.h"
 
 
 namespace utils {

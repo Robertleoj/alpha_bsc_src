@@ -13,6 +13,8 @@ namespace nn {
     public:
         std::unique_ptr<NNOut> eval_state(Board board) override;
 
+        std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) override;
+
         Connect4NN(std::string model_path);
 
         at::Tensor state_to_tensor(Board board) override;
