@@ -3,7 +3,7 @@
 
 namespace hp {
     const double PUCT_c = 4;
-    const int batch_size = 512;
+    const int batch_size = 128;
     const int num_parallel_games = 700;
     const int search_depth = 1000;
     const int self_play_num_games = 2000;

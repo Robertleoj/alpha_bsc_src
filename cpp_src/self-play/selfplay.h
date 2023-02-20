@@ -9,8 +9,11 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <torch/all.h>
+#include "../utils/utils.h"
 
-typedef std::pair<int, Board> eval_request;
+typedef std::pair<int, at::Tensor> eval_request;
+
 
 class SelfPlay {
 public:
@@ -26,8 +29,8 @@ public:
 
     void thread_play(
         int thread_idx, 
-        std::queue<eval_request> * eval_q,
-        std::mutex * q_mutex,
+        utils::thread_queue<eval_request> * eval_q,
+        // std::mutex * q_mutex,
         std::mutex * db_mutex,
         bool *req_completed,
         std::mutex *req_completed_mutex,

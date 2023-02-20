@@ -7,6 +7,7 @@
 #include "../games/breakthrough.h"
 #include "../hyperparams.h"
 #include "../base/types.h"
+#include "../utils/utils.h"
 #include <thread>
 
 
@@ -34,10 +35,10 @@ SelfPlay::SelfPlay(std::string game) {
 void SelfPlay::self_play(){
     int num_threads = hp::num_parallel_games;
 
-    std::mutex queue_mutex;
+    // std::mutex queue_mutex;
     std::mutex db_mutex;
-
-    std::queue<eval_request> eval_requests;
+    utils::thread_queue<eval_request> eval_requests;
+    // std::queue<eval_request> eval_requests;
 
     std::thread threads[num_threads];
 
@@ -51,6 +52,7 @@ void SelfPlay::self_play(){
     std::unique_ptr<nn::NNOut> evaluations[num_threads];
 
     std::condition_variable eval_cv;
+    // std::vector<std::condition_variable
 
     std::condition_variable nn_q_wait_cv;
 
@@ -62,7 +64,7 @@ void SelfPlay::self_play(){
             &SelfPlay::thread_play, this,
             i, 
             &eval_requests,
-            &queue_mutex,
+            // &queue_mutex,
             &db_mutex,
             (bool *) request_completed,
             &req_comp_mutex,
@@ -80,31 +82,32 @@ void SelfPlay::self_play(){
     };
 
     while(num_active_threads > 0){
-        std::unique_lock<std::mutex> nn_q_lock(queue_mutex);
-        nn_q_wait_cv.wait(nn_q_lock, [&eval_requests, &num_active_threads, &bs](){
-            return eval_requests.size() >= bs();
-        });
+        // std::unique_lock<std::mutex> nn_q_lock(queue_mutex);
+
+        // nn_q_wait_cv.wait(nn_q_lock, [&eval_requests, &num_active_threads, &bs](){
+            // return eval_requests.size() >= bs();
+        // });
 
         if(bs() == 0){
-            nn_q_lock.unlock();
+            // nn_q_lock.unlock();
             break;
         }
 
         std::vector<int> thread_indices;
-        std::vector<Board> states;
+        std::vector<at::Tensor> states;
 
         for(int i = 0; i < bs(); i++){
-            auto p = eval_requests.front();
+            auto p = eval_requests.pop();
             thread_indices.push_back(p.first);
             states.push_back(p.second);
-            eval_requests.pop();
+            // eval_requests.pop();
         }
 
-        nn_q_lock.unlock();
+        // nn_q_lock.unlock();
 
         // std::cout << "Running neural network on " << states.size() << " inputs" << std::endl;
 
-        auto result = this->neural_net->eval_states(&states);
+        auto result = this->neural_net->eval_tensors(states);
         for(int i = 0; i < (int)thread_indices.size(); i++){
             int thread_idx = thread_indices[i];
 
@@ -123,8 +126,8 @@ void SelfPlay::self_play(){
 
 void SelfPlay::thread_play(
     int thread_idx, 
-    std::queue<eval_request>* q,
-    std::mutex * q_mutex,
+    utils::thread_queue<eval_request>* q,
+    // std::mutex * q_mutex,
     std::mutex * db_mutex,
     bool * req_completed,
     std::mutex * req_comp_mutex,
@@ -148,9 +151,13 @@ void SelfPlay::thread_play(
         }   
 
         // evaluation function for agent
+
+        nn::NN * nn_ptr = this->neural_net.get();
+
         eval_f eval_func = [
+            nn_ptr,
             thread_idx, 
-            q_mutex, 
+            // q_mutex, 
             q,
             req_completed,
             req_comp_mutex,
@@ -161,9 +168,10 @@ void SelfPlay::thread_play(
         ](Board b){
             
             // Put item in queue
-            q_mutex->lock();
-            q->push({thread_idx, b});
-            q_mutex->unlock();
+            // q_mutex->lock();
+            auto t = nn_ptr->state_to_tensor(b);
+            q->push({thread_idx, t});
+            // q_mutex->unlock();
 
             nn_q_wait_cv->notify_one();
 

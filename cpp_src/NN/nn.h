@@ -25,6 +25,8 @@ namespace nn {
     public:
         virtual std::unique_ptr<NNOut> eval_state(Board board){};
         virtual std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards){};
+
+        virtual std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) {};
         virtual at::Tensor state_to_tensor(Board board){}
         virtual at::Tensor visit_count_to_policy_tensor(
             std::map<game::move_id, int>

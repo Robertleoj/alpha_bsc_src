@@ -11,14 +11,8 @@ namespace nn{
         this->net.to(at::kCUDA);
     }
 
-    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_states(std::vector<Board> * boards){
-
-        std::vector<at::Tensor> btensors;
-        for(auto &b: *boards){
-            btensors.push_back(this->state_to_tensor(b));
-        }
-
-        auto inp_tensor = torch::stack(btensors, 0).cuda();
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_tensors(std::vector<at::Tensor> & tensors) {
+        auto inp_tensor = torch::stack(tensors, 0).cuda();
         // std::cout << "\u001b[36mINP TENSOR SHAPE\u001b[0m" << inp_tensor.sizes() << std::endl;
 
 
@@ -33,7 +27,7 @@ namespace nn{
         val_tensors = val_tensors.sigmoid().cpu();
 
         std::vector<std::unique_ptr<NNOut>> out;
-        for(int i = 0; i < boards->size(); i++){
+        for(int i = 0; i < tensors.size(); i++){
             auto nnout = this->make_nnout_from_tensors(
                 pol_tensors[i], val_tensors[i]
             );
@@ -42,6 +36,17 @@ namespace nn{
         
         return out;
 
+
+    }
+
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_states(std::vector<Board> * boards){
+
+        std::vector<at::Tensor> btensors;
+        for(auto &b: *boards){
+            btensors.push_back(this->state_to_tensor(b));
+        }
+
+        return this->eval_tensors(btensors);
     };
 
     std::unique_ptr<NNOut> Connect4NN::eval_state(Board board) {
