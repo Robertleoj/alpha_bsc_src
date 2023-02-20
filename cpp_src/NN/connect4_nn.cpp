@@ -9,6 +9,7 @@ namespace nn{
         std::cout << "loading model from " << model_path << std::endl;
         this->net = torch::jit::load(model_path);
         this->net.to(at::kCUDA);
+        this->net.eval();
     }
 
     std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_tensors(std::vector<at::Tensor> & tensors) {
