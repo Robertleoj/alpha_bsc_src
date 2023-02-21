@@ -19,6 +19,9 @@ find_package(Torch REQUIRED)
 
 include_directories(".libs/mariadb_conn_c/include/mariadb") #path to include folder
 include_directories(".libs/mariadb_conn_cpp/include/mariadb") #path to include folder
+include_directories(".libs/gsl/include") #path to include folder
+
+link_directories(./libs/gsl/lib)
 
 add_library(mariadbcpp STATIC IMPORTED)
 
