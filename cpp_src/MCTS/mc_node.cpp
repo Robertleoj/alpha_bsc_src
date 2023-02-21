@@ -1,6 +1,6 @@
 #include "./mc_node.h"
 #include <bits/stdc++.h>
-#include "../hyperparams.h"
+#include "../config/config.h"
 
 
 // non-terminal constructor
@@ -42,7 +42,7 @@ MCNode::MCNode(
 
 void MCNode::add_noise(std::vector<double> noise){
     int i = 0;
-    double lam = hp::dirichlet_lambda;
+    double lam = config::hp["dirichlet_lambda"].get<double>();
     for(auto &p : this->p_map){
         p.second = (1 - lam) * p.second + lam * noise[i];
     }

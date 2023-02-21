@@ -1,6 +1,7 @@
 #include "./db.h"
 #include <torch/torch.h>
 #include <istream>
+#include "../config/config.h"
 
 namespace db {
 
@@ -57,10 +58,9 @@ namespace db {
         // Instantiate Driver
         sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-        sql::SQLString url("jdbc:mariadb://localhost:3306/self_play");
-
-        sql::SQLString user("user");
-        sql::SQLString pw("password");
+        sql::SQLString url(config::db["conn_string"].get<std::string>());
+        sql::SQLString user(config::db["user"].get<std::string>());
+        sql::SQLString pw(config::db["pw"].get<std::string>());
 
         // Establish Connection
         // Use a smart pointer for extra safety

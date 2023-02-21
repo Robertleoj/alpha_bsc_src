@@ -14,6 +14,7 @@
 #include <mariadb/conncpp.hpp>
 #include "./DB/db.h"
 #include "./self-play/selfplay.h"
+#include "./config/config.h"
 
 // using namespace std;
 using namespace game;
@@ -26,6 +27,8 @@ int main()
 {
     // seed random
     srand(time(NULL));
+    // initialize config
+    config::initialize();
 
     auto selfplayer = SelfPlay("connect4");
     selfplayer.self_play();

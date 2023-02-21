@@ -15,7 +15,9 @@ include_directories(".libs/libtorch/include")
 find_package(Torch REQUIRED)
 
 include_directories("/usr/include/mariadb") #path to include folder
+
 add_library(mariadbcpp STATIC IMPORTED)
+
 set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/usr/lib/libmariadbcpp.so") #path to libmariadbcpp.so
 
 
@@ -50,6 +52,8 @@ add_executable(AlphaBSc
     DB/db.cpp
     self-play/selfplay.h
     self-play/selfplay.cpp
+    config/config.h
+    config/config.cpp
 )
 
 target_link_libraries(AlphaBSc
@@ -58,3 +62,4 @@ target_link_libraries(AlphaBSc
     gsl 
     gslcblas
 )
+

@@ -9,3 +9,4 @@ build/
 Makefile
 *.cu
 *.cc
+config_files/db.json

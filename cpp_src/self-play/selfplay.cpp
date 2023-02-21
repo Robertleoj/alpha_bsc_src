@@ -5,7 +5,7 @@
 #include "../games/game.h"
 #include "../games/connect4.h"
 #include "../games/breakthrough.h"
-#include "../hyperparams.h"
+#include "../config/config.h"
 #include "../base/types.h"
 #include "../utils/utils.h"
 #include <thread>
@@ -33,7 +33,7 @@ SelfPlay::SelfPlay(std::string game) {
 }
 
 void SelfPlay::self_play(){
-    int num_threads = hp::num_parallel_games;
+    int num_threads = config::hp["num_parallel_games"].get<int>();
 
     utils::thread_queue<eval_request> eval_requests;
 
@@ -49,7 +49,9 @@ void SelfPlay::self_play(){
 
     std::unique_ptr<nn::NNOut> evaluations[num_threads];
 
-    std::atomic<int> games_left(hp::self_play_num_games);
+    std::atomic<int> games_left(
+        config::hp["self_play_num_games"].get<int>()
+    );
     std::atomic<int> num_active_threads(num_threads);
 
     for(int i = 0; i < num_threads; i++){
@@ -68,7 +70,10 @@ void SelfPlay::self_play(){
     }
 
     auto bs = [&num_active_threads](){
-        return std::min((int)num_active_threads, hp::batch_size);
+        return std::min(
+            (int)num_active_threads, 
+            config::hp["batch_size"].get<int>()
+        );
     };
 
 
@@ -168,7 +173,10 @@ void SelfPlay::thread_play(
         // game->display(std::cout);
 
         while(!game->is_terminal()){
-            agent->search(hp::search_depth);
+
+            agent->search(
+                config::hp["search_depth"].get<int>()
+            );
 
             auto visit_counts = agent->root_visit_counts();
 

@@ -2,8 +2,8 @@
 #include <math.h>
 #include <random>
 #include <stdexcept>
-#include "../hyperparams.h"
 #include "../utils/utils.h"
+#include "../config/config.h"
 
 
 Agent::Agent(
@@ -33,7 +33,7 @@ void Agent::update_tree(
 
     if(!this->game->is_terminal() && this->tree->root != nullptr){
         auto dir_noise = utils::dirichlet_dist(
-            hp::dirichlet_alpha, 
+            config::hp["dirichlet_alpha"].get<double>(), 
             this->tree->root->legal_moves.size()
         );
 
@@ -62,7 +62,7 @@ double Agent::PUCT(MCNode * node, MCNode * childnode){
     double P = node->p_map[childnode->move_from_parent];
     double N = node->plays;
 
-    double c = hp::PUCT_c; 
+    double c = config::hp["PUCT_c"].get<double>(); 
 
     return V + c *P * sqrt(N) / (1 + n);
 }
@@ -104,7 +104,7 @@ std::pair<MCNode *, double> Agent::selection(){
                 *evaluation
             );
             
-            auto dir_dist = utils::dirichlet_dist(hp::dirichlet_alpha, new_node->legal_moves.size());
+            auto dir_dist = utils::dirichlet_dist(config::hp["dirichlet_alpha"].get<double>(), new_node->legal_moves.size());
 
             new_node->add_noise(dir_dist);
             
