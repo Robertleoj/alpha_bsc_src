@@ -4,3 +4,4 @@
 **/__pycache__/
 smallvoice/
 remote_server_access.txt
+mount_smallvoice.sh
