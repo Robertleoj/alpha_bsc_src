@@ -3,14 +3,16 @@ from sys import argv
 
 # train_cmd
 
+cwd = os.getcwd()
+
 def self_play(gen:int, dep:str=None) ->str:
 
     cmd = f"sbatch --job-name=self_play{gen} --output=self_play{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
-    cmd += " self_play.sh"
+    cmd += f" {cwd}/self_play.sh"
 
-    job_id = os.popen(cmd.split()).read()
+    job_id = os.popen(cmd).read()
     print(f"started self_play job {job_id}")
     return job_id
 
@@ -19,9 +21,9 @@ def train(gen:int, dep:str=None) ->str:
     cmd = f"sbatch --job-name=train{gen} --output=train{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
-    cmd += " train.sh"
+    cmd += f" {cwd}/train.sh"
 
-    job_id = os.popen(cmd.split()).read()
+    job_id = os.popen(cmd).read()
     print(f"started train job {job_id}")
     return job_id
 
