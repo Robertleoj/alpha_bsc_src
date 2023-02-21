@@ -3,22 +3,29 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(AlphaBSc)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra") #-DNDEBUG
+set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra -pthread") #-DNDEBUG
 # set(CMAKE_CXX_FLAGS " -O3") #-DNDEBUG
 
-set(LIBTORCH ".libs/libtorch/")
 
-set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${LIBTORCH}")
+set(LIBTORCH ".libs/libtorch/")
+set(MARIADB_C ".libs/mariadb_conn_c")
+set(MARIADB_CPP ".libs/mariadb_conn_cpp")
+
+set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${LIBTORCH};${MARIADB_C};${MARIADB_CPP}")
 
 include_directories(".libs/libtorch/include")
 
 find_package(Torch REQUIRED)
 
-include_directories("/usr/include/mariadb") #path to include folder
+include_directories(".libs/mariadb_conn_c/include") #path to include folder
+include_directories(".libs/mariadb_conn_cpp/include") #path to include folder
+include_directories(".libs/gsl/include") #path to include folder
+
+link_directories(./.libs/gsl/lib)
 
 add_library(mariadbcpp STATIC IMPORTED)
 
-set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/usr/lib/libmariadbcpp.so") #path to libmariadbcpp.so
+set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION ".libs/mariadb_conn_cpp/lib/mariadb/libmariadbcpp.so") #path to libmariadbcpp.so
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
