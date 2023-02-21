@@ -28,7 +28,9 @@ link_directories(./.libs/mariadb_conn_cpp/lib/mariadb)
 
 add_library(mariadbcpp STATIC IMPORTED)
 
-set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/home/gimli/AlphaBSc/alpha_bsc_src/cpp_src/.libs/mariadb_conn_cpp/lib/mariadb/libmariadbcpp.so") #path to libmariadbcpp.so
+#set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/home/gimli/AlphaBSc/alpha_bsc_src/cpp_src/.libs/mariadb_conn_cpp/lib/mariadb/libmariadbcpp.so") #path to libmariadbcpp.so
+
+set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/home/bigbrainman/alpha_bsc/cpp_src/.libs/mariadb_conn_cpp/lib/mariadb/libmariadbcpp.so") #path to libmariadbcpp.so
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
