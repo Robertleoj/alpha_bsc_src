@@ -3,7 +3,7 @@ from sys import argv
 
 # train_cmd
 
-cwd = os.getcwd()
+cwd = "/home/gimli/AlphaBSc/alpha_bsc_src"
 
 def self_play(gen:int, dep:str=None) ->str:
 
@@ -18,7 +18,7 @@ def self_play(gen:int, dep:str=None) ->str:
 
 def train(gen:int, dep:str=None) ->str:
 
-    cmd = f"{cwd} && sbatch --job-name=train{gen} --output=train{gen}.log" 
+    cmd = f"cd {cwd} && sbatch --job-name=train{gen} --output=train{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += f" train.sh"

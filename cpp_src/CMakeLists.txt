@@ -16,16 +16,19 @@ set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${LIBTORCH};${MARIADB_C};${MARIADB_C
 include_directories(".libs/libtorch/include")
 
 find_package(Torch REQUIRED)
+#find_package(mariadbcpp REQUIRED)
+
 
 include_directories(".libs/mariadb_conn_c/include") #path to include folder
 include_directories(".libs/mariadb_conn_cpp/include") #path to include folder
 include_directories(".libs/gsl/include") #path to include folder
 
 link_directories(./.libs/gsl/lib)
+link_directories(./.libs/mariadb_conn_cpp/lib/mariadb)
 
 add_library(mariadbcpp STATIC IMPORTED)
 
-set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION ".libs/mariadb_conn_cpp/lib/mariadb/libmariadbcpp.so") #path to libmariadbcpp.so
+set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION "/home/gimli/AlphaBSc/alpha_bsc_src/cpp_src/.libs/mariadb_conn_cpp/lib/mariadb/libmariadbcpp.so") #path to libmariadbcpp.so
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
