@@ -4,11 +4,12 @@ import io
 import config
 import os
 import numpy as np
+from DB.db_config import db_conf
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
-if os.name == 'posix':
-    os.system('ulimit -n 64000')
+# if os.name == 'posix':
+#     os.system('ulimit -n 64000')
 
 
 # def make_tensor(state, policy, outcome):
@@ -40,12 +41,13 @@ class DB:
 
 
     def connect(self):
+
         return mariadb.connect(
-            user='user',
-            password='password',
-            host='127.0.0.1',
-            port=3306,
-            database='self_play'
+            user=db_conf['user'],
+            password=db_conf['pw'],
+            host=db_conf['host'],
+            port=db_conf['port'],
+            database=db_conf['db']
         )
 
     def add_generation(self, game:str, generation_num:int):
