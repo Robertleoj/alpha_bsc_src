@@ -10,7 +10,7 @@ def self_play(gen:int, dep:str=None) ->str:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += " self_play.sh"
 
-    job_id = os.popen(cmd).read()
+    job_id = os.popen(cmd.split()).read()
     print(f"started self_play job {job_id}")
     return job_id
 
@@ -21,7 +21,7 @@ def train(gen:int, dep:str=None) ->str:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += " train.sh"
 
-    job_id = os.popen(cmd).read()
+    job_id = os.popen(cmd.split()).read()
     print(f"started train job {job_id}")
     return job_id
 
