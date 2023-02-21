@@ -11,6 +11,7 @@ def self_play(gen:int, dep:str=None) ->str:
     cmd += " self_play.sh"
 
     job_id = os.popen(cmd)
+    print(f"started self_play job {job_id}")
     return job_id
 
 def train(gen:int, dep:str=None) ->str:
@@ -21,6 +22,7 @@ def train(gen:int, dep:str=None) ->str:
     cmd += " train.sh"
 
     job_id = os.popen(cmd)
+    print(f"started train job {job_id}")
     return job_id
 
 def single_cycle(gen, dep:str=None) -> str:
