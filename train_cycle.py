@@ -52,6 +52,7 @@ def main():
 
     cycles(first_gen, num_generations, first_dep)
 
+main()
 
 
 
