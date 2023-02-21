@@ -5,7 +5,7 @@ from sys import argv
 
 def self_play(gen:int, dep:str=None) ->str:
 
-    cmd = f"sbatch --job_name=self_play{gen} --output=self_play{gen}.log" 
+    cmd = f"sbatch --job-name=self_play{gen} --output=self_play{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += " self_play.sh"
@@ -16,7 +16,7 @@ def self_play(gen:int, dep:str=None) ->str:
 
 def train(gen:int, dep:str=None) ->str:
 
-    cmd = f"sbatch --job_name=train{gen} --output=train{gen}.log" 
+    cmd = f"sbatch --job-name=train{gen} --output=train{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += " train.sh"
