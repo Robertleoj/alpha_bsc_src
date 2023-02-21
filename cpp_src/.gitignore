@@ -4,6 +4,7 @@ CMakeFiles/
 cmake_install.cmake
 CMakeCache.txt
 AlphaBSc
+self_play
 build/
 .libs
 Makefile

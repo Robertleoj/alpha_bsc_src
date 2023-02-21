@@ -30,7 +30,7 @@ set_property(TARGET mariadbcpp PROPERTY IMPORTED_LOCATION ".libs/mariadb_conn_cp
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-add_executable(AlphaBSc
+add_executable(self_play
     main.cpp
     base/types.h    
     base/bitboard.h
@@ -63,7 +63,7 @@ add_executable(AlphaBSc
     config/config.cpp
 )
 
-target_link_libraries(AlphaBSc
+target_link_libraries(self_play
     ${TORCH_LIBRARIES}
     mariadbcpp
     gsl 
