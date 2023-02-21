@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(AlphaBSc)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra") #-DNDEBUG
+set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra -pthread") #-DNDEBUG
 # set(CMAKE_CXX_FLAGS " -O3") #-DNDEBUG
 
 
@@ -17,11 +17,11 @@ include_directories(".libs/libtorch/include")
 
 find_package(Torch REQUIRED)
 
-include_directories(".libs/mariadb_conn_c/include/mariadb") #path to include folder
-include_directories(".libs/mariadb_conn_cpp/include/mariadb") #path to include folder
+include_directories(".libs/mariadb_conn_c/include") #path to include folder
+include_directories(".libs/mariadb_conn_cpp/include") #path to include folder
 include_directories(".libs/gsl/include") #path to include folder
 
-link_directories(./libs/gsl/lib)
+link_directories(./.libs/gsl/lib)
 
 add_library(mariadbcpp STATIC IMPORTED)
 
