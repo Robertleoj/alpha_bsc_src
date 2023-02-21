@@ -7,10 +7,10 @@ cwd = os.getcwd()
 
 def self_play(gen:int, dep:str=None) ->str:
 
-    cmd = f"sbatch --job-name=self_play{gen} --output=self_play{gen}.log" 
+    cmd = f"cd {cwd} && sbatch --job-name=self_play{gen} --output=self_play{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
-    cmd += f" {cwd}/self_play.sh"
+    cmd += f" self_play.sh"
 
     job_id = os.popen(cmd).read()
     print(f"started self_play job {job_id}")
@@ -18,10 +18,10 @@ def self_play(gen:int, dep:str=None) ->str:
 
 def train(gen:int, dep:str=None) ->str:
 
-    cmd = f"sbatch --job-name=train{gen} --output=train{gen}.log" 
+    cmd = f"{cwd} && sbatch --job-name=train{gen} --output=train{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
-    cmd += f" {cwd}/train.sh"
+    cmd += f" train.sh"
 
     job_id = os.popen(cmd).read()
     print(f"started train job {job_id}")
