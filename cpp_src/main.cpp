@@ -11,7 +11,6 @@
 #include <torch/script.h>
 // like import *
 #include <torch/all.h>
-#include <mariadb/conncpp.hpp>
 #include "./DB/db.h"
 #include "./self-play/selfplay.h"
 #include "./config/config.h"
