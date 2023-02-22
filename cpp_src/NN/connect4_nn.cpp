@@ -9,11 +9,8 @@ namespace nn{
     Connect4NN::Connect4NN(std::string model_path){
         std::cout << "loading model from " << model_path << std::endl;
         this->net = torch::jit::load(model_path);
-        std::cout << "loaded model" << std::endl;
         this->net.to(at::kCUDA);
-        std::cout << "put on cuda" << std::endl;
         this->net.eval();
-        std::cout << "put on eval" << std::endl;
     }
 
     std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_tensors(std::vector<at::Tensor> & tensors) {
