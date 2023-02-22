@@ -29,6 +29,12 @@ int main()
               << TORCH_VERSION_MAJOR << '.' 
               << TORCH_VERSION_MINOR << '.' 
               << TORCH_VERSION_PATCH << std::endl;
+
+    // std::ifstream f("../models/test.pt", std::ios::binary);
+    // auto cu = std::make_shared<torch::CompilationUnit>();
+ 
+    // torch::jit::import_ir_module(cu,"../models/test.pt", c10::Device("cuda"));
+    // f.close();
     // seed random
     srand(time(NULL));
     // initialize config

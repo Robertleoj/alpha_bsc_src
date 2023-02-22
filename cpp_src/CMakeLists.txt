@@ -71,6 +71,8 @@ add_executable(self_play
     self-play/selfplay.cpp
     config/config.h
     config/config.cpp
+    sqlite/sqlite3.h
+    sqlite/sqlite3.c
 )
 
 target_link_libraries(self_play
@@ -78,5 +80,6 @@ target_link_libraries(self_play
     mariadbcpp
     gsl 
     gslcblas
+    dl
 )
 

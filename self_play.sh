@@ -16,3 +16,4 @@ RUNPATH=/home/gimli/AlphaBSc/alpha_bsc_src/cpp_src
 cd $RUNPATH
 
 ./self_play
+
