@@ -1,9 +1,9 @@
 #pragma once
-#include <mariadb/conncpp.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
 #include "../NN/nn.h"
+#include "../sqlite/sqlite3.h"
 
 namespace db {
     class DB {
@@ -11,7 +11,7 @@ namespace db {
         std::string game;
         int game_id;
         DB(std::string game);
-        std::unique_ptr<sql::Connection>  conn;
+        sqlite3 * db;
         int curr_generation;
         int generation_id;
 
@@ -22,6 +22,7 @@ namespace db {
     private:
         void make_connection();
         void set_curr_generation();
+        sqlite3_stmt * query(std::string);
     };
 
 }

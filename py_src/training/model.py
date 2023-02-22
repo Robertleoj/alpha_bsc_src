@@ -8,7 +8,7 @@ from torch import nn
 
 class Model:
 
-    def __init__(self, game: str, device='cuda', generation:int=None):
+    def __init__(self, game: str, device='cuda', generation:int=None, prefetch=True):
         self.device = device
         self.loss_fn = loss_fn
 
@@ -52,18 +52,18 @@ class Model:
         )
 
     def save_nn(self):
-        new_gen = self.generation + 1
-        new_gen_path = self.model_path / f"{new_gen}.pt"
+        new_gen_path = self.model_path / f"{self.generation}.pt"
 
         serialized = torch.jit.script(self.nn)
         serialized.save(new_gen_path)
 
-    def increment_db_gen(self):
-        self.db.add_generation(self.game, self.generation + 1)
+    def add_db_gen(self):
+        self.db.add_generation(self.game, self.generation)
 
     def save_and_next_gen(self):
+        self.generation += 1
         self.save_nn()
-        self.increment_db_gen()
+        self.add_db_gen()
 
         # using class is not allowed after calling this
         del self.__dict__

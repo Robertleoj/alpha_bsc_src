@@ -1,6 +1,7 @@
 #include <string>
 #include "./connect4_nn.h"
 #include "../base/types.h"
+#include <fstream>
 
 
 namespace nn{

@@ -11,7 +11,6 @@
 #include <torch/script.h>
 // like import *
 #include <torch/all.h>
-#include <mariadb/conncpp.hpp>
 #include "./DB/db.h"
 #include "./self-play/selfplay.h"
 #include "./config/config.h"
@@ -25,6 +24,16 @@ using RunGameEntry = std::tuple<std::string,std::unique_ptr<game::IGame>,int, in
 
 int main()
 {
+    std::cout << "PYTORCH VERSION "
+              << TORCH_VERSION_MAJOR << '.' 
+              << TORCH_VERSION_MINOR << '.' 
+              << TORCH_VERSION_PATCH << std::endl;
+
+    // std::ifstream f("../models/test.pt", std::ios::binary);
+    // auto cu = std::make_shared<torch::CompilationUnit>();
+ 
+    // torch::jit::import_ir_module(cu,"../models/test.pt", c10::Device("cuda"));
+    // f.close();
     // seed random
     srand(time(NULL));
     // initialize config

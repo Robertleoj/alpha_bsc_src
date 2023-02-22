@@ -1,14 +1,15 @@
-import mariadb
 import torch
+import sqlite3
 import io
-import config
+# import config
 import os
 import numpy as np
+# from DB.db_config import db_conf
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
-if os.name == 'posix':
-    os.system('ulimit -n 64000')
+# if os.name == 'posix':
+#     os.system('ulimit -n 64000')
 
 
 # def make_tensor(state, policy, outcome):
@@ -40,13 +41,15 @@ class DB:
 
 
     def connect(self):
-        return mariadb.connect(
-            user='user',
-            password='password',
-            host='127.0.0.1',
-            port=3306,
-            database='self_play'
-        )
+
+        # return mariadb.connect(
+        #     user=db_conf['user'],
+        #     password=db_conf['pw'],
+        #     host=db_conf['host'],
+        #     port=db_conf['port'],
+        #     database=db_conf['db']
+        # )
+        return sqlite3.connect('../db/db.db')
 
     def add_generation(self, game:str, generation_num:int):
 
@@ -56,9 +59,12 @@ class DB:
             insert into generations (game_id, generation_num)
             values ({game_id}, {generation_num})
         """
-        self.mutating_query(query)
+
+        self.query(query, True)
+
 
     def get_game_id(self, game:str):
+
         query = f"""
             select id from games where game_name = "{game}"
         """
@@ -67,21 +73,24 @@ class DB:
         return res[0][0]
 
 
-    def mutating_query(self, query):
+    # def mutating_query(self, query):
+    #     conn = self.connect()
+    #     cursor = conn.cursor()
+    #     cursor.execute(query)
+    #     conn.commit()
+    #     cursor.close()
+    #     conn.close()
+
+    def query(self, query, no_data=False):
         conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute(query)
-        conn.commit()
-        cursor.close()
+        cursor = conn.execute(query)
+
+        res = None
+        if not no_data:
+            res = cursor.fetchall()
+
         conn.close()
 
-    def query(self, query):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute(query)
-        res = list(cursor)
-        cursor.close()
-        conn.close()
         return res
 
 
@@ -214,8 +223,7 @@ class DB:
 if __name__ == "__main__":
     db = DB()
 
-    cursor = db.conn.cursor()
-    cursor.execute("""
+    cursor = db.query("""
         select id, generation_id, state, policy, outcome, created_at
         from training_data
     """)
@@ -229,4 +237,3 @@ if __name__ == "__main__":
         print(f"Policy shape: {policy.shape}")
 
         print(f"State shape: {state.shape}")
-
