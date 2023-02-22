@@ -25,6 +25,10 @@ using RunGameEntry = std::tuple<std::string,std::unique_ptr<game::IGame>,int, in
 
 int main()
 {
+    std::cout << "PYTORCH VERSION "
+              << TORCH_VERSION_MAJOR << '.' 
+              << TORCH_VERSION_MINOR << '.' 
+              << TORCH_VERSION_PATCH << std::endl;
     // seed random
     srand(time(NULL));
     // initialize config
