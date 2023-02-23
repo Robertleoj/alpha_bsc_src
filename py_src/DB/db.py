@@ -88,6 +88,8 @@ class DB:
         res = None
         if not no_data:
             res = cursor.fetchall()
+        else:
+            conn.commit()
 
         conn.close()
 
