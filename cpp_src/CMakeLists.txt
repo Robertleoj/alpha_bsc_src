@@ -6,28 +6,34 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra -pthread -pipe -march=native")# -DNDEBUG")
 # set(CMAKE_CXX_FLAGS " -O3") #-DNDEBUG
 
+set(USERNAME $ENV{USER})
 
-set(LIBTORCH ".libs/libtorch/")
-#set(LIBTORCH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/torch/share/cmake/")
+message("Username is ${USERNAME}")
+
+if(USERNAME STREQUAL "gimli")
+
+    message("On smallvoice. Using python version of libtorch.")
+    set(LIBTORCH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/torch/share/cmake/")
+    set(CUDNN_LIBRARY_PATH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
+    set(CUDNN_INCLUDE_PATH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/nvidia/cudnn/include")
+
+    link_directories(/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib/python3.9/site-packages/nvidia/cudnn/lib/)
+
+else()
+    message("On local. Using .libs/libtorch.")
+    set(LIBTORCH ".libs/libtorch/")
+
+endif()
+
+
 
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${LIBTORCH}")
-# set(CUDNN "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib/python3.9/site-packages/nvidia/cudnn/")
 
-#set(CUDNN_LIBRARY_PATH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
-#set(CUDNN_INCLUDE_PATH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/nvidia/cudnn/include")
-
-#include_directories(".libs/libtorch/include")
 find_package(Torch REQUIRED)
 
-
-
 include_directories(".libs/gsl/include") #path to include folder
-# include_directories("/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib/python3.9/site-packages/nvidia/cudnn/include") #path to include folder
 
 link_directories(./.libs/gsl/lib)
-#link_directories(/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib/python3.9/site-packages/nvidia/cudnn/lib/)
-# 
-
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
