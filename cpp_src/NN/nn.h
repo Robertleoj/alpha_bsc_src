@@ -6,6 +6,7 @@
 #include <memory>
 #include <torch/torch.h>
 #include <vector>
+#include <string>
 
 
 namespace nn {
@@ -14,6 +15,7 @@ namespace nn {
         at::Tensor target_policy;
         at::Tensor state;
         double outcome;
+        std::string moves;
     };
     
     struct NNOut {

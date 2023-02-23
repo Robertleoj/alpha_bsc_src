@@ -141,7 +141,7 @@ void SelfPlay::thread_play(
     std::mutex * results_mutex,
     std::atomic<int> * games_left,
     std::atomic<int> * num_active_threads
-){
+) {
 
     while((*games_left) > 0){
         (*games_left)--;
@@ -202,6 +202,8 @@ void SelfPlay::thread_play(
 
         // game->display(std::cout);
 
+        std::stringstream moves;
+
         while(!game->is_terminal()){
 
             agent->search(
@@ -218,20 +220,24 @@ void SelfPlay::thread_play(
             auto state_tensor = this->neural_net->state_to_tensor(game->get_board());    
             // std::cout << "made state tensor" << std::endl;
 
+            // get best move id
+            game::move_id best_move;
+            int best_visit_count = -1;
+            std::string move_str = game->move_as_str(best_move);
+
+            moves << move_str << ";";
+
 
             nn::TrainingSample ts = {
                 policy_tensor,
                 state_tensor,
-                0
+                0,
+                moves.str()
             };
 
             // std::cout << "Made training sample" << std::endl;
 
             samples.push_back(ts);
-
-            // get best move id
-            game::move_id best_move;
-            int best_visit_count = -1;
 
 
             for(auto &p : visit_counts) {
@@ -259,6 +265,7 @@ void SelfPlay::thread_play(
 
         // now we need to insert the training data into the db
         db_mutex->lock();
+        // db::DB db(this->game);
         this->db->insert_training_samples(samples);
         db_mutex->unlock();
 

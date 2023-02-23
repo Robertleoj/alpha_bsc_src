@@ -2,8 +2,8 @@
     "PUCT_c" : 4,
     "batch_size": 256,
     "num_parallel_games" : 512,
-    "search_depth": 300,
-    "self_play_num_games" : 5000,
+    "search_depth": 500,
+    "self_play_num_games" : 1000,
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.3
 }
