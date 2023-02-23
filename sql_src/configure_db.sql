@@ -1,9 +1,3 @@
-GRANT ALL PRIVILEGES ON  *.* to 'user'@'%' WITH GRANT OPTION;
-
-create database self_play;
-
-use self_play;
-
 create table games (
     id int auto_increment,
     game_name varchar(45) unique not null,
