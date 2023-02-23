@@ -13,8 +13,11 @@ message("Username is ${USERNAME}")
 if(USERNAME STREQUAL "gimli")
 
     message("On smallvoice. Using python version of libtorch.")
+
     set(LIBTORCH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/torch/share/cmake/")
+
     set(CUDNN_LIBRARY_PATH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
+
     set(CUDNN_INCLUDE_PATH "/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib64/python3.9/site-packages/nvidia/cudnn/include")
 
     link_directories(/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib/python3.9/site-packages/nvidia/cudnn/lib/)
