@@ -19,11 +19,12 @@ python3 -m venv .venv
 ```
 
 Activate it with
-```
+```bash
 source ./.venv/bin/activate
 ```
 
 Install requirements with
-```
+
+```bash
 pip install -r requirements.txt
 ```
