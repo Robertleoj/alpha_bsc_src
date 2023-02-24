@@ -49,6 +49,7 @@ seaborn==0.12.2
 six==1.16.0
 stack-data==0.6.2
 torch==1.13.1
+torch-summary==1.4.5
 torchvision==0.14.1
 tornado==6.2
 tqdm==4.64.1

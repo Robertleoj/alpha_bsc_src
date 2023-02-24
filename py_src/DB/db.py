@@ -112,6 +112,20 @@ class DB:
 
         return res[0][0]
 
+    def add_loss(self, game: str, generation, iteration, loss):
+
+        game_id = self.get_game_id(game)
+
+        query = f"""
+            insert into losses (generation_id, iteration, loss)
+            values (
+                (select id from generations where game_id = {game_id} and generation_num = {generation}),
+                {iteration},
+                {loss}
+            )
+        """
+
+        self.query(query, True)
 
 
     def prefetch_generation(self, game:str, generation:int):

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cp db/empty_db.db db/db.db
+sqlite3 db/db.db < db/configure_db.sql

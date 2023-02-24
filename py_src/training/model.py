@@ -67,6 +67,9 @@ class Model:
 
         # using class is not allowed after calling this
         del self.__dict__
+
+    def log_loss(self, iteration:int, loss: float):
+        self.db.add_loss(self.game, self.generation, iteration, loss)
     
     def train(self, num_iterations: int=config.num_iterations):
 
@@ -99,6 +102,14 @@ class Model:
                 tqdm_dl.refresh()
             
             iteration += 1
+
+            if (iteration % config.log_loss_interval) == 0:
+                self.log_loss(
+                    iteration=iteration, 
+                    loss=sum(losses)/len(losses)
+                )
+
+                losses = []
 
             if iteration > num_iterations:
                 break
