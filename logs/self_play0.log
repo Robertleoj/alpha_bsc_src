@@ -1,0 +1,7 @@
+PYTORCH VERSION 1.13.1
+reading json file at ./config_files/hyperparameters.json
+Opened database successfully
+Game ID: 1
+Current generation: 0
+making neural net
+loading model from ../models/connect4/0.pt

@@ -6,24 +6,40 @@ from sys import argv
 cwd = "/home/gimli/AlphaBSc/alpha_bsc_src"
 
 def self_play(gen:int, dep:str=None) ->str:
+    print("starting self_play job")
 
-    cmd = f"cd {cwd} && sbatch --job-name=self_play{gen} --output=self_play{gen}.log" 
+    cmd = f"cd {cwd} && sbatch --job-name=self_play{gen} --output=./logs/self_play{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += f" self_play.sh"
+    print("running command")
+    print(cmd)
 
-    job_id = os.popen(cmd).read()
+    outp = os.popen(cmd).read()
+    print("output: ")
+    print(outp)
+    
+    job_id = outp.strip().split(' ')[-1]
+
     print(f"started self_play job {job_id}")
     return job_id
 
 def train(gen:int, dep:str=None) ->str:
+    print('starting train job')
 
-    cmd = f"cd {cwd} && sbatch --job-name=train{gen} --output=train{gen}.log" 
+    cmd = f"cd {cwd} && sbatch --job-name=train{gen} --output=./logs/train{gen}.log" 
     if dep is not None:
         cmd += f" --dependency=aftercorr:{dep}"
     cmd += f" train.sh"
 
-    job_id = os.popen(cmd).read()
+    print('running command')
+    print(cmd)
+    outp = os.popen(cmd).read()
+    print("output: ")
+    print(outp)
+    
+    job_id = outp.strip().split(' ')[-1]
+
     print(f"started train job {job_id}")
     return job_id
 
