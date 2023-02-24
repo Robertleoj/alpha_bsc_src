@@ -2,6 +2,9 @@
 
 # Requirements
 
+## DB
+Run `init_db.sh`
+
 ## C++
 Create a folder in `cpp_src` called `.libs`. 
 
@@ -28,3 +31,8 @@ Install requirements with
 ```bash
 pip install -r requirements.txt
 ```
+## Neural Network
+Run `init_conn4_net.py`
+
+# To train
+Run `local_train_cycle.py`
