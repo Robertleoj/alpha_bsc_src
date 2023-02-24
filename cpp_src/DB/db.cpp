@@ -16,6 +16,10 @@ namespace db {
         std::cout << "Current generation: " << this->curr_generation << std::endl;
     }
 
+    DB::~DB(){
+        sqlite3_close(this->db);
+    }
+
     sqlite3_stmt * DB::query(std::string q) {
         //caller must finalize query!!
         sqlite3_stmt * stmt;
@@ -131,7 +135,7 @@ namespace db {
 
 
     void DB::insert_training_samples(std::vector<nn::TrainingSample> &samples) {
-
+        sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
         for(auto &sample : samples){
 
             sqlite3_stmt * stmt = nullptr;
@@ -142,16 +146,18 @@ namespace db {
                     generation_id,
                     state,
                     policy,
-                    outcome
+                    outcome,
+                    moves
                 ) 
                 values
-                (?, ?, ?, ?)
+                (?, ?, ?, ?, ?)
                 )",
                 -1,
                 &stmt,
                 NULL
             );
             
+
             sqlite3_bind_int(stmt, 1, this->generation_id);
 
             std::stringstream state_ss;
@@ -169,6 +175,8 @@ namespace db {
 
             sqlite3_bind_double(stmt, 4, sample.outcome);
 
+            sqlite3_bind_text(stmt, 5, sample.moves.c_str(), sample.moves.size(), SQLITE_TRANSIENT);
+
             int rc = sqlite3_step(stmt);
 
             if (rc != SQLITE_DONE){
@@ -178,5 +186,6 @@ namespace db {
 
             sqlite3_finalize(stmt);
         }
+        sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, NULL);
     }
 }

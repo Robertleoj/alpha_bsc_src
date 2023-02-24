@@ -55,8 +55,8 @@ class Connect4NN(nn.Module):
         )
 
 
-        #self.middle = Middle([6, 24, 24, 24, 24, 24, 24, 12])
-        self.middle = Middle([6, 24, 12])
+        self.middle = Middle([6, 24, 24, 24, 24, 24, 24, 12])
+        # self.middle = Middle([6, 24, 12])
 
         self.policy_head = Connect4PolicyHead()
         self.value_head = Connect4ValueHead()

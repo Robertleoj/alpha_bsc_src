@@ -8,3 +8,5 @@ mount_smallvoice.sh
 azure_mariadb_terminal.txt
 db/db.db
 db/db.db-journal
+models/connect4/*
+models/breakthrough/*
