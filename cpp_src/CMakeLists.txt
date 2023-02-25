@@ -22,6 +22,18 @@ if(USERNAME STREQUAL "gimli")
 
     link_directories(/home/gimli/AlphaBSc/alpha_bsc_src/py_src/.venv/lib/python3.9/site-packages/nvidia/cudnn/lib/)
 
+elseif(USERNAME STREQUAL "cluster")
+    
+        message("On cluster. Using python version of libtorch.")
+    
+        set(LIBTORCH "/home/cluster/.local/lib/python3.10/site-packages/torch/share/cmake")
+
+        set(CUDNN_LIBRARY_PATH "/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
+
+        set(CUDNN_INCLUDE_PATH "/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/include")
+
+        link_directories(/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/)
+    
 else()
     message("On local. Using .libs/libtorch.")
     set(LIBTORCH ".libs/libtorch/")
