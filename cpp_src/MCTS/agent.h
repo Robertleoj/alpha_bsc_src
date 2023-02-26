@@ -12,12 +12,14 @@ class Agent {
 public:
     MCTree * tree = nullptr;
     eval_f eval_func;
+    bool use_dirichlet_noise = true;
 
 
     Agent(
         game::IGame * game, 
         pp::Player player, 
-        eval_f eval_func
+        eval_f eval_func,
+        bool apply_noise = true
     );
 
     ~Agent();
@@ -31,6 +33,8 @@ public:
 
     void switch_sides();
     double outcome_to_value(out::Outcome);
+    double eval_for_player(double eval, pp::Player player);
+    double switch_eval(double eval);
 
 private:
     game::IGame * game;
