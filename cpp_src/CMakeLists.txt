@@ -96,3 +96,45 @@ target_link_libraries(self_play
     dl
 )
 
+
+add_executable(play_agent
+    play_agent.cpp
+    base/types.h    
+    base/bitboard.h
+    utils/utils.h
+    utils/random.h
+    utils/random.cpp
+    utils/dirichlet.h
+    utils/dirichlet.cpp
+    games/move.h
+    games/game.h
+    games/breakthrough.h
+    games/breakthrough.cpp
+    games/connect4.h
+    games/connect4.cpp
+    base/board.h
+    MCTS/agent.cpp
+    MCTS/agent.h
+    MCTS/mc_node.cpp
+    MCTS/mc_node.h
+    MCTS/mc_tree.cpp
+    MCTS/mc_tree.h
+    NN/connect4_nn.h
+    NN/connect4_nn.cpp
+    NN/nn.h
+    DB/db.h
+    DB/db.cpp
+    self-play/selfplay.h
+    self-play/selfplay.cpp
+    config/config.h
+    config/config.cpp
+    sqlite/sqlite3.h
+    sqlite/sqlite3.c
+)
+
+target_link_libraries(play_agent
+    ${TORCH_LIBRARIES}
+    gsl 
+    gslcblas
+    dl
+)

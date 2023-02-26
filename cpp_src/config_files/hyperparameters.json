@@ -3,7 +3,7 @@
     "batch_size": 512,
     "num_parallel_games" : 512,
     "search_depth": 1000,
-    "self_play_num_games" : 10000,
+    "self_play_num_games" : 1000,
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.3
 }

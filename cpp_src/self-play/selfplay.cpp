@@ -261,6 +261,7 @@ void SelfPlay::thread_play(
 
         for(auto &sample : samples){
             sample.outcome = outcome;
+            // outcome = -outcome; // DO THIS?
         }
 
         // now we need to insert the training data into the db

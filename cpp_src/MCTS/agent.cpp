@@ -9,11 +9,13 @@
 Agent::Agent(
     game::IGame * game, 
     pp::Player player, 
-    eval_f eval_func
+    eval_f eval_func,
+    bool apply_noise
 ) : game(game), player(player)
 {  
     this->eval_func = eval_func;
     this->tree = new MCTree();
+    this->use_dirichlet_noise = apply_noise;
 }
 
 void Agent::switch_sides(){ 
@@ -37,7 +39,9 @@ void Agent::update_tree(
             this->tree->root->legal_moves.size()
         );
 
-        this->tree->root->add_noise(dir_noise);
+        if(this->use_dirichlet_noise) {
+            this->tree->root->add_noise(dir_noise);
+        }
     }
 }
 
@@ -80,6 +84,18 @@ double Agent::outcome_to_value(out::Outcome oc){
     }
 }
 
+double Agent::eval_for_player(double v, pp::Player player){
+    if(player == pp::First){
+        return v;
+    } else {
+        return 1 - v;
+    }
+}
+
+double Agent::switch_eval(double v) {
+    return 1 - v;
+}
+
 std::pair<MCNode *, double> Agent::selection(){
 
     // If root doesn't exist, create it
@@ -88,7 +104,7 @@ std::pair<MCNode *, double> Agent::selection(){
         MCNode * new_node = nullptr;
         double v = 0;
         if(game->is_terminal()){
-            v = this->outcome_to_value(game->outcome(pp::First));
+            v = this->outcome_to_value(game->outcome());
             new_node = new MCNode(
                 nullptr,
                 -1,
@@ -96,6 +112,7 @@ std::pair<MCNode *, double> Agent::selection(){
             );
         } else {
             auto evaluation = this->eval_func(this->game->get_board());
+            evaluation->v = this->eval_for_player(evaluation->v, this->game->get_to_move());
 
             new_node = new MCNode(
                 nullptr,
@@ -104,9 +121,10 @@ std::pair<MCNode *, double> Agent::selection(){
                 *evaluation
             );
             
-            auto dir_dist = utils::dirichlet_dist(config::hp["dirichlet_alpha"].get<double>(), new_node->legal_moves.size());
-
-            new_node->add_noise(dir_dist);
+            if(this->use_dirichlet_noise){
+                auto dir_dist = utils::dirichlet_dist(config::hp["dirichlet_alpha"].get<double>(), new_node->legal_moves.size());
+                new_node->add_noise(dir_dist);
+            }
             
             v = evaluation->v;
         }
@@ -146,7 +164,7 @@ std::pair<MCNode *, double> Agent::selection(){
                 MCNode * new_node;
                 double v;
                 if(game->is_terminal()){
-                    v = this->outcome_to_value(game->outcome(pp::First));
+                    v = this->outcome_to_value(game->outcome());
                     new_node = new MCNode(
                         current_node,
                         mv,
@@ -155,6 +173,7 @@ std::pair<MCNode *, double> Agent::selection(){
                 } else {
 
                     auto evaluation = this->eval_func(this->game->get_board());
+                    evaluation->v = this->eval_for_player(evaluation->v, this->game->get_to_move());
 
                     // Make new node 
                     new_node = new MCNode(
@@ -196,22 +215,24 @@ std::pair<MCNode *, double> Agent::selection(){
 
 
 void Agent::backpropagation(MCNode * node, double v){
-    while(true){
-        node->plays++;
-        double val = v;
+    bool first = true;
 
-        if(this->game->get_to_move() == pp::Second){
-            val = 1 - v;
+    while(true){
+
+        if(!first){
+            node->plays++;
+            node->update_eval(v);
         }
-        
-        node->update_eval(val);
+        first = false;
 
         if (node->parent == nullptr) {
             break;
         } else {
             this->game->retract(node->move_from_parent);
             node = node->parent;
+            v = this->switch_eval(v);
         }
+
     }
 }
 

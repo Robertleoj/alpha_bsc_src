@@ -1,4 +1,4 @@
-buffer_generations = 20
+buffer_generations = 3
 
 batch_size = 1024
 dl_num_workers = 8
