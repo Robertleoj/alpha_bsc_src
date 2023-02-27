@@ -31,9 +31,10 @@ Agent::~Agent(){
 void Agent::update_tree(
     game::move_id move_id
 ){
-    tree->move(move_id);
+    this->tree->move(move_id);
 
     if(!this->game->is_terminal() && this->tree->root != nullptr){
+
         if(this->use_dirichlet_noise) {
             auto dir_noise = utils::dirichlet_dist(
                 config::hp["dirichlet_alpha"].get<double>(), 
@@ -41,6 +42,7 @@ void Agent::update_tree(
             );
             this->tree->root->add_noise(dir_noise);
         }
+
     }
 }
 
