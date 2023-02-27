@@ -106,7 +106,12 @@ void print_pucts(Agent * ag) {
 
 }
 
-void play_self(std::string model1, std::string model2){
+void play_self(std::string m1, std::string m2){
+
+    std::string model1 = utils::string_format("../models/connect4/%s.pt", m1.c_str());
+    std::string model2 = utils::string_format("../models/connect4/%s.pt", m2.c_str());
+
+
     nn::NN * neural_net = new nn::Connect4NN(model1);
     nn::NN * neural_net2 = new nn::Connect4NN(model2);
 
@@ -164,7 +169,7 @@ void play_self(std::string model1, std::string model2){
         agent2.update_tree(best_move);
 
 
-        std::cout << "Agent" << (agent1_turn ? "1" : "2") << " made move "  << move_str << std::endl;
+        std::cout << "Agent " << (agent1_turn ? m1 : m2) << " made move "  << move_str << std::endl;
 
         game->display(std::cout);
         std::cout << std::endl;
@@ -180,11 +185,8 @@ void play_self(std::string model1, std::string model2){
 
 int main(int argc, char * argv[]){
 
-    std::string model1 = utils::string_format("../models/connect4/%s.pt", argv[1]);
-    std::string model2 = utils::string_format("../models/connect4/%s.pt", argv[2]);
-
     config::initialize();
     srand(time(NULL));
 
-    play_self(model1, model2);
+    play_self(argv[1], argv[2]);
 }
