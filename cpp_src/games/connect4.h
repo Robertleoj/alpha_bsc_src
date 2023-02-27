@@ -217,16 +217,16 @@ namespace games {
                         (m.board[0] & (1ULL << sqr)) 
                         != 0ULL
                     ) {
-
-                        os << 'X';
+                        // blue X
+                        os << "\033[34m" << "X" << "\033[0m";
                     }
 
                     else if (
                         (m.board[1] & (1ULL << sqr)) 
                         != 0ULL
                     ) {
-
-                        os << 'O';
+                        // green O
+                        os << "\033[32m" << "O" << "\033[0m";
                     }
                     else { os << ' '; }
                     os << '|';
