@@ -35,6 +35,7 @@ public:
     double outcome_to_value(out::Outcome);
     double eval_for_player(double eval, pp::Player player);
     double switch_eval(double eval);
+    double PUCT(MCNode *node, game::move_id move);
 
 private:
     game::IGame * game;
@@ -54,7 +55,6 @@ private:
 
     int get_current_best_move();
 
-    double PUCT(MCNode *node, MCNode * childnode);
     
 
 };

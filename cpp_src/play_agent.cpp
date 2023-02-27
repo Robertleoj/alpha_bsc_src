@@ -8,6 +8,7 @@
 #include "./games/game.h"
 #include "./games/connect4.h"
 #include "./base/types.h"
+#include "./utils/utils.h"
 
 
 
@@ -70,9 +71,31 @@ void play_user(){
     }
 }
 
-void play_self(){
-    nn::NN * neural_net = new nn::Connect4NN("../models/connect4/0.pt");
-    nn::NN * neural_net2 = new nn::Connect4NN("../models/connect4/18.pt");
+void print_pucts(Agent * ag) {
+    std::cout << "PUCT, evaluations" << std::endl;
+    MCNode * root = ag->tree->root;
+    for(auto &mv: root->legal_moves){
+
+        double v = -5;
+        double p = -1;
+
+        MCNode * child = root->children[mv];
+        p = root->p_map[mv];
+
+        if(child != nullptr){
+            v = child->value_approx;
+        }
+
+        std::cout << mv 
+                  << ": PUCT=" << ag->PUCT(ag->tree->root, mv) 
+                  << ", v=" <<  v 
+                  << ", p=" << p <<  std::endl;
+    }
+}
+
+void play_self(std::string model1, std::string model2){
+    nn::NN * neural_net = new nn::Connect4NN(model1);
+    nn::NN * neural_net2 = new nn::Connect4NN(model2);
 
     game::IGame* game = new games::Connect4();
 
@@ -98,11 +121,12 @@ void play_self(){
         std::map<game::move_id, int> visit_counts;
         if(agent1_turn){
             agent1.search(config::hp["search_depth"].get<int>());
-
             visit_counts = agent1.root_visit_counts();
+            print_pucts(&agent1);
         } else {
             agent2.search(config::hp["search_depth"].get<int>());
             visit_counts = agent2.root_visit_counts();
+            print_pucts(&agent2);
         }
 
 
@@ -110,9 +134,11 @@ void play_self(){
 
         game::move_id best_move;
         int best_visit_count = -1;
+        // int best_visit_count = 100000000;
 
         for(auto &p : visit_counts) {
             if(p.second > best_visit_count){
+            // if(p.second < best_visit_count){
                 best_move = p.first;
                 best_visit_count = p.second;
             }
@@ -139,9 +165,13 @@ void play_self(){
 
 
 
-int main(){
+int main(int argc, char * argv[]){
+
+    std::string model1 = utils::string_format("../models/connect4/%s.pt", argv[1]);
+    std::string model2 = utils::string_format("../models/connect4/%s.pt", argv[2]);
+
     config::initialize();
     srand(time(NULL));
 
-    play_self();
+    play_self(model1, model2);
 }

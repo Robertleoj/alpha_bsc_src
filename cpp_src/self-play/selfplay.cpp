@@ -232,6 +232,7 @@ void SelfPlay::thread_play(
                 policy_tensor,
                 state_tensor,
                 0,
+                game->get_to_move(),
                 moves.str()
             };
 
@@ -260,8 +261,7 @@ void SelfPlay::thread_play(
         double outcome = agent->outcome_to_value(game->outcome(pp::First));
 
         for(auto &sample : samples){
-            sample.outcome = outcome;
-            // outcome = -outcome; // DO THIS?
+            sample.outcome = agent->eval_for_player(outcome, sample.player);
         }
 
         // now we need to insert the training data into the db

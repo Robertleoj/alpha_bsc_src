@@ -28,6 +28,7 @@ create table training_data(
     state blob not null,
     policy blob not null,
     outcome float,
+    player tinyint not null,
     moves text,
     created_at timestamp default current_timestamp,
     foreign key (generation_id) references generations (id)

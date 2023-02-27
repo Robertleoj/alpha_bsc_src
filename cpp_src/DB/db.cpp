@@ -147,10 +147,11 @@ namespace db {
                     state,
                     policy,
                     outcome,
-                    moves
+                    moves,
+                    player
                 ) 
                 values
-                (?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?)
                 )",
                 -1,
                 &stmt,
@@ -176,6 +177,8 @@ namespace db {
             sqlite3_bind_double(stmt, 4, sample.outcome);
 
             sqlite3_bind_text(stmt, 5, sample.moves.c_str(), sample.moves.size(), SQLITE_TRANSIENT);
+
+            sqlite3_bind_int(stmt, 6, (sample.player == pp::First ? 1 : 0));
 
             int rc = sqlite3_step(stmt);
 

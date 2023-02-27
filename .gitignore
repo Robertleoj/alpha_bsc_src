@@ -10,3 +10,7 @@ db/db.db
 db/db.db-journal
 models/connect4/*
 models/breakthrough/*
+local_train_cycle.py
+db/db.bak
+*.bak
+cpp_src/play_agent

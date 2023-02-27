@@ -26,7 +26,7 @@ namespace nn{
         pol_tensors = pol_tensors.softmax(1).cpu();
 
         auto val_tensors = net_out.at(1).toTensor();
-        val_tensors = val_tensors.sigmoid().cpu();
+        val_tensors = val_tensors.cpu();
 
         std::vector<std::unique_ptr<NNOut>> out;
         for(int i = 0; i < tensors.size(); i++){
@@ -60,10 +60,10 @@ namespace nn{
         
         auto net_out = this->net.forward(inp).toTuple()->elements();
         auto pol_tensor = net_out.at(0).toTensor().cpu().squeeze(0);
-
         pol_tensor = torch::softmax(pol_tensor, 0);
+
         auto val_tensor = net_out.at(1).toTensor().cpu().squeeze(0);
-        val_tensor = torch::sigmoid(val_tensor);
+        // val_tensor = torch::tanh(val_tensor);
 
         return std::move(this->make_nnout_from_tensors(pol_tensor, val_tensor));
     }
@@ -97,12 +97,19 @@ namespace nn{
             .dtype(torch::kFloat32);
 
         auto out = torch::zeros(
-            {3, rows, cols}, torchopt
+            {2, rows, cols}, torchopt
         );
+        uint64_t x_board;
+        uint64_t o_board;
+        if(board.to_move == pp::First){
+            x_board = board.bbs[0];
+            o_board = board.bbs[1];
+        } else {
+            x_board = board.bbs[1];
+            o_board = board.bbs[0];
+        }
         
-        uint64_t x_board = board.bbs[0];
-        uint64_t o_board = board.bbs[1];
-        
+       
         for(int i = 0; i < rows * cols; i ++){
             int row = i / cols;
             int col = i % cols;
@@ -117,12 +124,6 @@ namespace nn{
             
             x_board = x_board >> 1;
             o_board = o_board >> 1;
-        }
-        
-        bool x_move = board.to_move == pp::First;
-        
-        if(x_move){
-            out[2] += 1;
         }
 
         return out;
