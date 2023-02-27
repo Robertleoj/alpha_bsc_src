@@ -13,7 +13,8 @@ class Connect4ValueHead(nn.Module):
             nn.Flatten(1),
             nn.Linear(12 * 7 * 7, 512),
             nn.ReLU(),
-            nn.Linear(512, 1)
+            nn.Linear(512, 1),
+            nn.Tanh()
         )
 
         # output is 1
@@ -40,11 +41,11 @@ class Connect4NN(nn.Module):
     def __init__(self):
         super().__init__()
         
-        # input is 3 x 6 x 7
+        # input is 2 x 6 x 7
         pad = nn.ZeroPad2d((0, 0, 1, 0))
 
         inp_nn = nn.Conv2d(
-            in_channels = 3,
+            in_channels = 2,
             out_channels = 6,
             kernel_size = (3, 3),
             padding=(1, 1)
@@ -62,7 +63,7 @@ class Connect4NN(nn.Module):
         self.value_head = Connect4ValueHead()
 
     def forward(self, x):
-        # Input has shape 3 x ROWS x COLS
+        # Input has shape 2 x ROWS x COLS
         x = self.inp(x)
         x = self.middle(x)
         policy = self.policy_head(x)

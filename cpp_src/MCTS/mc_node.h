@@ -30,8 +30,7 @@ public:
     // terminal constructor
     MCNode(
         MCNode * parent,
-        game::move_id move_from_parent,
-        double terminal_eval
+        game::move_id move_from_parent
     );
 
     void update_eval(double v);

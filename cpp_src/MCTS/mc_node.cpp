@@ -12,11 +12,11 @@ MCNode::MCNode(
 ){
     this->legal_moves = legal_moves;
     this->parent = parent;
-    this->plays = 1;
+    this->plays = 0;
     this->is_terminal = false;
     this->move_from_parent = move_from_parent;
 
-    this->value_approx = nn_evaluation.v;
+    // this->value_approx = nn_evaluation.v;
 
     this->children = std::map<game::move_id, MCNode *>();
     for(auto move_id : legal_moves){
@@ -29,14 +29,12 @@ MCNode::MCNode(
 
 MCNode::MCNode(
     MCNode * parent,
-    game::move_id move_from_parent,
-    double terminal_eval
+    game::move_id move_from_parent
 ) {
     this->parent = parent;
-    this->plays = 1;
+    this->plays = 0;
     this->is_terminal = true;
     this->move_from_parent = move_from_parent;
-    this->value_approx = terminal_eval;
     this->children = std::map<game::move_id, MCNode *>();
 }
 
@@ -73,7 +71,13 @@ std::map<game::move_id, int> MCNode::visit_count_map(){
     std::map<game::move_id, int> mp;
 
     for(auto &kv: this->children){
-        mp[kv.first] = kv.second->plays;
+        int vc = 0;
+
+        if(kv.second != nullptr){
+            vc = kv.second->plays;
+        }
+
+        mp[kv.first] = vc;
     }
 
     return mp;
@@ -82,7 +86,7 @@ std::map<game::move_id, int> MCNode::visit_count_map(){
 void MCNode::update_eval(double v){
 
     this->plays++;
-    int n = this->plays;
+    double n = (double) this->plays;
     this->value_approx = ((n - 1) / n) * this->value_approx + (1 / n) * v;
 
 }

@@ -2,6 +2,7 @@
 
 #include "../base/board.h"
 #include "../games/game.h"
+#include "../base/types.h"
 #include <map>
 #include <memory>
 #include <torch/torch.h>
@@ -15,6 +16,7 @@ namespace nn {
         at::Tensor target_policy;
         at::Tensor state;
         double outcome;
+        pp::Player player;
         std::string moves;
     };
     

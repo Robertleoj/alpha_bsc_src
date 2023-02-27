@@ -34,19 +34,18 @@ void Agent::update_tree(
     tree->move(move_id);
 
     if(!this->game->is_terminal() && this->tree->root != nullptr){
-        auto dir_noise = utils::dirichlet_dist(
-            config::hp["dirichlet_alpha"].get<double>(), 
-            this->tree->root->legal_moves.size()
-        );
-
         if(this->use_dirichlet_noise) {
+            auto dir_noise = utils::dirichlet_dist(
+                config::hp["dirichlet_alpha"].get<double>(), 
+                this->tree->root->legal_moves.size()
+            );
             this->tree->root->add_noise(dir_noise);
         }
     }
 }
 
 
-double Agent::PUCT(MCNode * node, MCNode * childnode){
+double Agent::PUCT(MCNode * node, game::move_id move){
     /*
     PUCT(s, a) = 
         V + c * P(a|s)(\sqrt{N} / (1 + n))
@@ -55,18 +54,23 @@ double Agent::PUCT(MCNode * node, MCNode * childnode){
     V = evaluations for the child node
     n = number of simulations for child node
     N = simulations for current node
-    c = 4
+    c = hp
     */
+
+    double P = node->p_map[move];
+    double c = config::hp["PUCT_c"].get<double>(); 
+
+    MCNode * childnode = node->children[move];
+
     if(childnode == nullptr){
-        throw std::runtime_error("No child node");
+        return c * P;
+        // throw std::runtime_error("No child node");
     }
     
     double V = childnode->value_approx;
     double n = childnode->plays;
-    double P = node->p_map[childnode->move_from_parent];
     double N = node->plays;
 
-    double c = config::hp["PUCT_c"].get<double>(); 
 
     return V + c *P * sqrt(N) / (1 + n);
 }
@@ -74,11 +78,11 @@ double Agent::PUCT(MCNode * node, MCNode * childnode){
 double Agent::outcome_to_value(out::Outcome oc){
     switch(oc){
         case out::Outcome::Loss:
-            return 0;
+            return -1;
         case out::Outcome::Win:
             return 1;
         case out::Outcome::Tie:
-            return 0.5;
+            return 0;
         default:
             throw std::runtime_error("Undecided outcome");
     }
@@ -88,12 +92,12 @@ double Agent::eval_for_player(double v, pp::Player player){
     if(player == pp::First){
         return v;
     } else {
-        return 1 - v;
+        return -v;
     }
 }
 
 double Agent::switch_eval(double v) {
-    return 1 - v;
+    return -v;
 }
 
 std::pair<MCNode *, double> Agent::selection(){
@@ -107,12 +111,10 @@ std::pair<MCNode *, double> Agent::selection(){
             v = this->outcome_to_value(game->outcome());
             new_node = new MCNode(
                 nullptr,
-                -1,
-                v
+                -1
             );
         } else {
             auto evaluation = this->eval_func(this->game->get_board());
-            evaluation->v = this->eval_for_player(evaluation->v, this->game->get_to_move());
 
             new_node = new MCNode(
                 nullptr,
@@ -131,7 +133,7 @@ std::pair<MCNode *, double> Agent::selection(){
         
         this->tree->root = new_node;
 
-        return std::make_pair(new_node, v);
+        return std::make_pair(new_node, this->switch_eval(v));
     }
 
     MCNode * current_node = tree->root;
@@ -141,7 +143,7 @@ std::pair<MCNode *, double> Agent::selection(){
     MCNode * next_node = nullptr;
     game::move_id best_move;
 
-    MCNode * child_node = nullptr;
+    // MCNode * child_node = nullptr;
 
     while(true){
         // find best node
@@ -156,74 +158,67 @@ std::pair<MCNode *, double> Agent::selection(){
         auto &children = current_node->children;
 
         for(auto mv: legal_moves){
-            if(children[mv] == nullptr){
+            uct = PUCT(current_node, mv);
 
-                // update state
-                this->game->make(mv);
-                
-                MCNode * new_node;
-                double v;
-                if(game->is_terminal()){
-                    v = this->outcome_to_value(game->outcome());
-                    new_node = new MCNode(
-                        current_node,
-                        mv,
-                        v
-                    );
-                } else {
-
-                    auto evaluation = this->eval_func(this->game->get_board());
-                    evaluation->v = this->eval_for_player(evaluation->v, this->game->get_to_move());
-
-                    // Make new node 
-                    new_node = new MCNode(
-                        current_node,
-                        this->game->moves(),
-                        mv,
-                        *evaluation
-                    );
-                    v = evaluation->v;
-                }
-
-                children[mv] = new_node;
-
-                // return new node
-                return std::make_pair(new_node, v);
-    
-            } else {
-                
-                // Get uct value
-                child_node = children[mv];
-                uct = PUCT(current_node, child_node);
-
-                // Update 
-                if(uct > max_uct){
-                    max_uct = uct;
-                    next_node = child_node;
-                    best_move = mv;
-                }
+            if(uct > max_uct){
+                max_uct = uct;
+                next_node = children[mv];
+                best_move = mv;
             }
         }
 
-        this->game->make(best_move);
 
-        current_node = next_node;
-        next_node = nullptr;
-        child_node = nullptr;
+        game->make(best_move);
+
+        if(next_node == nullptr){
+            // create new node
+            MCNode * new_node = nullptr;
+            double v;
+
+
+            if(game->is_terminal()){
+                v = this->outcome_to_value(game->outcome());
+
+                new_node = new MCNode(
+                    current_node,
+                    best_move
+                );
+            } else {
+
+                auto evaluation = this->eval_func(this->game->get_board());
+
+                // Make new node 
+                new_node = new MCNode(
+                    current_node,
+                    this->game->moves(),
+                    best_move,
+                    *evaluation
+                );
+                v = evaluation->v;
+            }
+
+
+            children[best_move] = new_node;
+
+            return std::make_pair(new_node, this->switch_eval(v));
+        } else {
+            //continue selection
+            current_node = next_node;
+            next_node = nullptr;
+        }
     }
 }
 
 
 void Agent::backpropagation(MCNode * node, double v){
-    bool first = true;
+    // bool first = true;
 
     while(true){
 
-        if(!first){
-            node->plays++;
-            node->update_eval(v);
-        }
-        first = false;
+        // if(!first){
+        node->update_eval(v);
+        // }
+        // first = false;
 
         if (node->parent == nullptr) {
             break;

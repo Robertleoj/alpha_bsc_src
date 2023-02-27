@@ -1,3 +1,4 @@
+#!/bin/python3
 from sys import argv
 import os
 
@@ -9,12 +10,17 @@ if len(argv) >= 2:
 
 def self_play():
     os.chdir('./cpp_src')
-    os.system('./self_play')
+    exit_code = os.system('./self_play')
+    if(exit_code != 0):
+        exit(0)
+
     os.chdir('..')
 
 def train():
     os.chdir('./py_src')
-    os.system('python3 train.py')
+    exit_code = os.system('python3 train.py')
+    if(exit_code != 0):
+        exit(0)
     os.chdir('..')
 
 for i in range(num_cycles):
