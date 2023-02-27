@@ -10,12 +10,14 @@ Agent::Agent(
     game::IGame * game, 
     pp::Player player, 
     eval_f eval_func,
-    bool apply_noise
+    bool apply_noise,
+    bool delete_on_move
 ) : game(game), player(player)
 {  
     this->eval_func = eval_func;
     this->tree = new MCTree();
     this->use_dirichlet_noise = apply_noise;
+    this->delete_on_move = delete_on_move;
 }
 
 void Agent::switch_sides(){ 
@@ -31,18 +33,23 @@ Agent::~Agent(){
 void Agent::update_tree(
     game::move_id move_id
 ){
-    this->tree->move(move_id);
 
-    if(!this->game->is_terminal() && this->tree->root != nullptr){
+    if(this->delete_on_move){
+        delete this->tree;
+        this->tree = new MCTree();
+    } else {
+        this->tree->move(move_id);
 
-        if(this->use_dirichlet_noise) {
-            auto dir_noise = utils::dirichlet_dist(
-                config::hp["dirichlet_alpha"].get<double>(), 
-                this->tree->root->legal_moves.size()
-            );
-            this->tree->root->add_noise(dir_noise);
+        if(!this->game->is_terminal() && this->tree->root != nullptr){
+
+            if(this->use_dirichlet_noise) {
+                auto dir_noise = utils::dirichlet_dist(
+                    config::hp["dirichlet_alpha"].get<double>(), 
+                    this->tree->root->legal_moves.size()
+                );
+                this->tree->root->add_noise(dir_noise);
+            }
         }
-
     }
 }
 
@@ -69,7 +76,12 @@ double Agent::PUCT(MCNode * node, game::move_id move){
     MCNode * childnode = node->children[move];
 
     if(childnode != nullptr){
-        V = childnode->value_approx;
+        /*
+         value-approx is the evaluation of the node
+         with respect to the player whose move it is in that node
+         thus we reverse the evaluation
+        */
+        V = this->switch_eval(childnode->value_approx);
         n = childnode->plays;
     }
 
@@ -102,6 +114,9 @@ double Agent::switch_eval(double v) {
 }
 
 std::pair<MCNode *, double> Agent::selection(){
+    /*
+        Returns a pair of the newly created node and the evaluation of that node from the perspective of the player whose move it is
+    */
 
     // If root doesn't exist, create it
     if (this->tree->root == nullptr)
@@ -134,7 +149,7 @@ std::pair<MCNode *, double> Agent::selection(){
         
         this->tree->root = new_node;
 
-        return std::make_pair(new_node, this->switch_eval(v));
+        return std::make_pair(new_node, v);
     }
 
     MCNode * current_node = tree->root;
@@ -201,7 +216,7 @@ std::pair<MCNode *, double> Agent::selection(){
 
             children[best_move] = new_node;
 
-            return std::make_pair(new_node, this->switch_eval(v));
+            return std::make_pair(new_node, v);
         } else {
             //continue selection
             current_node = next_node;

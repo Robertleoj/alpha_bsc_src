@@ -85,7 +85,7 @@ void print_pucts(Agent * ag) {
         p = root->p_map[mv];
 
         if(child != nullptr){
-            v = child->value_approx;
+            v = -child->value_approx;
         }
 
         ss << mv 

@@ -13,13 +13,15 @@ public:
     MCTree * tree = nullptr;
     eval_f eval_func;
     bool use_dirichlet_noise = true;
+    bool delete_on_move;
 
 
     Agent(
         game::IGame * game, 
         pp::Player player, 
         eval_f eval_func,
-        bool apply_noise = true
+        bool apply_noise = true,
+        bool delete_on_move = true
     );
 
     ~Agent();
