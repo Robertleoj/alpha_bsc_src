@@ -74,10 +74,12 @@ void play_user(){
 void print_pucts(Agent * ag) {
     std::cout << "PUCT, evaluations" << std::endl;
     MCNode * root = ag->tree->root;
+    std::vector<std::pair<game::move_id, std::string>> moves;
     for(auto &mv: root->legal_moves){
 
         double v = -5;
         double p = -1;
+        std::stringstream ss;
 
         MCNode * child = root->children[mv];
         p = root->p_map[mv];
@@ -86,11 +88,22 @@ void print_pucts(Agent * ag) {
             v = child->value_approx;
         }
 
-        std::cout << mv 
+        ss << mv 
                   << ": PUCT=" << ag->PUCT(ag->tree->root, mv) 
                   << ", v=" <<  v 
                   << ", p=" << p <<  std::endl;
+
+        moves.push_back(std::make_pair(mv, ss.str()));
     }
+    // print in order of move_id
+    std::sort(moves.begin(), moves.end(), [](const std::pair<game::move_id, std::string> &a, const std::pair<game::move_id, std::string> &b) {
+        return a.first < b.first;
+    });
+
+    for(auto &p : moves){
+        std::cout << p.second;
+    }
+
 }
 
 void play_self(std::string model1, std::string model2){

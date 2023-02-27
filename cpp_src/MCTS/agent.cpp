@@ -59,18 +59,17 @@ double Agent::PUCT(MCNode * node, game::move_id move){
 
     double P = node->p_map[move];
     double c = config::hp["PUCT_c"].get<double>(); 
+    double N = node->plays;
+
+    double V = 0;
+    double n = 0;
 
     MCNode * childnode = node->children[move];
 
-    if(childnode == nullptr){
-        return c * P;
-        // throw std::runtime_error("No child node");
+    if(childnode != nullptr){
+        V = childnode->value_approx;
+        n = childnode->plays;
     }
-    
-    double V = childnode->value_approx;
-    double n = childnode->plays;
-    double N = node->plays;
-
 
     return V + c *P * sqrt(N) / (1 + n);
 }
