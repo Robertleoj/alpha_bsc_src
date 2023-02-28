@@ -11,65 +11,10 @@
 #include "./utils/utils.h"
 
 
-
-
-
-void play_user(){
-    nn::NN * neural_net = new nn::Connect4NN("../models/connect4/18.pt");
-
-    game::IGame* game = new games::Connect4();
-
-    auto efunc = [neural_net](Board b){
-        return std::move(neural_net->eval_state(b));
-    };
-
-    Agent agent(game, pp::First, efunc);
-
-    bool agent_turn = true;
-
-    game->display(std::cout);
-    std::cout << std::endl;
-
-    while(!game->is_terminal()){
-
-        if(agent_turn){
-            agent.search(config::hp["search_depth"].get<int>());
-
-            auto visit_counts = agent.root_visit_counts();
-
-            // get best move id
-
-            game::move_id best_move;
-            int best_visit_count = -1;
-
-            for(auto &p : visit_counts) {
-                if(p.second > best_visit_count){
-                    best_move = p.first;
-                    best_visit_count = p.second;
-                }
-            }
-
-            std::string move_str = game->move_as_str(best_move);
-
-            game->make(best_move);
-            agent.update_tree(best_move);
-
-            std::cout << "Agent made move "  << move_str << std::endl;
-        } else {
-            std::cout << "Move: ";
-            int user_move;
-            std::cin >> user_move;
-            std::cout << std::endl << "You made move " << user_move << std::endl;
-            game->make(user_move);
-            agent.update_tree(user_move);
-        }
-
-        game->display(std::cout);
-        std::cout << std::endl;
-
-        agent_turn = !agent_turn;
-    }
+std::string model_path(std::string model_name){
+    return utils::string_format("../models/connect4/%s.pt", model_name.c_str());
 }
+
 
 void print_pucts(Agent * ag) {
     std::cout << "PUCT, evaluations" << std::endl;
@@ -106,10 +51,74 @@ void print_pucts(Agent * ag) {
 
 }
 
+
+
+void play_user(std::string model_name){
+    nn::NN * neural_net = new nn::Connect4NN(model_path(model_name));
+
+    game::IGame* game = new games::Connect4();
+
+    auto efunc = [neural_net](Board b){
+        return std::move(neural_net->eval_state(b));
+    };
+
+    Agent agent(game, pp::First, efunc);
+
+    bool agent_turn = false;
+
+    game->display(std::cout);
+    std::cout << std::endl;
+
+    while(!game->is_terminal()){
+
+        if(agent_turn){
+            agent.search(config::hp["search_depth"].get<int>());
+
+            auto visit_counts = agent.root_visit_counts();
+
+            // get best move id
+
+            game::move_id best_move;
+            int best_visit_count = -1;
+
+            for(auto &p : visit_counts) {
+                if(p.second > best_visit_count){
+                    best_move = p.first;
+                    best_visit_count = p.second;
+                }
+            }
+
+            std::string move_str = game->move_as_str(best_move);
+
+            print_pucts(&agent);
+            std::cout << "Agent made move "  << move_str << std::endl;
+
+            game->make(best_move);
+            agent.update_tree(best_move);
+
+        } else {
+            std::cout << "Move: ";
+            int user_move;
+            std::cin >> user_move;
+            std::cout << std::endl << "You made move " << user_move << std::endl;
+            game->make(user_move);
+            agent.update_tree(user_move);
+        }
+
+        game->display(std::cout);
+        std::cout << std::endl;
+
+        agent_turn = !agent_turn;
+    }
+}
+
+
+
 void play_self(std::string m1, std::string m2){
 
-    std::string model1 = utils::string_format("../models/connect4/%s.pt", m1.c_str());
-    std::string model2 = utils::string_format("../models/connect4/%s.pt", m2.c_str());
+    
+    std::string model1 = model_path(m1);
+    std::string model2 = model_path(m2);
 
 
     nn::NN * neural_net = new nn::Connect4NN(model1);
@@ -188,5 +197,9 @@ int main(int argc, char * argv[]){
     config::initialize();
     srand(time(NULL));
 
-    play_self(argv[1], argv[2]);
+    if(argc == 2){
+        play_user(argv[1]);
+    } else {
+        play_self(argv[1], argv[2]);
+    }
 }

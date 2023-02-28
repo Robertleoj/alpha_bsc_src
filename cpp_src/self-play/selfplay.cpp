@@ -204,6 +204,8 @@ void SelfPlay::thread_play(
 
         std::stringstream moves;
 
+        int argmax_depth = config::hp["depth_until_pi_argmax"].get<int>();
+
         while(!game->is_terminal()){
 
             agent->search(
@@ -213,7 +215,9 @@ void SelfPlay::thread_play(
             auto visit_counts = agent->root_visit_counts();
 
             // std::cout << "Making policy tensor" << std::endl;
-            auto policy_tensor =this->neural_net->visit_count_to_policy_tensor(visit_counts);
+            std::map<game::move_id, double> normalized_visit_counts = utils::softmax_map(visit_counts);
+
+            auto policy_tensor =this->neural_net->move_map_to_policy_tensor(normalized_visit_counts);
             // std::cout << "made policy tensor" << std::endl;
 
             // std::cout << "Making state tensor" << std::endl;
@@ -223,10 +227,6 @@ void SelfPlay::thread_play(
             // get best move id
             game::move_id best_move;
             int best_visit_count = -1;
-            std::string move_str = game->move_as_str(best_move);
-
-            moves << move_str << ";";
-
 
             nn::TrainingSample ts = {
                 policy_tensor,
@@ -240,19 +240,18 @@ void SelfPlay::thread_play(
 
             samples.push_back(ts);
 
-
-            for(auto &p : visit_counts) {
-                if(p.second > best_visit_count){
-                    best_move = p.first;
-                    best_visit_count = p.second;
-                }
+            if(num_moves < argmax_depth){
+                best_move = utils::sample_multinomial(normalized_visit_counts);
+            } else {
+                best_move = utils::argmax_map(visit_counts);
             }
 
-            // std::cout << "best move: " << game->move_as_str(best_move) << std::endl;
+            std::string move_str = game->move_as_str(best_move);
+            moves << move_str << ";";
 
             game->make(best_move);
+            num_moves++;
 
-            // game->display(std::cout);
             agent->update_tree(best_move);
         }
 
@@ -272,9 +271,9 @@ void SelfPlay::thread_play(
 
         delete agent;
         delete game;
-        std::cout << "Games left: " << *games_left << std::endl;
+        std::cout << "Games left: " << *games_left + *num_active_threads << std::endl;
     }
     int at = --(*num_active_threads);
     nn_q_wait_cv->notify_one();
-    std::cout << "Active threads left: " << at << std::endl;
+    // std::cout << "Active threads left: " << at << std::endl;
 }

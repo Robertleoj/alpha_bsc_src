@@ -130,27 +130,25 @@ namespace nn{
     }
 
 
-    at::Tensor Connect4NN::visit_count_to_policy_tensor(
-        std::map<game::move_id, int> visit_counts
+    at::Tensor Connect4NN::move_map_to_policy_tensor(
+        std::map<game::move_id, double> prob_map
     ) {
+        /*
+            Accepts a normalized map of move ids to probabilities
+        */
 
         at::Tensor policy = torch::zeros({7});
 
-        // maintain sum to normalize
-        double sm = 0;
-
-
-        for(auto &p : visit_counts){
+        for(auto &p : prob_map){
             // mvoe id is col + 1
             int idx = p.first - 1;
-            int cnt = p.second;
-            sm += cnt;
-            policy[idx] = (double) cnt;
+            double prob = p.second;
+            policy[idx] = prob;
         }
 
-
-        for(int i = 0; i < 7; i++){
-            policy[i] /= sm;
+        
+        if(abs(policy.sum().item().toFloat() - 1.) >= 0.001 ){
+            throw std::runtime_error("policy tensor does not sum to 1");
         }
 
         return policy;

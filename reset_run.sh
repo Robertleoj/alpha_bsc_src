@@ -1,9 +1,9 @@
 #!/bin/bash
 
 
-rm ./db/db.db
-rm ./models/*/*.pt
-rm ./py_src/training_data/*/*.pt
+rm ./db/db.db 
+rm ./models/*/*.pt 
+rm ./py_src/training_data/*/*.pt 
 
 source ./py_src/.venv/bin/activate
 

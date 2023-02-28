@@ -63,6 +63,7 @@ add_executable(self_play
     utils/random.cpp
     utils/dirichlet.h
     utils/dirichlet.cpp
+    utils/colors.h
     games/move.h
     games/game.h
     games/breakthrough.h
@@ -106,6 +107,7 @@ add_executable(play_agent
     utils/random.cpp
     utils/dirichlet.h
     utils/dirichlet.cpp
+    utils/colors.h
     games/move.h
     games/game.h
     games/breakthrough.h

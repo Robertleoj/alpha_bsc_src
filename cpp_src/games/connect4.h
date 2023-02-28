@@ -1,7 +1,3 @@
-//
-// Created by Yngvi Björnsson on 7.5.2022.
-//
-
 #pragma once
 
 #include <ostream>
@@ -9,6 +5,8 @@
 #include "game.h"
 #include "../base/bitboard.h"
 #include "../base/board.h"
+#include "../utils/colors.h"
+
 
 
 namespace games {
@@ -218,7 +216,7 @@ namespace games {
                         != 0ULL
                     ) {
                         // blue X
-                        os << "\033[34m" << "X" << "\033[0m";
+                        os << colors::BLUE << "X" << colors::RESET;
                     }
 
                     else if (
@@ -226,7 +224,7 @@ namespace games {
                         != 0ULL
                     ) {
                         // green O
-                        os << "\033[32m" << "O" << "\033[0m";
+                        os << colors::GREEN << "O" << colors::RESET;
                     }
                     else { os << ' '; }
                     os << '|';
