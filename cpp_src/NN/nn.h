@@ -32,8 +32,8 @@ namespace nn {
 
         virtual std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) {};
         virtual at::Tensor state_to_tensor(Board board){}
-        virtual at::Tensor visit_count_to_policy_tensor(
-            std::map<game::move_id, int>
+        virtual at::Tensor move_map_to_policy_tensor(
+            std::map<game::move_id, double>
         ){}
         virtual std::unique_ptr<NNOut> make_nnout_from_tensors(at::Tensor policy, at::Tensor value){}
     };

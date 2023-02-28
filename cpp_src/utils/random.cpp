@@ -38,4 +38,18 @@ namespace utils {
 
         return freqs;
     }
+
+    int sample_multinomial(const std::vector<double>& probs){
+        double r = normalized_double();
+
+        double sm = 0;
+        
+        for(int i = 0; i < probs.size(); i++){
+            sm += probs[i];
+            if(sm >= r){
+                return i;
+            }
+        }
+        return probs.size() - 1;
+    }
 }

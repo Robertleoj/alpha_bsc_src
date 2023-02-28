@@ -5,6 +5,7 @@ from pathlib import Path
 mdl = Connect4NN()
 
 # traced = torch.jit.trace(mdl, torch.randn(5, 3, 6, 7))
+print("Initialized model")
 
 serialized = torch.jit.script(mdl)
 path = Path("../models/connect4")
