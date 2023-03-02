@@ -14,7 +14,7 @@ MCNode::MCNode(
     MCNode * parent, 
     std::vector<game::move_id> legal_moves,
     game::move_id move_from_parent,
-    nn::move_dist &nn_prior
+    nn::move_dist * nn_prior
 ) : legal_moves(legal_moves),
     parent(parent),
     move_from_parent(move_from_parent)
@@ -27,7 +27,7 @@ MCNode::MCNode(
         this->children[move_id] = nullptr;
     }
 
-    this->make_prior(&nn_prior);
+    this->make_prior(nn_prior);
 }
 
 

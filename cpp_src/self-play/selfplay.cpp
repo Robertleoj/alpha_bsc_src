@@ -31,64 +31,56 @@ SelfPlay::SelfPlay(std::string game) {
     std::cout << "made neural net" << std::endl;
 }
 
+void SelfPlay::start_threads(std::thread *threads, ThreadData *thread_data, int num_threads)
+{
+    for(int i = 0; i < num_threads; i++){
+        threads[i] = std::thread(
+            &SelfPlay::thread_play, this, i, thread_data
+        );
+    }
+}
+
+/**
+ * @brief Starts the self play process
+ * 
+ */
 void SelfPlay::self_play(){
     int num_threads = config::hp["num_parallel_games"].get<int>();
 
-    std::mutex queue_mutex;
-    std::mutex db_mutex;
-
-    std::queue<eval_request> eval_requests;
 
     std::thread threads[num_threads];
 
-    bool request_completed[num_threads];
+    // std::atomic<int> games_left(hp::self_play_num_games);
+    int num_games = config::hp["self_play_num_games"].get<int>();
 
-    memset(request_completed, false, sizeof(request_completed));
+    bool req_completed[num_threads];
+    memset(req_completed, false, sizeof(req_completed));
 
-    std::mutex req_comp_mutex;
-    std::mutex results_mutex;
 
     std::unique_ptr<nn::NNOut> evaluations[num_threads];
 
-    std::condition_variable eval_cv;
-
-    std::condition_variable nn_q_wait_cv;
-
-    // std::atomic<int> games_left(hp::self_play_num_games);
-    std::atomic<int> games_left(
-        config::hp["self_play_num_games"].get<int>()
+    ThreadData thread_data(
+        num_threads, 
+        num_games, 
+        (bool *)req_completed, 
+        (std::unique_ptr<nn::NNOut> *)evaluations
     );
-    std::atomic<int> num_active_threads(num_threads);
 
-    for(int i = 0; i < num_threads; i++){
-        threads[i] = std::thread(
-            &SelfPlay::thread_play, this,
-            i, 
-            &eval_requests,
-            &queue_mutex,
-            &db_mutex,
-            (bool *) request_completed,
-            &req_comp_mutex,
-            (std::unique_ptr<nn::NNOut> *) evaluations,
-            &eval_cv,
-            &nn_q_wait_cv,
-            &results_mutex,
-            &games_left,
-            &num_active_threads
-        );
-    }
+    this->start_threads(threads, &thread_data, num_threads);
 
-    auto bs = [&num_active_threads](){
+
+    auto bs = [&thread_data](){
         return std::min(
-            (int)num_active_threads, 
+            (int)thread_data.num_active_threads, 
             config::hp["batch_size"].get<int>()
         );
     };
 
-    while(num_active_threads > 0){
-        std::unique_lock<std::mutex> nn_q_lock(queue_mutex);
-        nn_q_wait_cv.wait(nn_q_lock, [&eval_requests, &num_active_threads, &bs](){
-            return eval_requests.size() >= bs();
+    while(thread_data.num_active_threads > 0){
+        std::unique_lock<std::mutex> nn_q_lock(thread_data.q_mutex);
+
+        thread_data.q_cv.wait(nn_q_lock, [&thread_data, &bs](){
+            return thread_data.eval_q.size() >= bs();
         });
 
         if(bs() == 0){
@@ -100,10 +92,11 @@ void SelfPlay::self_play(){
         std::vector<at::Tensor> states;
 
         for(int i = 0; i < bs(); i++){
-            auto p = eval_requests.front();
+            auto p = thread_data.eval_q.front();
+            thread_data.eval_q.pop();
+
             thread_indices.push_back(p.first);
             states.push_back(p.second);
-            eval_requests.pop();
         }
 
         nn_q_lock.unlock();
@@ -116,10 +109,10 @@ void SelfPlay::self_play(){
 
             evaluations[thread_idx] = std::move(result[i]);
 
-            request_completed[thread_idx] = true;
+            thread_data.req_completed[thread_idx] = true;
         }
 
-        eval_cv.notify_all();
+        thread_data.eval_cv.notify_all();
     }
 
     for(auto &t: threads){
@@ -127,23 +120,21 @@ void SelfPlay::self_play(){
     }
 }
 
+/**
+ * @brief Plays games on separate threads until all games are completed
+ * 
+ * 
+ * 
+ * @param thread_idx 
+ * @param thread_data
+ */
 void SelfPlay::thread_play(
-    int thread_idx, 
-    std::queue<eval_request>* q,
-    std::mutex * q_mutex,
-    std::mutex * db_mutex,
-    bool * req_completed,
-    std::mutex * req_comp_mutex,
-    std::unique_ptr<nn::NNOut> * evaluations,
-    std::condition_variable * eval_cv,
-    std::condition_variable * nn_q_wait_cv,
-    std::mutex * results_mutex,
-    std::atomic<int> * games_left,
-    std::atomic<int> * num_active_threads
+    int thread_idx,
+    ThreadData * thread_data
 ) {
 
-    while((*games_left) > 0){
-        (*games_left)--;
+    while((thread_data->games_left) > 0){
+        (thread_data->games_left)--;
 
         game::IGame* game;
 
@@ -157,39 +148,33 @@ void SelfPlay::thread_play(
         // evaluation function for agent
         eval_f eval_func = [
             thread_idx, 
-            q_mutex, 
-            q,
-            req_completed,
-            req_comp_mutex,
-            evaluations,
-            eval_cv,
-            nn_q_wait_cv,
-            results_mutex,
+            &thread_data,
             nn_ptr
         ](Board b){
             
             auto t = nn_ptr->state_to_tensor(b);
             // Put item in queue
-            q_mutex->lock();
-            q->push({thread_idx, t});
-            q_mutex->unlock();
+            thread_data->q_mutex.lock();
+            thread_data->eval_q.push({thread_idx, t});
+            thread_data->q_mutex.unlock();
 
-            nn_q_wait_cv->notify_one();
+            thread_data->q_cv.notify_one();
 
             // Wait for result
-            std::unique_lock<std::mutex> lq(*req_comp_mutex);
-            eval_cv->wait(lq, [req_completed, thread_idx](){
-                return req_completed[thread_idx];
+            std::unique_lock<std::mutex> lq(thread_data->req_completed_mutex);
+
+            thread_data->eval_cv.wait(lq, [thread_data, thread_idx](){
+                return thread_data->req_completed[thread_idx];
             });
             
-            req_completed[thread_idx] = false;
+            thread_data->req_completed[thread_idx] = false;
             lq.unlock();
 
             // Get results
-            results_mutex->lock();
-            auto result = std::move(evaluations[thread_idx]);
-            evaluations[thread_idx] = nullptr;
-            results_mutex->unlock();
+            thread_data->results_mutex.lock();
+            auto result = std::move(thread_data->evaluations[thread_idx]);
+            thread_data->evaluations[thread_idx] = nullptr;
+            thread_data->results_mutex.unlock();
             return result;
         };
         
@@ -225,7 +210,6 @@ void SelfPlay::thread_play(
 
             // get best move id
             game::move_id best_move;
-            int best_visit_count = -1;
 
             nn::TrainingSample ts = {
                 policy_tensor,
@@ -263,16 +247,15 @@ void SelfPlay::thread_play(
         }
 
         // now we need to insert the training data into the db
-        db_mutex->lock();
+        thread_data->db_mutex.lock();
         // db::DB db(this->game);
         this->db->insert_training_samples(samples);
-        db_mutex->unlock();
+        thread_data->db_mutex.unlock();
 
         delete agent;
         delete game;
-        std::cout << "Games left: " << *games_left + *num_active_threads << std::endl;
+        std::cout << "Games left: " << thread_data->games_left + thread_data->num_active_threads << std::endl;
     }
-    int at = --(*num_active_threads);
-    nn_q_wait_cv->notify_one();
+    thread_data->q_cv.notify_one();
     // std::cout << "Active threads left: " << at << std::endl;
 }

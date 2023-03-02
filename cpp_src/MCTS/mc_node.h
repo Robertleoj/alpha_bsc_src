@@ -18,7 +18,7 @@ public:
         MCNode * parent, 
         std::vector<game::move_id> legal_moves,
         game::move_id move_from_parent, 
-        nn::move_dist& nn_prior
+        nn::move_dist * nn_prior
     );
     
     //// terminal constructor
