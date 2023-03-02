@@ -134,9 +134,9 @@ namespace db {
 
 
 
-    void DB::insert_training_samples(std::vector<nn::TrainingSample> &samples) {
+    void DB::insert_training_samples(std::vector<nn::TrainingSample> *samples) {
         sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
-        for(auto &sample : samples){
+        for(auto &sample : *samples){
 
             sqlite3_stmt * stmt = nullptr;
             auto q = sqlite3_prepare_v2(

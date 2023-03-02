@@ -17,7 +17,7 @@ namespace db {
 
         void get_game_id();
 
-        void insert_training_samples(std::vector<nn::TrainingSample>&);
+        void insert_training_samples(std::vector<nn::TrainingSample> *);
         ~DB();
 
     private:
