@@ -32,6 +32,13 @@ SelfPlay::SelfPlay(std::string game) {
     std::cout << "made neural net" << std::endl;
 }
 
+/**
+ * @brief Starts `num_theads` threads, each of which plays a game of self-play.
+ * 
+ * @param threads 
+ * @param thread_data 
+ * @param num_threads 
+ */
 void SelfPlay::start_threads(std::thread *threads, ThreadData *thread_data, int num_threads)
 {
     for(int i = 0; i < num_threads; i++){
@@ -68,6 +75,13 @@ void SelfPlay::pop_batch(
     }
 }
 
+/**
+ * @brief Evaluate a batch of states.
+ * 
+ * @param states 
+ * @param thread_indices 
+ * @param thread_data 
+ */
 void SelfPlay::eval_batch(std::vector<at::Tensor> &states, std::vector<int> &thread_indices, ThreadData &thread_data)
 {
     auto result = this->neural_net->eval_tensors(states);
@@ -81,6 +95,12 @@ void SelfPlay::eval_batch(std::vector<at::Tensor> &states, std::vector<int> &thr
         thread_data.eval_cv.notify_all();
 }
 
+/**
+ * @brief Main thread work loop. Waits until the queue contains a batch, pops it and evaluates it.
+ * 
+ * @param thread_data 
+ * @param bs 
+ */
 void SelfPlay::active_thread_work(ThreadData &thread_data, std::function<unsigned long()> bs)
 {
     while(thread_data.num_active_threads > 0){
@@ -194,6 +214,11 @@ eval_f SelfPlay::make_eval_function(int thread_idx, ThreadData * thread_data, nn
     };   
 }
 
+/**
+ * @brief Gets the correct game instance based on the game name (this->game).
+ * 
+ * @return game::IGame* 
+ */
 game::IGame * SelfPlay::get_game_instance(){
     if(this->game == "connect4"){
         return new games::Connect4();
@@ -205,6 +230,14 @@ game::IGame * SelfPlay::get_game_instance(){
     }
 }
 
+/**
+ * @brief Creates a training sample from the given data.
+ * 
+ * @param normalized_visit_counts 
+ * @param moves 
+ * @param board 
+ * @return nn::TrainingSample 
+ */
 nn::TrainingSample SelfPlay::get_training_sample(
     nn::move_dist normalized_visit_counts,
     std::string moves,
@@ -225,6 +258,26 @@ nn::TrainingSample SelfPlay::get_training_sample(
 }
 
 /**
+ * @brief Selects a move based on the visit counts and the current number of moves.
+ * 
+ * @param visit_count_dist 
+ * @param num_moves 
+ * @return game::move_id 
+ */
+game::move_id SelfPlay::select_move(nn::move_dist visit_count_dist, int num_moves) {
+
+    int argmax_depth = config::hp["depth_until_pi_argmax"].get<int>();
+
+    if(num_moves < argmax_depth){
+        return utils::sample_multinomial(visit_count_dist);
+    } else {
+        return utils::argmax_map(visit_count_dist);
+    }
+}
+
+
+
+/**
  * @brief Plays a single game
  * 
  * @param thread_idx 
@@ -235,59 +288,52 @@ void SelfPlay::thread_game(int thread_idx, ThreadData * thread_data){
     (thread_data->games_left)--;
 
     game::IGame* game = this->get_game_instance();
-    nn::NN * nn_ptr = this->neural_net.get();
 
-    // agent
-    eval_f eval_func = make_eval_function(thread_idx, thread_data, nn_ptr);
+    eval_f eval_func = make_eval_function(thread_idx, thread_data, this->neural_net.get());
     Agent * agent = new Agent(game, eval_func);
-
-    int argmax_depth = config::hp["depth_until_pi_argmax"].get<int>();
 
     std::vector<nn::TrainingSample> samples;
 
-    int num_moves = 0;
-
     std::stringstream moves;
-
+    int num_moves = 0;
     while(!game->is_terminal()){
 
-        agent->search(
-            config::hp["search_depth"].get<int>()
-        );
+        agent->search(config::hp["search_depth"].get<int>());
 
         auto visit_counts = agent->root_visit_counts();
         auto normalized_visit_counts = utils::softmax_map(visit_counts);
 
-        nn::TrainingSample ts = this->get_training_sample(normalized_visit_counts, moves.str(), game->get_board());
-        samples.push_back(ts);
+        samples.push_back(this->get_training_sample(
+            normalized_visit_counts, 
+            moves.str(), 
+            game->get_board()
+        ));
 
-        game::move_id best_move;
+        auto best_move = this->select_move(normalized_visit_counts, num_moves);
 
-        if(num_moves < argmax_depth){
-            best_move = utils::sample_multinomial(normalized_visit_counts);
-        } else {
-            best_move = utils::argmax_map(visit_counts);
-        }
-
-        std::string move_str = game->move_as_str(best_move);
-        moves << move_str << ";";
+        moves << game->move_as_str(best_move) << ";";
 
         game->make(best_move);
-        num_moves++;
-
         agent->update_tree(best_move);
-    }
 
-    std::cout << "finished game" << std::endl;
+        num_moves++;
+    }
 
     this->write_samples(&samples, agent, thread_data, game);
 
     delete agent;
     delete game;
 
-    std::cout << "Games left: " << thread_data->games_left + thread_data->num_active_threads << std::endl;
 }
 
+/**
+ * @brief Writes the training samples to the database
+ * 
+ * @param training_samples 
+ * @param agent 
+ * @param thread_data 
+ * @param game 
+ */
 void SelfPlay::write_samples(
     std::vector<nn::TrainingSample> *training_samples, 
     Agent* agent, 
@@ -319,9 +365,13 @@ void SelfPlay::thread_play(
     ThreadData * thread_data
 ) {
 
-    // play games until all games are completed
     while((thread_data->games_left) > 0){
         this->thread_game(thread_idx, thread_data);
+        std::cout << "finished game" << std::endl;
+        std::cout << "Games left: " 
+                  << thread_data->games_left + thread_data->num_active_threads 
+                  << std::endl;
     }
+
     thread_data->q_cv.notify_one();
 }
