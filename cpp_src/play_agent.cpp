@@ -62,7 +62,7 @@ void play_user(std::string model_name){
         return std::move(neural_net->eval_state(b));
     };
 
-    Agent agent(game, pp::First, efunc);
+    Agent agent(game, efunc);
 
     bool agent_turn = false;
 
@@ -134,8 +134,8 @@ void play_self(std::string m1, std::string m2){
         return std::move(neural_net2->eval_state(b));
     };
 
-    Agent agent1(game, pp::First, efunc1, false);
-    Agent agent2(game, pp::First, efunc2, false);
+    Agent agent1(game, efunc1, false);
+    Agent agent2(game, efunc2, false);
 
     bool agent1_turn = true;
 

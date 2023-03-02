@@ -8,20 +8,15 @@
 
 Agent::Agent(
     game::IGame * game, 
-    pp::Player player, 
     eval_f eval_func,
     bool apply_noise,
     bool delete_on_move
-) : game(game), player(player)
+) : game(game), 
+    eval_func(eval_func), 
+    use_dirichlet_noise(apply_noise), 
+    delete_on_move(delete_on_move) 
 {  
-    this->eval_func = eval_func;
     this->tree = new MCTree();
-    this->use_dirichlet_noise = apply_noise;
-    this->delete_on_move = delete_on_move;
-}
-
-void Agent::switch_sides(){ 
-    // this->player = this->player == pp::First ? pp::Second: pp::First;
 }
 
 Agent::~Agent(){
@@ -30,6 +25,12 @@ Agent::~Agent(){
     }
 }
 
+
+/**
+ * @brief Update the tree. Depending on the config, this can be done by deleting the tree and creating a new one, or by moving the root node to the new state.
+ * 
+ * @param move_id 
+ */
 void Agent::update_tree(
     game::move_id move_id
 ){
@@ -38,33 +39,27 @@ void Agent::update_tree(
         delete this->tree;
         this->tree = new MCTree();
     } else {
+
         this->tree->move(move_id);
 
         if(!this->game->is_terminal() && this->tree->root != nullptr){
-
-            if(this->use_dirichlet_noise) {
-                auto dir_noise = utils::dirichlet_dist(
-                    config::hp["dirichlet_alpha"].get<double>(), 
-                    this->tree->root->legal_moves.size()
-                );
-                this->tree->root->add_noise(dir_noise);
-            }
+            this->apply_noise(this->tree->root);
         }
     }
 }
 
 
+/**
+ * @brief PUCT(s, a) = V + c * P(a|s)(sqrt{N} / (1 + n))\n
+ *  V = evaluations for the child node
+ *  n = number of simulations for child node
+ *  N = simulations for current node
+ *  c = hp
+ * @param node
+ * @param move
+ * @returns PUCT value
+*/
 double Agent::PUCT(MCNode * node, game::move_id move){
-    /*
-    PUCT(s, a) = 
-        V + c * P(a|s)(\sqrt{N} / (1 + n))
-        
-
-    V = evaluations for the child node
-    n = number of simulations for child node
-    N = simulations for current node
-    c = hp
-    */
 
     double P = node->p_map[move];
     double c = config::hp["PUCT_c"].get<double>(); 
@@ -101,6 +96,13 @@ double Agent::outcome_to_value(out::Outcome oc){
     }
 }
 
+/**
+ * @brief Evaluation from the perspective of the player, assumes v is from the perspective of the first player
+ * 
+ * @param v 
+ * @param player 
+ * @return double 
+ */
 double Agent::eval_for_player(double v, pp::Player player){
     if(player == pp::First){
         return v;
@@ -113,110 +115,147 @@ double Agent::switch_eval(double v) {
     return -v;
 }
 
+
+/**
+ * @brief Create new node - assumes the game is in the state the node should represent
+ * 
+ * @param parent 
+ * @param move_id 
+ * @return std::pair<MCNode *, double> 
+ */
+std::pair<MCNode *, double> Agent::make_node(MCNode * parent, game::move_id move_id){
+    MCNode * new_node = nullptr;
+    double v;
+
+    if(game->is_terminal()){
+        v = this->outcome_to_value(game->outcome());
+
+        new_node = new MCNode(
+            parent,
+            move_id
+        );
+    } else {
+
+        auto evaluation = this->eval_func(this->game->get_board());
+
+        // Make new node 
+        new_node = new MCNode(
+            parent,
+            this->game->moves(),
+            move_id,
+            *evaluation
+        );
+
+        if(parent != nullptr){
+            parent->children[move_id] = new_node;
+        }
+
+        v = evaluation->v;
+    }
+
+    return std::make_pair(new_node, v);
+}
+
+
+/**
+ * @brief Applies dirichlet noise to the root node
+ * 
+ * @param node 
+ */
+void Agent::apply_noise(MCNode * node){
+
+    if(!this->use_dirichlet_noise){
+        return;
+    }
+
+    auto noise = utils::dirichlet_dist(
+        config::hp["dirichlet_alpha"].get<double>(), 
+        node->legal_moves.size()
+    );
+
+    node->add_noise(noise);
+}
+
+
+/**
+ * @brief Returns the move id of the move to be selected/explored
+ * 
+ * @param node 
+ * @return selected move id
+ */
+game::move_id Agent::select_puct_move(MCNode * node){
+    double max_uct = -100000;
+
+    auto &legal_moves = node->legal_moves;
+
+    auto &children = node->children;
+
+    game::move_id best_move;
+
+    for(auto mv: legal_moves){
+        double uct = PUCT(node, mv);
+
+        if(uct > max_uct){
+            max_uct = uct;
+            best_move = mv;
+        }
+    }
+
+    return best_move;
+}
+
+
+/**
+ * @brief Create root node - applies noise if applicable
+ * 
+ * @return pair with the new root and its evaluation
+ */
+std::pair<MCNode *, double> Agent::make_root(){
+    auto ret = this->make_node(nullptr, -1);
+
+    auto [root, value] = ret;
+
+    this->tree->root = root;
+
+    if(!this->game->is_terminal()){
+        this->apply_noise(root);
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Selection phase of MCTS
+ * 
+ * @return Pair with the selected node and its evaluation from the perspective of the player whose move it is
+ */
 std::pair<MCNode *, double> Agent::selection(){
-    /*
-        Returns a pair of the newly created node and the evaluation of that node from the perspective of the player whose move it is
-    */
 
     // If root doesn't exist, create it
-    if (this->tree->root == nullptr)
-    {
-        MCNode * new_node = nullptr;
-        double v = 0;
-        if(game->is_terminal()){
-            v = this->outcome_to_value(game->outcome());
-            new_node = new MCNode(
-                nullptr,
-                -1
-            );
-        } else {
-            auto evaluation = this->eval_func(this->game->get_board());
-
-            new_node = new MCNode(
-                nullptr,
-                this->game->moves(),
-                -1,
-                *evaluation
-            );
-            
-            if(this->use_dirichlet_noise){
-                auto dir_dist = utils::dirichlet_dist(config::hp["dirichlet_alpha"].get<double>(), new_node->legal_moves.size());
-                new_node->add_noise(dir_dist);
-            }
-            
-            v = evaluation->v;
-        }
-        
-        this->tree->root = new_node;
-
-        return std::make_pair(new_node, v);
+    if (this->tree->root == nullptr){
+        return this->make_root();
     }
 
     MCNode * current_node = tree->root;
-    
-    double max_uct;
-    double uct;
-    MCNode * next_node = nullptr;
-    game::move_id best_move;
-
-    // MCNode * child_node = nullptr;
 
     while(true){
-        // find best node
+
+        // if the current node is terminal, the selection phase is over, and there is no expansion.
         if(current_node->is_terminal){
             return std::make_pair(current_node, current_node->value_approx);
         }
 
-        max_uct = -100000;
+        // find move with highest puct
+        game::move_id best_move = this->select_puct_move(current_node);
 
-        auto &legal_moves = current_node->legal_moves;
-
-        auto &children = current_node->children;
-
-        for(auto mv: legal_moves){
-            uct = PUCT(current_node, mv);
-
-            if(uct > max_uct){
-                max_uct = uct;
-                next_node = children[mv];
-                best_move = mv;
-            }
-        }
-
+        MCNode * next_node = current_node->children[best_move];
 
         game->make(best_move);
 
         if(next_node == nullptr){
-            // create new node
-            MCNode * new_node = nullptr;
-            double v;
+            // if the next node is null, we have reached a leaf node, and we need to expand it
+            return this->make_node(current_node, best_move);
 
-
-            if(game->is_terminal()){
-                v = this->outcome_to_value(game->outcome());
-
-                new_node = new MCNode(
-                    current_node,
-                    best_move
-                );
-            } else {
-
-                auto evaluation = this->eval_func(this->game->get_board());
-
-                // Make new node 
-                new_node = new MCNode(
-                    current_node,
-                    this->game->moves(),
-                    best_move,
-                    *evaluation
-                );
-                v = evaluation->v;
-            }
-
-
-            children[best_move] = new_node;
-
-            return std::make_pair(new_node, v);
         } else {
             //continue selection
             current_node = next_node;
@@ -226,15 +265,18 @@ std::pair<MCNode *, double> Agent::selection(){
 }
 
 
+
+/**
+ * @brief Backpropagation phase of MCTS
+ * 
+ * @param node The node to start backpropagation from
+ * @param v The evaluation of the node
+ */
 void Agent::backpropagation(MCNode * node, double v){
-    // bool first = true;
 
     while(true){
 
-        // if(!first){
         node->update_eval(v);
-        // }
-        // first = false;
 
         if (node->parent == nullptr) {
             break;
@@ -247,56 +289,27 @@ void Agent::backpropagation(MCNode * node, double v){
     }
 }
 
-int Agent::get_current_best_move(){
-    // return 0;
-    double highest = -10000;
-    auto root_children = this->tree->root->children;
-    int score;
-    int best_move = -1;
-    
-    for(int i = 0; i < root_children.size(); i++){
-        auto child = root_children[i];
-
-        if(child == nullptr){
-            continue;
-        }
-
-        // score = child->wins / child->plays;
-        score = child -> plays;
-
-        if(score > highest){
-            highest = score;
-            best_move = i;
-        }
-    }
-
-    if (best_move == -1) {
-        throw std::runtime_error("No best move");
-    }
-
-    return best_move;
-}
-
-
+/**
+ * @brief Performs a search with the given playout cap
+ * 
+ * @param playout_cap 
+ */
 void Agent::search(int playout_cap){
 
-    int i;
-
-    for(i = 0; i < playout_cap; i++){
-        // std::cout << "Playout " << i << std::endl;
-        // std::cout << "selection" << std::endl;
+    for(int i = 0; i < playout_cap; i++){
         std::pair<MCNode *, double> selection_result = this->selection();
-        auto created_node = selection_result.first;
-        double v = selection_result.second;
 
-        // std::cout << "Backpropagation" << std::endl;
+        auto [created_node, v] = selection_result;
+
         this->backpropagation(created_node, v);
     }
-
-    // Get best move
-    // printf("Performed %d iterations\n", i);
 }
 
+/**
+ * @brief Returns the visit counts of the root node
+ * 
+ * @return std::map<game::move_id, int> 
+ */
 std::map<game::move_id, int> Agent::root_visit_counts(){
     return this->tree->root->visit_count_map();
 }

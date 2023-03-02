@@ -194,7 +194,7 @@ void SelfPlay::thread_play(
             return result;
         };
         
-        Agent * agent = new Agent(game, pp::First, eval_func);
+        Agent * agent = new Agent(game, eval_func);
 
         int num_moves = 0;
 
