@@ -20,21 +20,22 @@ namespace nn {
         std::string moves;
     };
     
+    typedef std::map<game::move_id, double> move_dist;
+
     struct NNOut {
-        std::map<game::move_id, double> p;
+        move_dist p;
         double v;
     };
 
     class NN {
     public:
         virtual std::unique_ptr<NNOut> eval_state(Board board){};
+
         virtual std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards){};
 
         virtual std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) {};
         virtual at::Tensor state_to_tensor(Board board){}
-        virtual at::Tensor move_map_to_policy_tensor(
-            std::map<game::move_id, double>
-        ){}
+        virtual at::Tensor move_map_to_policy_tensor(move_dist){}
         virtual std::unique_ptr<NNOut> make_nnout_from_tensors(at::Tensor policy, at::Tensor value){}
     };
 }

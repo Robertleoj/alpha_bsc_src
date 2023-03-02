@@ -9,6 +9,7 @@ MCTree::~MCTree(){
 }
 
 void MCTree::delete_tree(MCNode * node){
+
     // base case
     if(node == nullptr){
         return;

@@ -1,32 +1,42 @@
 #include "./mc_node.h"
-#include <bits/stdc++.h>
 #include "../config/config.h"
 
 
-// non-terminal constructor
+/**
+ * @brief Constructor for non-terminal nodes
+ * 
+ * @param parent Pointer to parent node
+ * @param legal_moves List of legal moves from this node
+ * @param move_from_parent  Move that led to this node from parent
+ * @param nn_prior Prior probability distribution from neural network
+ */
 MCNode::MCNode(
     MCNode * parent, 
     std::vector<game::move_id> legal_moves,
     game::move_id move_from_parent,
-    nn::NNOut nn_evaluation
-){
-    this->legal_moves = legal_moves;
-    this->parent = parent;
+    nn::move_dist &nn_prior
+) : legal_moves(legal_moves),
+    parent(parent),
+    move_from_parent(move_from_parent)
+{
     this->plays = 0;
     this->is_terminal = false;
-    this->move_from_parent = move_from_parent;
+    this->children = child_map();
 
-    // this->value_approx = nn_evaluation.v;
-
-    this->children = std::map<game::move_id, MCNode *>();
     for(auto move_id : legal_moves){
         this->children[move_id] = nullptr;
     }
 
-    this->make_evaluation(&nn_evaluation);
+    this->make_prior(&nn_prior);
 }
 
 
+/**
+ * @brief Constructor for terminal nodes
+ * 
+ * @param parent Pointer to parent node
+ * @param move_from_parent  Move that led to this node from parent
+ */
 MCNode::MCNode(
     MCNode * parent,
     game::move_id move_from_parent
@@ -35,28 +45,38 @@ MCNode::MCNode(
     this->plays = 0;
     this->is_terminal = true;
     this->move_from_parent = move_from_parent;
-    this->children = std::map<game::move_id, MCNode *>();
+    this->children = child_map();
 }
 
+/**
+ * @brief Add noise to the prior probability distribution of this node
+ * 
+ * @param noise The dirichlet noise to add
+ */
 void MCNode::add_noise(std::vector<double> noise){
     int i = 0;
+
     double lam = config::hp["dirichlet_lambda"].get<double>();
+
     for(auto &p : this->p_map){
         p.second = (1 - lam) * p.second + lam * noise[i];
     }
 }
 
-void MCNode::make_evaluation(nn::NNOut * nn_evaluation) {
+/**
+ * @brief Create the prior from the prior given by the neural network - removes illegal moves
+ * 
+ * @param nn_prior The prior given by the neural network
+ */
+void MCNode::make_prior(nn::move_dist * nn_prior) {
     
-    this->p_map = std::map<game::move_id, double>();
+    this->p_map = nn::move_dist();
 
-    auto mp = nn_evaluation->p;
-    
     double prob_sum = 0;
 
     for(auto mv_id: this->legal_moves){
 
-        double prob = mp.at(mv_id);
+        double prob = nn_prior->at(mv_id);
         this->p_map[mv_id] = prob;
         prob_sum += prob;
     }
@@ -66,6 +86,11 @@ void MCNode::make_evaluation(nn::NNOut * nn_evaluation) {
     }
 }
 
+/**
+ * @brief Visit counts for each move from this node
+ * 
+ * @return std::map<game::move_id, int> 
+ */
 std::map<game::move_id, int> MCNode::visit_count_map(){
 
     std::map<game::move_id, int> mp;
@@ -83,6 +108,11 @@ std::map<game::move_id, int> MCNode::visit_count_map(){
     return mp;
 }
 
+/**
+ * @brief Update this node's value approximation - uses iterative mean update
+ * 
+ * @param v the value of the playout
+ */
 void MCNode::update_eval(double v){
 
     this->plays++;

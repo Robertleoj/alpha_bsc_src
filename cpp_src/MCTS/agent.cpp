@@ -143,7 +143,7 @@ std::pair<MCNode *, double> Agent::make_node(MCNode * parent, game::move_id move
             parent,
             this->game->moves(),
             move_id,
-            *evaluation
+            evaluation->p
         );
 
         v = evaluation->v;
