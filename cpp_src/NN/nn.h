@@ -29,13 +29,15 @@ namespace nn {
 
     class NN {
     public:
-        virtual std::unique_ptr<NNOut> eval_state(Board board){};
+        virtual std::unique_ptr<NNOut> eval_state(Board board) = 0;
 
-        virtual std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards){};
+        virtual std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards) = 0;
 
-        virtual std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) {};
-        virtual at::Tensor state_to_tensor(Board board){}
-        virtual at::Tensor move_map_to_policy_tensor(move_dist){}
-        virtual std::unique_ptr<NNOut> make_nnout_from_tensors(at::Tensor policy, at::Tensor value){}
+        virtual std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) = 0;
+
+        virtual at::Tensor state_to_tensor(Board board) = 0;
+
+        virtual at::Tensor move_map_to_policy_tensor(move_dist) = 0;
+        virtual std::unique_ptr<NNOut> make_nnout_from_tensors(at::Tensor policy, at::Tensor value) = 0;
     };
 }

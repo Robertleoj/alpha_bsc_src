@@ -29,7 +29,6 @@ SelfPlay::SelfPlay(std::string game) {
         );
     }
     std::cout << "made neural net" << std::endl;
-
 }
 
 void SelfPlay::self_play(){
