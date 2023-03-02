@@ -14,3 +14,4 @@ local_train_cycle.py
 db/db.bak
 *.bak
 cpp_src/play_agent
+py_src/7x6.book

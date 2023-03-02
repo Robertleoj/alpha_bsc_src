@@ -36,24 +36,16 @@ namespace db {
             throw std::runtime_error(sqlite3_errmsg(this->db));
         }
 
-        // int rc =sqlite3_step(stmt);
-
-        // if(rc != SQLITE_OK){
-        //     std::cerr << q << std::endl;
-        //     throw std::runtime_error(sqlite3_errmsg(this->db));
-        // }
-        
-
         return stmt;
-        
     }
 
     void DB::set_curr_generation(){
         std::string stmt = R"(
-                select max(generation_num) as gen
-                from generations
-                where game_id = %d
-            )";
+            select max(generation_num) as gen
+            from generations
+            where game_id = %d
+        )";
+
         stmt = utils::string_format(stmt, this->game_id);
 
 
@@ -96,7 +88,6 @@ namespace db {
     }
 
     void DB::make_connection() {
-        char *zErrMsg = 0;
         int rc;
 
         rc = sqlite3_open("../db/db.db", &this->db);
