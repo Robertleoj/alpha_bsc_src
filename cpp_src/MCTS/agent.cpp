@@ -50,7 +50,7 @@ void Agent::update_tree(
 
 
 /**
- * @brief PUCT(s, a) = V + c * P(a|s)(sqrt{N} / (1 + n))\n
+ * @brief PUCT(s, a) = V + c * P(a|s)(sqrt{N} / (1 + n))
  *  V = evaluations for the child node
  *  n = number of simulations for child node
  *  N = simulations for current node
@@ -146,11 +146,11 @@ std::pair<MCNode *, double> Agent::make_node(MCNode * parent, game::move_id move
             *evaluation
         );
 
-        if(parent != nullptr){
-            parent->children[move_id] = new_node;
-        }
-
         v = evaluation->v;
+    }
+
+    if(parent != nullptr){
+        parent->children[move_id] = new_node;
     }
 
     return std::make_pair(new_node, v);
@@ -259,7 +259,6 @@ std::pair<MCNode *, double> Agent::selection(){
         } else {
             //continue selection
             current_node = next_node;
-            next_node = nullptr;
         }
     }
 }
