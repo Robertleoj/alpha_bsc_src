@@ -1,14 +1,20 @@
 #include "./mc_tree.h"
 
 MCTree::MCTree(){
-    root = nullptr; //new MCNode(nullptr);
+    root = nullptr; 
 }
 
 MCTree::~MCTree(){
     delete_tree(this->root);
 }
 
+/**
+ * @brief Recursively delete the tree starting at node
+ * 
+ * @param node 
+ */
 void MCTree::delete_tree(MCNode * node){
+
     // base case
     if(node == nullptr){
         return;
@@ -24,6 +30,11 @@ void MCTree::delete_tree(MCNode * node){
 }
 
 
+/**
+ * @brief Move the root of the tree to the child node with move_id and delete the rest of the tree
+ * 
+ * @param move_id 
+ */
 void MCTree::move(game::move_id move_id){
 
     if(this->root == nullptr){
