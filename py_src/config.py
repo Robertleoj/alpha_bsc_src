@@ -1,3 +1,9 @@
+from enum import Enum
+class SampleMethod(Enum):
+    uniform = 0
+    endgame = 1
+
+
 buffer_generations = 10
 
 batch_size = 4096
@@ -8,4 +14,19 @@ learning_rate = 1e-4
 num_iterations = 2000
 dl_prefetch_factor = 10
 log_loss_interval = 100
+
+
+sample_method = SampleMethod.endgame
+
+class dynamic_window:
+    on = True
+    min = 1
+    max = 20
+    increase_every = 3
+
+class endgame_training:
+    p_max = 0.5
+    p_min = 0
+    shift = 5
+    generation_uniform = 30
 

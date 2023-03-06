@@ -89,6 +89,7 @@ def generate(n: int, curr_games: list[dict])-> list[str]:
             sampled = p.map(random_position, range(n))
 
         sampled = [''.join(pos) for pos in sampled]
+        sampled = list(set(sampled))
         new_games.extend([
             pos for pos in sampled 
             if pos not in games and pos not in new_games

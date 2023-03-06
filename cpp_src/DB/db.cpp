@@ -229,7 +229,7 @@ namespace db {
 
 
 
-    void DB::insert_training_samples(std::vector<nn::TrainingSample> *samples) {
+    void DB::insert_training_samples(std::vector<TrainingSample> *samples) {
         sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
         for(auto &sample : *samples){
 
@@ -243,37 +243,45 @@ namespace db {
                     policy,
                     outcome,
                     moves,
-                    player
+                    player,
+                    moves_left
                 ) 
                 values
-                (?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?)
                 )",
                 -1,
                 &stmt,
                 NULL
             );
             
-
+            // generation_id
             sqlite3_bind_int(stmt, 1, this->generation_id);
 
+            // state
             std::stringstream state_ss;
             torch::save(sample.state, state_ss);
             auto state_str = state_ss.str();
 
-
             sqlite3_bind_blob(stmt, 2, state_str.c_str(), state_str.size(), SQLITE_STATIC);
 
+            // target policy
             std::stringstream policy_ss;
             torch::save(sample.target_policy, policy_ss);
             auto pol_str = policy_ss.str();
 
             sqlite3_bind_blob(stmt, 3, pol_str.c_str(), pol_str.size(), SQLITE_STATIC);
 
+            // outcome
             sqlite3_bind_double(stmt, 4, sample.outcome);
 
+            // moves
             sqlite3_bind_text(stmt, 5, sample.moves.c_str(), sample.moves.size(), SQLITE_TRANSIENT);
 
+            // player
             sqlite3_bind_int(stmt, 6, (sample.player == pp::First ? 1 : 0));
+
+            // moves_left
+            sqlite3_bind_int(stmt, 7, sample.moves_left);
 
             int rc = sqlite3_step(stmt);
 

@@ -30,6 +30,7 @@ create table training_data(
     outcome float,
     player tinyint not null,
     moves text,
+    moves_left integer not null,
     created_at timestamp default current_timestamp,
     foreign key (generation_id) references generations (id)
 );

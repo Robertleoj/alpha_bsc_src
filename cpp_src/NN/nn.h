@@ -12,13 +12,7 @@
 
 namespace nn {
 
-    struct TrainingSample {
-        at::Tensor target_policy;
-        at::Tensor state;
-        double outcome;
-        pp::Player player;
-        std::string moves;
-    };
+
     
     typedef std::map<game::move_id, double> move_dist;
 
