@@ -94,15 +94,17 @@ void thread_game(
 
 
 void write_samples(
-    std::vector<nn::TrainingSample> *, 
+    std::vector<db::TrainingSample> *, 
     Agent *, 
     ThreadData *,
-    game::IGame *
+    game::IGame *,
+    int num_moves
 );
 
-nn::TrainingSample get_training_sample(
-    nn::move_dist visit_counts,
-    std::string moves, Board,
+db::TrainingSample get_training_sample(
+    nn::move_dist normalized_visit_counts,
+    std::string moves,
+    Board board,
     nn::NN * neural_net
 );
 
@@ -199,7 +201,8 @@ void write_evaluation_to_db(
     double mcts_value_error = std::pow(mcts_value - gt->value, 2);
 
     // print some info
-    printf("Eval: %s\n", gt->moves.c_str());
+    std::cout << '.' << std::flush;
+    // printf("Eval: %s\n", gt->moves.c_str());
 
     // create eval entry
     db::EvalEntry eval_entry {
@@ -321,6 +324,7 @@ void sim::eval_targets(std::string eval_targets_filename, int generation_num){
     start_eval_threads(thread_data, &eval_data, threads, num_threads);
 
     self_play_active_thread_work(thread_data);
+    std::cout << std::endl;
 
     for(auto &t: threads){
         t.join();
@@ -568,7 +572,7 @@ game::IGame * get_game_instance(std::string game){
  * @param board 
  * @return nn::TrainingSample 
  */
-nn::TrainingSample get_training_sample(
+db::TrainingSample get_training_sample(
     nn::move_dist normalized_visit_counts,
     std::string moves,
     Board board,
@@ -577,7 +581,7 @@ nn::TrainingSample get_training_sample(
     auto policy_tensor = neural_net->move_map_to_policy_tensor(normalized_visit_counts);
     auto state_tensor = neural_net->state_to_tensor(board);    
 
-    nn::TrainingSample ts = {
+    db::TrainingSample ts = {
         policy_tensor,
         state_tensor,
         0,
@@ -622,7 +626,7 @@ void thread_game(int thread_idx, ThreadData * thread_data, std::string game_name
     eval_f eval_func = make_eval_function(thread_idx, thread_data);
     Agent * agent = new Agent(game, eval_func);
 
-    std::vector<nn::TrainingSample> samples;
+    std::vector<db::TrainingSample> samples;
 
     std::stringstream moves;
     int num_moves = 0;
@@ -650,7 +654,7 @@ void thread_game(int thread_idx, ThreadData * thread_data, std::string game_name
         num_moves++;
     }
 
-    write_samples(&samples, agent, thread_data, game);
+    write_samples(&samples, agent, thread_data, game, num_moves);
 
     delete agent;
     delete game;
@@ -666,22 +670,25 @@ void thread_game(int thread_idx, ThreadData * thread_data, std::string game_name
  * @param game 
  */
 void write_samples(
-    std::vector<nn::TrainingSample> *training_samples, 
+    std::vector<db::TrainingSample> *training_samples, 
     Agent* agent, 
     ThreadData * thread_data, 
-    game::IGame * game
+    game::IGame * game,
+    int num_moves
 ){
     double outcome = agent->outcome_to_value(game->outcome(pp::First));
 
+    int i = 0;
     for(auto &sample : *training_samples){
         sample.outcome = agent->eval_for_player(outcome, sample.player);
+        sample.moves_left = num_moves - i; 
+        i++;
     }
 
     // now we need to insert the training data into the db
     thread_data->db_mutex.lock();
     thread_data->db->insert_training_samples(training_samples);
     thread_data->db_mutex.unlock();
-
 }
 
 

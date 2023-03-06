@@ -1,32 +1,19 @@
 import torch
 import sqlite3
 import io
-# import config
 import os
 import numpy as np
-# from DB.db_config import db_conf
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
-# if os.name == 'posix':
-#     os.system('ulimit -n 64000')
-
-
-# def make_tensor(state, policy, outcome):
-#     return (
-#         np.array(tensor_from_blob(state)),
-#         np.array(tensor_from_blob(policy)),
-#         # torch.tensor(outcome).detach().clone()
-#         np.array(outcome)
-#     )
 
 def read_tensors(arg):
-    state, policy, outcome = arg
+    state, policy, outcome, moves_left = arg
     return (
         np.array(tensor_from_blob(state)),
         np.array(tensor_from_blob(policy)),
-        # torch.tensor(outcome).detach().clone()
-        np.array(outcome)
+        np.array(outcome),
+        np.array(moves_left)
     )
 
 def tensor_from_blob(blob) -> torch.Tensor:
@@ -42,13 +29,6 @@ class DB:
 
     def connect(self):
 
-        # return mariadb.connect(
-        #     user=db_conf['user'],
-        #     password=db_conf['pw'],
-        #     host=db_conf['host'],
-        #     port=db_conf['port'],
-        #     database=db_conf['db']
-        # )
         return sqlite3.connect('../db/db.db')
 
     def add_generation(self, game:str, generation_num:int):
@@ -62,7 +42,6 @@ class DB:
 
         self.query(query, True)
 
-
     def get_game_id(self, game:str):
 
         query = f"""
@@ -71,15 +50,6 @@ class DB:
 
         res = self.query(query)
         return res[0][0]
-
-
-    # def mutating_query(self, query):
-    #     conn = self.connect()
-    #     cursor = conn.cursor()
-    #     cursor.execute(query)
-    #     conn.commit()
-    #     cursor.close()
-    #     conn.close()
 
     def query(self, query, no_data=False):
         conn = self.connect()
@@ -133,7 +103,8 @@ class DB:
             select 
                 t.state, 
                 t.policy, 
-                t.outcome 
+                t.outcome,
+                t.moves_left
             from 
                 games g
                 join generations gens

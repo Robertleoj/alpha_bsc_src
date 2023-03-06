@@ -26,6 +26,15 @@ namespace db {
         double mcts_value_error;
     };
 
+    struct TrainingSample {
+        at::Tensor target_policy;
+        at::Tensor state;
+        double outcome;
+        pp::Player player;
+        std::string moves;
+        int moves_left;
+    };
+
     class DB {
     public:
         std::string game;
@@ -37,7 +46,7 @@ namespace db {
 
         void get_game_id();
 
-        void insert_training_samples(std::vector<nn::TrainingSample> *);
+        void insert_training_samples(std::vector<TrainingSample> *);
         void insert_evaluation(EvalEntry *);
         ~DB();
 
