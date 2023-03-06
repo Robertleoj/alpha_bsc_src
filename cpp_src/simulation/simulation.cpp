@@ -704,6 +704,6 @@ void thread_play(
                   << thread_data->games_left + thread_data->num_active_threads 
                   << std::endl;
     }
-
+    thread_data->num_active_threads--;
     thread_data->q_cv.notify_one();
 }
