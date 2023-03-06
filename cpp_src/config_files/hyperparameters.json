@@ -6,7 +6,9 @@
     "self_play_num_games" : 1000,
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.3,
-    "depth_until_pi_argmax": 4
+    "depth_until_pi_argmax": 4,
+
+    "eval_search_depth": 600
 }
 
 

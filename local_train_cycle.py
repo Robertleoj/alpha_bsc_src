@@ -23,8 +23,18 @@ def train():
         exit(0)
     os.chdir('..')
 
+def evaluate():
+    os.chdir('./cpp_src')
+    exit_code = os.system('./eval_agent')
+    if(exit_code != 0):
+        exit(0)
+    os.chdir('..')
+
+
 for i in range(num_cycles):
     print(f"Cycle {i+1}/{num_cycles}")
+    evaluate()
     self_play()
     train()
+evaluate()
     
