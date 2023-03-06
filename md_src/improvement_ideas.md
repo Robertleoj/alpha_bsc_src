@@ -3,6 +3,9 @@
 # Self-play
 
 ## Dynamic training window
+## States later in the game - new
+
+
 ## Synthetic data
 ## Increasing MCTS playouts through training
 ## EMA

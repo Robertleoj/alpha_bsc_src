@@ -33,6 +33,9 @@ We can
 * Use the ground truth to create a policy with some kind of softmax and compare
 * We can measure the probability mass on the suboptimal moves (losing if wins are possible, drawing if wins and draws are possible, etc.)
 
+Solution: 
+Uniform over best possible outcome
+
 ## Evaluation
 Win, draw, loss is $-1$, $0$, $1$. Compute distance from this to $v$.
 
