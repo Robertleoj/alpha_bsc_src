@@ -11,10 +11,8 @@ dl_num_workers = 8
 value_loss_ratio = 2.0
 weight_decay = 1e-4
 learning_rate = 1e-4
-num_iterations = 2000
-dl_prefetch_factor = 10
+num_iterations = 5000
 log_loss_interval = 100
-
 
 sample_method = SampleMethod.uniform
 
@@ -30,3 +28,6 @@ class endgame_training:
     shift = 5
     generation_uniform = 30
 
+
+# does not affect algorithm, only time
+dl_prefetch_factor = 10
