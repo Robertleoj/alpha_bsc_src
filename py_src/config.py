@@ -16,10 +16,10 @@ dl_prefetch_factor = 10
 log_loss_interval = 100
 
 
-sample_method = SampleMethod.endgame
+sample_method = SampleMethod.uniform
 
 class dynamic_window:
-    on = True
+    on = False
     min = 1
     max = 20
     increase_every = 3

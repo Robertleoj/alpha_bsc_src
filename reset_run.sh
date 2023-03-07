@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$USER" = "gimli" ]; then
+  echo "You are Gimli. Exiting the script."
+  exit 1
+fi
+
 
 rm ./db/db.db 
 rm ./models/*/*.pt 
