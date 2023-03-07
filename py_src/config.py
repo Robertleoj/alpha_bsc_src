@@ -4,7 +4,7 @@ class SampleMethod(Enum):
     endgame = 1
 
 
-buffer_generations = 10
+buffer_generations = 20
 
 batch_size = 4096
 dl_num_workers = 8
