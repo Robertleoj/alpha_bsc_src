@@ -67,7 +67,7 @@ class Middle(nn.Module):
         ]
 
         chann_changes = [
-            ChannelChange(cin, cout) 
+            ChannelChange(cin, cout) if cin != cout else nn.Identity()
             for (cin, cout) in zip(channel_list, channel_list[1:])
         ]
 

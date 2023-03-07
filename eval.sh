@@ -6,13 +6,10 @@
 #SBATCH --mem=32gb                 
 #SBATCH --partition=beQuick
 
-# https://crc.pitt.edu/user-support/job-scheduling-policy/submitting-multiple-jobs-cluster 
-# to train on multiple nodes with --array
-
 
 RUNPATH=/home/gimli/AlphaBSc/alpha_bsc_src/cpp_src
 
 cd $RUNPATH
 
-./self_play
+./eval_agent
 

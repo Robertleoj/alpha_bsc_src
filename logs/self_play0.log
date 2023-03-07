@@ -1,7 +1,207 @@
 PYTORCH VERSION 1.13.1
-reading json file at ./config_files/hyperparameters.json
+reading json file at ./config_files/hyperparameters.json[0;32m [OK][0m
 Opened database successfully
 Game ID: 1
 Current generation: 0
 making neural net
 loading model from ../models/connect4/0.pt
+finished game
+Games left: 100
+finished game
+Games left: 99
+finished game
+Games left: 98
+finished game
+Games left: 97
+finished game
+Games left: 96
+finished game
+Games left: 95
+finished game
+Games left: 94
+finished game
+Games left: 93
+finished game
+Games left: 92
+finished game
+Games left: 91
+finished game
+Games left: 90
+finished game
+Games left: 89
+finished game
+Games left: 88
+finished game
+Games left: 87
+finished game
+Games left: 86
+finished game
+Games left: 85
+finished game
+Games left: 84
+finished game
+Games left: 83
+finished game
+Games left: 82
+finished game
+Games left: 81
+finished game
+Games left: 80
+finished game
+Games left: 79
+finished game
+Games left: 78
+finished game
+Games left: 77
+finished game
+Games left: 76
+finished game
+Games left: 75
+finished game
+Games left: 74
+finished game
+Games left: 73
+finished game
+Games left: 72
+finished game
+Games left: 71
+finished game
+Games left: 70
+finished game
+Games left: 69
+finished game
+Games left: 68
+finished game
+Games left: 67
+finished game
+Games left: 66
+finished game
+Games left: 65
+finished game
+Games left: 64
+finished game
+Games left: 63
+finished game
+Games left: 62
+finished game
+Games left: 61
+finished game
+Games left: 60
+finished game
+Games left: 59
+finished game
+Games left: 58
+finished game
+Games left: 57
+finished game
+Games left: 56
+finished game
+Games left: 55
+finished game
+Games left: 54
+finished game
+Games left: 53
+finished game
+Games left: 52
+finished game
+Games left: 51
+finished game
+Games left: 50
+finished game
+Games left: 49
+finished game
+Games left: 48
+finished game
+Games left: 47
+finished game
+Games left: 46
+finished game
+Games left: 45
+finished game
+Games left: 44
+finished game
+Games left: 43
+finished game
+Games left: 42
+finished game
+Games left: 41
+finished game
+Games left: 40
+finished game
+Games left: 39
+finished game
+Games left: 38
+finished game
+Games left: 37
+finished game
+Games left: 36
+finished game
+Games left: 35
+finished game
+Games left: 34
+finished game
+Games left: 33
+finished game
+Games left: 32
+finished game
+Games left: 31
+finished game
+Games left: 30
+finished game
+Games left: 29
+finished game
+Games left: 28
+finished game
+Games left: 27
+finished game
+Games left: 26
+finished game
+Games left: 25
+finished game
+Games left: 24
+finished game
+Games left: 23
+finished game
+Games left: 22
+finished game
+Games left: 21
+finished game
+Games left: 20
+finished game
+Games left: 19
+finished game
+Games left: 18
+finished game
+Games left: 17
+finished game
+Games left: 16
+finished game
+Games left: 15
+finished game
+Games left: 14
+finished game
+Games left: 13
+finished game
+Games left: 12
+finished game
+Games left: 11
+finished game
+Games left: 10
+finished game
+Games left: 9
+finished game
+Games left: 8
+finished game
+Games left: 7
+finished game
+Games left: 6
+finished game
+Games left: 5
+finished game
+Games left: 4
+finished game
+Games left: 3
+finished game
+Games left: 2
+finished game
+Games left: 1

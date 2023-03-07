@@ -1,0 +1,7 @@
+Training generations: 0
+Fetched 2753 rows
+Making tensors:   0%|          | 0/2753 [00:00<?, ?it/s]Making tensors:  76%|███████▌  | 2081/2753 [00:00<00:00, 20743.50it/s]Making tensors: 100%|██████████| 2753/2753 [00:00<00:00, 22291.61it/s]
+Prefeched 2753 samples for connect4 generation 0.
+Initializing endgame sampling
+Done initializing endgame sampling
+  0%|          | 0/2000 [00:00<?, ?it/s]loss=3.7369:   0%|          | 0/2000 [00:03<?, ?it/s]loss=3.7369:   0%|          | 0/2000 [00:03<?, ?it/s]loss=3.7369:   0%|          | 1/2000 [00:03<2:10:41,  3.92s/it]loss=3.7369:   0%|          | 2/2000 [00:04<57:56,  1.74s/it]  slurmstepd-samson: error: *** JOB 6655 ON samson CANCELLED AT 2023-03-07T17:50:17 ***

@@ -24,6 +24,27 @@ def self_play(gen:int, dep:str=None) ->str:
     print(f"started self_play job {job_id}")
     return job_id
 
+def evaluate(gen:int, dep:str=None) ->str:
+    print("starting evaluation job")
+
+    cmd = f"cd {cwd} && sbatch --job-name=evaluate{gen} --output=./logs/eval{gen}.log" 
+    if dep is not None:
+        cmd += f" --dependency=aftercorr:{dep}"
+    cmd += f" eval.sh"
+    print("running command")
+    print(cmd)
+
+    outp = os.popen(cmd).read()
+    print("output: ")
+    print(outp)
+    
+    job_id = outp.strip().split(' ')[-1]
+
+    print(f"started eval job {job_id}")
+    return job_id
+
+
+
 def train(gen:int, dep:str=None) ->str:
     print('starting train job')
 
@@ -44,6 +65,7 @@ def train(gen:int, dep:str=None) ->str:
     return job_id
 
 def single_cycle(gen, dep:str=None) -> str:
+    dep = evaluate(gen, dep)
     dep = self_play(gen, dep)
     dep = train(gen, dep)
     return dep
@@ -51,6 +73,7 @@ def single_cycle(gen, dep:str=None) -> str:
 def cycles(gen, num_gens, dep):
     for g in range(gen, gen+num_gens):
         dep = single_cycle(g, dep)
+    evaluate(gen, dep)
     
 
 def main():

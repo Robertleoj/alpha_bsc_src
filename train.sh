@@ -5,7 +5,6 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=32gb                 
 #SBATCH --partition=beQuick
-#SBATCH --nodelist=samson
 
 
 RUNPATH=/home/gimli/AlphaBSc/alpha_bsc_src/py_src
