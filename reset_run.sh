@@ -1,8 +1,12 @@
 #!/bin/bash
 
 if [ "$USER" = "gimli" ]; then
-  echo "You are Gimli. Exiting the script."
-  exit 1
+  echo "You are Gimli. Are you sure you want to reset the run? (y/n)"
+    read sure
+    if [ "$sure" != "y" ]; then
+        echo "Exiting."
+        exit 1
+    fi
 fi
 
 
