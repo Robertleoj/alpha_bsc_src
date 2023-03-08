@@ -32,12 +32,15 @@ Install requirements with
 pip install -r requirements.txt
 ```
 
-Also, the connect4 solver needs to be installed. To do so, run
+Also, the connect4 solver needs to be installed. To do so, install `pybind11-dev` with
+```
+sudo apt install pybind11-dev
+```
+and install the solver with
 
 ```bash
 python3 setup.py install
 ```
-
 inside the `py_src/conn4_alpha_beta` folder with the virtual environment activated.
 
 ## Neural Network

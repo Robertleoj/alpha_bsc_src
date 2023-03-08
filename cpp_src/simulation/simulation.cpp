@@ -516,7 +516,7 @@ eval_f make_eval_function(int thread_idx, ThreadData * thread_data){
     ](Board b){
         
         // Make thread create the tensor from state so main thread does not have to
-        auto t = nn_ptr->state_to_tensor(b);
+        auto t = nn_ptr->state_to_tensor(b).cuda();
 
         // Put item in queue
         thread_data->q_mutex.lock();
@@ -527,7 +527,8 @@ eval_f make_eval_function(int thread_idx, ThreadData * thread_data){
         thread_data->q_cv.notify_one();
 
         // Wait for result
-        std::unique_lock<std::mutex> lq(thread_data->req_completed_mutex);
+        std::mutex m;
+        std::unique_lock<std::mutex> lq(m);
 
         // Wait for main thread to notify that the result is ready
         thread_data->eval_cv.wait(lq, [thread_data, thread_idx](){
@@ -539,10 +540,10 @@ eval_f make_eval_function(int thread_idx, ThreadData * thread_data){
         lq.unlock();
 
         // Get results
-        thread_data->results_mutex.lock();
+        // thread_data->results_mutex.lock();
         auto result = std::move(thread_data->evaluations[thread_idx]);
         thread_data->evaluations[thread_idx] = nullptr;
-        thread_data->results_mutex.unlock();
+        // thread_data->results_mutex.unlock();
 
         return result;
     };   

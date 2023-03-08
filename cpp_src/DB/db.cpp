@@ -287,6 +287,7 @@ namespace db {
 
             if (rc != SQLITE_DONE){
                 std::cerr << "Failed to insert training sample!" << std::endl;
+                std::cerr << sqlite3_errmsg(this->db) << std::endl;
                 throw std::runtime_error("Failed to insert");
             }
 

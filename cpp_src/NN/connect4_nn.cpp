@@ -29,7 +29,11 @@ namespace nn{
         std::vector<at::Tensor> & tensors
     ) {
         // Create the input tensor
-        auto inp_tensor = torch::stack(tensors, 0).cuda();
+        auto inp_tensor = torch::stack(tensors, 0);
+
+        if(!inp_tensor.is_cuda()){
+            inp_tensor = inp_tensor.cuda();
+        }
 
         // Create the input value for the network
         std::vector<torch::jit::IValue> inp({inp_tensor});
