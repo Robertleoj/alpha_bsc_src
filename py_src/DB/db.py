@@ -2,9 +2,11 @@ import torch
 import sqlite3
 import io
 import os
+import json
 import numpy as np
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
+import pandas as pd
 
 
 def read_tensors(arg):
@@ -64,6 +66,61 @@ class DB:
         conn.close()
 
         return res
+
+    def evals(self, game:str, gen: int):
+        query = f"""
+            select
+                gt.id,
+                gt.policy_target, 
+                gt.value_target, 
+                gt.policy_prior,
+                gt.policy_mcts,
+                gt.nn_value,
+                gt.nn_value_error,
+                gt.mcts_value,
+                gt.mcts_value_error,
+                gt.prior_error,
+                gt.mcts_error
+                
+            from
+                games g
+                join generations gens
+                    on gens.game_id = g.id
+                join ground_truth_evals gt
+                    on gt.generation_id = gens.id
+            where
+                g.game_name = "{game}"
+                and gens.generation_num = {gen}
+        """
+
+        res = self.query(query)
+        json_indices = [1, 3, 4]
+
+        res = [
+            [
+                json.loads(x) if i in json_indices else x 
+                for i, x in enumerate(row)
+            ]
+            for row in res
+        ]
+
+        # create dataframe
+        df = pd.DataFrame(res, columns=[
+                "id",
+                "policy_target",
+                "value_target",
+                "policy_prior",
+                "policy_mcts",
+                "nn_value",
+                "nn_value_error",
+                "mcts_value",
+                "mcts_value_error",
+                "prior_error",
+                "mcts_error"
+            ])
+        return df
+
+
 
 
     def newest_generation(self, game:str) -> int:

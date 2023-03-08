@@ -4,15 +4,13 @@ class SampleMethod(Enum):
     endgame = 1
 
 
-buffer_generations = 10
+buffer_generations = 20
 
 batch_size = 4096
-dl_num_workers = 8
-value_loss_ratio = 2.0
+value_loss_ratio = 1.0
 weight_decay = 1e-4
 learning_rate = 1e-4
 num_iterations = 5000
-log_loss_interval = 100
 
 sample_method = SampleMethod.uniform
 
@@ -31,3 +29,5 @@ class endgame_training:
 
 # does not affect algorithm, only time
 dl_prefetch_factor = 10
+dl_num_workers = 8
+log_loss_interval = 100

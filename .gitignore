@@ -15,3 +15,4 @@ db/db.bak
 cpp_src/play_agent
 py_src/7x6.book
 cpp_src/simulation/simulation.cpp
+saved_runs/

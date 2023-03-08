@@ -1,4 +1,8 @@
 #!/bin/bash
 
-ssh gimli@smallvoice.ru.is -t "cd ~/AlphaBSc/alpha_bsc_src && tar -czvf data.tar.gz ./db/db.db ./models"
-scp gimli@smallvoice.ru.is:/home/gimli/AlphaBSc/data.tar.gz ./
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <run-name>"
+  exit 1
+fi
+
+scp -r gimli@smallvoice.ru.is:/home/gimli/AlphaBSc/alpha_bsc_src/saved_runs/$1 ./saved_runs/$1
