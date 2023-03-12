@@ -15,6 +15,8 @@ fi
 7z x ./saved_runs/$1/db.7z 
 7z x ./saved_runs/$1/models.7z 
 
+mv db.db ./db/db.db
+
 if [ "$(ls -A ./py_src/training_data/*/)" ]; then
     echo "Warning: cached training data has not been deleted!"
 fi
