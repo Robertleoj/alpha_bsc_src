@@ -2,6 +2,8 @@ import os
 from config import dynamic_window, buffer_generations, endgame_training
 import torch
 from dataclasses import dataclass
+import sys
+import os
 
 @dataclass
 class Data:
@@ -32,3 +34,12 @@ def dynamic_window_gen(generation: int):
     else:
         raise RuntimeError("Dynamic window is off!")
         
+def set_run(run_name, game):
+
+    if not os.path.exists(f"../vault/{game}/{run_name}"):
+        print("Run does not exist! Exiting")
+        exit(1)
+
+    os.chdir(f"../vault/{game}/{run_name}")
+    sys.path.append(f"../vault/{game}/{run_name}")
+

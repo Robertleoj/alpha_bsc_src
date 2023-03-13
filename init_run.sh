@@ -20,14 +20,24 @@ else
     GAME_NAME="connect4"
 fi
 
-COMPRESSED_PATH=./saved_runs/$RUN_NAME.7z
-OUTPUT_PATH=./vault/$GAME_NAME
+RUN_DIR=./vault/$GAME_NAME/$RUN_NAME
+DEFAULT_DIR=./vault/$GAME_NAME/defaults
 
-# make sure the run exists
-if [ ! -f "$COMPRESSED_PATH" ]; then
-    echo "Run \"$RUN_NAME\" does not exist"
-    exit 1
-fi
+mkdir -p $RUN_DIR
+
+mkdir $RUN_DIR/cached_data
+mkdir $RUN_DIR/models
+
+# copy the default files
+cp $DEFAULT_DIR/* $RUN_DIR
+
+sqlite3 $RUN_DIR/db.db < ./db/configure_db.sql
+
+cd ./py_src
+
+source .venv/bin/activate
+
+python3 init_conn4_net.py ../$RUN_DIR/models/
 
 
-7z x $COMPRESSED_PATH -o$OUTPUT_PATH
+

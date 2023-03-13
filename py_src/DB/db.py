@@ -28,10 +28,9 @@ def tensor_from_blob(blob) -> torch.Tensor:
 
 class DB:
 
-
     def connect(self):
 
-        return sqlite3.connect('../db/db.db')
+        return sqlite3.connect('./db.db')
 
     def add_generation(self, game:str, generation_num:int):
 

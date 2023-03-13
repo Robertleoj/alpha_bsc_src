@@ -2,11 +2,15 @@ from DB import DB
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from utils import set_run
+import sys
 
-
-    
+if len(sys.argv) < 2:
+    print("Usage: python3 train.py <run_name>")
 
 game_name = "connect4"
+
+set_run(sys.argv[1], game_name)
 
 db = DB()
 

@@ -3,8 +3,12 @@ from utils import make_folder, Data
 import torch
 import os
 from colorama import Fore, init
+from pathlib import Path
+
 init(autoreset=True)
 
+CACHED_DATA_PATH = Path("./cached_data")
+CACHED_DATA_PATH.mkdir(parents=True, exist_ok=True)
 
 def prefetch_generation(game:str, generation:int):
     db = DB()
@@ -13,7 +17,7 @@ def prefetch_generation(game:str, generation:int):
     print(f"Prefeched {states.shape[0]} samples for {Fore.GREEN}{game}{Fore.RESET} generation {Fore.GREEN}{generation}{Fore.RESET}.")
 
     # Ensure that folders exist
-    make_folder(f"training_data/{game}")
+
     torch.save(
         Data(
             states=states, 
@@ -21,12 +25,12 @@ def prefetch_generation(game:str, generation:int):
             outcomes=outcomes,
             moves_left=moves_left
         ), 
-        f"training_data/{game}/{generation}.pt"
+        CACHED_DATA_PATH/f"{generation}.pt"
     )
 
 
 def generation_exists(game:str, generation:int):
-    return os.path.exists(f"training_data/{game}/{generation}.pt")
+    return (CACHED_DATA_PATH/f"{generation}.pt").exists()
 
 
 def load_generation(game:str, generation:int):
@@ -34,7 +38,7 @@ def load_generation(game:str, generation:int):
     if not generation_exists(game, generation):
         prefetch_generation(game, generation)
 
-    return torch.load(f"training_data/{game}/{generation}.pt")
+    return torch.load(CACHED_DATA_PATH/f"{generation}.pt")
 
 
 def load_generations(game:str, generations:list):

@@ -12,7 +12,7 @@
 
 
 std::string model_path(std::string model_name){
-    return utils::string_format("../models/connect4/%s.pt", model_name.c_str());
+    return utils::string_format("./models/%s.pt", model_name.c_str());
 }
 
 

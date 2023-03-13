@@ -12,6 +12,11 @@
 
 namespace utils {
     /*
+        Check if dir exists.
+    */
+    bool dir_exists(const std::string& path);    
+
+    /*
      * Timing.
      */
     template<typename F, typename... Args>
