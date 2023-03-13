@@ -17,6 +17,9 @@ create table generations (
     foreign key (game_id) references games (id)
 );
 
+create index generations_game_id_idx 
+on generations (game_id);
+
 insert into generations (game_id, generation_num)
 values
 ((select id from games where game_name = 'connect4'), 0),

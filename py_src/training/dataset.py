@@ -26,12 +26,21 @@ class EndgameSampling:
         self.population = list(range(self.num_samples))
         self.generation = generation
         self.generate_weights()
+        self.idx_q = []
+
         print("Done initializing endgame sampling")
         
     def sample(self):
-        idx = torch.multinomial(self.weights, 1)[0]
+        if len(self.idx_q) == 0:
+            self.refresh_indices()
+
+        idx = self.idx_q.pop()
 
         return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx]
+
+    def refresh_indices(self):
+        mult_sample = torch.multinomial(self.weights, config.endgame_sampling_q_size, replacement=True)
+        self.idx_q = mult_sample.tolist()
     
     def generate_weights(self):
         self.weights = self.sjonn_dist(self.data.moves_left)

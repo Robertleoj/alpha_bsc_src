@@ -31,3 +31,4 @@ class endgame_training:
 dl_prefetch_factor = 10
 dl_num_workers = 8
 log_loss_interval = 100
+endgame_sampling_q_size = 100000
