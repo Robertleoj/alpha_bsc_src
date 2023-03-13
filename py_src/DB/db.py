@@ -187,7 +187,7 @@ class DB:
         
     def get_ids(self, generation: int, game: str) -> list[int]:
 
-        min_gen = max(generation - config.buffer_generations, 0)
+        min_gen = max(generation - config['buffer_generations'], 0)
         
         query = f"""
             select t.id

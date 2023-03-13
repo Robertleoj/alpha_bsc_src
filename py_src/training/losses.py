@@ -1,5 +1,5 @@
 import torch
-import config
+from config import config
 
 def policy_loss(
     nn_policy: torch.Tensor, 
@@ -29,7 +29,7 @@ def value_loss(nn_value: torch.Tensor, real_value: torch.Tensor):
 
 def loss_fn(nn_val, nn_pol, target_val, target_pol) -> torch.Tensor:
     return (
-        config.value_loss_ratio * value_loss(nn_val, target_val) 
+        config['value_loss_ratio'] * value_loss(nn_val, target_val) 
         +policy_loss(nn_pol, target_pol)
     )
 

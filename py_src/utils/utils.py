@@ -1,5 +1,5 @@
 import os
-from config import dynamic_window, buffer_generations, endgame_training
+from config import config
 import torch
 from dataclasses import dataclass
 import sys
@@ -18,18 +18,22 @@ def make_folder(path):
     os.makedirs(path, exist_ok=True)
 
 def training_gens(generation: int):
-    if dynamic_window.on:
+    dw_config = config['dynamic_window']
+    if dw_config['on']:
         return dynamic_window_gen(generation)
     else:
-        return buffer_generations
+        return config['buffer_generations']
 
 
 def dynamic_window_gen(generation: int):
     """Returns the number of training generations based on the current generation"""
-    if dynamic_window.on:
+
+    dw_config = config['dynamic_window']
+    
+    if dw_config['on']:
         return min(
-                dynamic_window.max,
-                dynamic_window.min + generation // dynamic_window.increase_every,
+                dw_config['max'],
+                dw_config['min'] + generation // dw_config['increase_every'],
             )
     else:
         raise RuntimeError("Dynamic window is off!")
@@ -41,5 +45,5 @@ def set_run(run_name, game):
         exit(1)
 
     os.chdir(f"../vault/{game}/{run_name}")
-    sys.path.append(f"../vault/{game}/{run_name}")
+    config.initialize("py_config.json")
 

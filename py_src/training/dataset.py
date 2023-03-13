@@ -4,7 +4,7 @@ import torch
 
 from DB.db import DB
 import random
-import config
+from config import config
 import utils
 
 from prefetch import load_generations
@@ -15,10 +15,10 @@ class EndgameSampling:
     def __init__(self, data:Data, generation) -> None:
         # hyperparams
         print("Initializing endgame sampling")
-        self.p_max = config.endgame_training.p_max
-        self.p_min = config.endgame_training.p_min
-        self.shift = config.endgame_training.shift
-        self.gen_uniform = config.endgame_training.generation_uniform
+        self.p_max = config['endgame_training']['p_max']
+        self.p_min = config['endgame_training']['p_min']
+        self.shift = config['endgame_training']['shift']
+        self.gen_uniform = config['endgame_training']['generation_uniform']
 
         self.num_samples = len(data.states)
         self.data = data
@@ -39,7 +39,7 @@ class EndgameSampling:
         return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx]
 
     def refresh_indices(self):
-        mult_sample = torch.multinomial(self.weights, config.endgame_sampling_q_size, replacement=True)
+        mult_sample = torch.multinomial(self.weights, config['endgame_sampling_q_size'], replacement=True)
         self.idx_q = mult_sample.tolist()
     
     def generate_weights(self):
@@ -63,9 +63,9 @@ class UniformSampler:
 
 
 def get_sampler(data:Data, generation: int):
-    if config.sample_method == config.SampleMethod.uniform:
+    if config['sample_method'] == 'uniform':
         return UniformSampler(data)
-    elif config.sample_method == config.SampleMethod.endgame:
+    elif config['sample_method'] == 'endgame':
         return EndgameSampling(data, generation)
 
 
@@ -97,8 +97,8 @@ def get_dataloader(
 
     return DataLoader(
         dataset=dataset, 
-        batch_size=config.batch_size, 
-        num_workers=config.dl_num_workers, 
+        batch_size=config['batch_size'], 
+        num_workers=config['dl_num_workers'], 
         pin_memory=True,
-        prefetch_factor=config.dl_prefetch_factor
+        prefetch_factor=config['dl_prefetch_factor']
     )

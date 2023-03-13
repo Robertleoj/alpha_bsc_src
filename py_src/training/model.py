@@ -1,4 +1,4 @@
-import config
+from config import config
 import torch
 import pathlib
 from DB import DB
@@ -47,8 +47,8 @@ class Model:
     def get_optimizer(self) -> torch.optim.Optimizer:
         return torch.optim.Adam(
             self.nn.parameters(), 
-            lr=config.learning_rate,
-            weight_decay=config.weight_decay
+            lr=config['learning_rate'],
+            weight_decay=config['weight_decay']
         )
 
     def save_nn(self):
@@ -71,7 +71,9 @@ class Model:
     def log_loss(self, iteration:int, loss: float):
         self.db.add_loss(self.game, self.generation, iteration, loss)
     
-    def train(self, num_iterations: int=config.num_iterations):
+    def train(self, num_iterations: int=None):
+        if num_iterations is None:
+            num_iterations = config['num_iterations']
 
         iteration = 0
 
@@ -103,7 +105,7 @@ class Model:
             
             iteration += 1
 
-            if (iteration % config.log_loss_interval) == 0:
+            if (iteration % config['log_loss_interval']) == 0:
                 self.log_loss(
                     iteration=iteration, 
                     loss=sum(losses)/len(losses)

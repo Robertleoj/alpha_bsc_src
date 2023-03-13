@@ -14,6 +14,7 @@ if(len(sys.argv) == 3):
     game = sys.argv[2]
 
 
+
 set_run(run_name, game)
 
 model = Model('connect4')
