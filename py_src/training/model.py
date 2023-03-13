@@ -13,7 +13,7 @@ class Model:
         self.loss_fn = loss_fn
 
         self.game = game
-        self.model_path = pathlib.Path('../models') / self.game
+        self.model_path = pathlib.Path('./models')
 
         self.db = DB()
 

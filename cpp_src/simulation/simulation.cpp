@@ -381,8 +381,7 @@ ThreadData * init_thread_data(std::string game_name, int num_threads, int num_ga
 nn::NN * get_neural_net(std::string game, db::DB *db){
 
     std::string model_path = utils::string_format(
-        "../models/%s/%d.pt", 
-        game.c_str(),
+        "./models/%d.pt", 
         db->curr_generation
     );
 

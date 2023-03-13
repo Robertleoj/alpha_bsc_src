@@ -1,102 +1,58 @@
-import os
+#!/bin/python3
 from sys import argv
+import os
+from pathlib import Path
 
-# train_cmd
 
-cwd = "/home/gimli/AlphaBSc/alpha_bsc_src"
+if len(argv) <= 1:
+    print("Usage: python3 train_cycle.py <run_name> [<num_cycles> <game_name>]")
+    exit(1)
 
-def self_play(gen:int, dep:str=None) ->str:
-    print("starting self_play job")
+run_name = Path(argv[1])
+game_name = 'connect4'
 
-    cmd = f"cd {cwd} && sbatch --job-name=self_play{gen} --output=./logs/self_play{gen}.log" 
-    if dep is not None:
-        cmd += f" --dependency=aftercorr:{dep}"
-    cmd += f" self_play.sh"
-    print("running command")
-    print(cmd)
+num_cycles = 10
+if len(argv) >= 3:
+    num_cycles = int(argv[2])
 
-    outp = os.popen(cmd).read()
-    print("output: ")
-    print(outp)
+if len(argv) >= 4:
+    game_name = argv[3]
+
+run_dir = Path(f'./vault/{game_name}/{run_name}')
+
+if not run_dir.exists():
+    print("Run directory does not exist")
+    exit(1)
+
+
+def self_play():
+    os.chdir('./cpp_src')
+    exit_code = os.system(f'./self_play {run_name} {game_name}')
+
+    if(exit_code != 0):
+        exit(0)
+
+    os.chdir('..')
+
+def train():
+    os.chdir('./py_src')
+    exit_code = os.system(f'python3 train.py {run_name} {game_name}')
+    if(exit_code != 0):
+        exit(0)
+    os.chdir('..')
+
+def evaluate():
+    os.chdir('./cpp_src')
+    exit_code = os.system(f'./eval_agent {run_name}')
+    if(exit_code != 0):
+        exit(0)
+    os.chdir('..')
+
+
+for i in range(num_cycles):
+    print(f"Cycle {i+1}/{num_cycles}")
+    evaluate()
+    self_play()
+    train()
+evaluate()
     
-    job_id = outp.strip().split(' ')[-1]
-
-    print(f"started self_play job {job_id}")
-    return job_id
-
-def evaluate(gen:int, dep:str=None) ->str:
-    print("starting evaluation job")
-
-    cmd = f"cd {cwd} && sbatch --job-name=evaluate{gen} --output=./logs/eval{gen}.log" 
-    if dep is not None:
-        cmd += f" --dependency=aftercorr:{dep}"
-    cmd += f" eval.sh"
-    print("running command")
-    print(cmd)
-
-    outp = os.popen(cmd).read()
-    print("output: ")
-    print(outp)
-    
-    job_id = outp.strip().split(' ')[-1]
-
-    print(f"started eval job {job_id}")
-    return job_id
-
-
-
-def train(gen:int, dep:str=None) ->str:
-    print('starting train job')
-
-    cmd = f"cd {cwd} && sbatch --job-name=train{gen} --output=./logs/train{gen}.log" 
-    if dep is not None:
-        cmd += f" --dependency=aftercorr:{dep}"
-    cmd += f" train.sh"
-
-    print('running command')
-    print(cmd)
-    outp = os.popen(cmd).read()
-    print("output: ")
-    print(outp)
-    
-    job_id = outp.strip().split(' ')[-1]
-
-    print(f"started train job {job_id}")
-    return job_id
-
-def single_cycle(gen, dep:str=None) -> str:
-    dep = evaluate(gen, dep)
-    dep = self_play(gen, dep)
-    dep = train(gen, dep)
-    return dep
-
-def cycles(gen, num_gens, dep):
-    for g in range(gen, gen+num_gens):
-        dep = single_cycle(g, dep)
-    evaluate(gen, dep)
-    
-
-def main():
-    first_gen = 0
-
-    if len(argv) >= 2:
-        first_gen = int(argv[1])
-
-    num_generations = 5
-
-    if len(argv) >= 3:
-        num_generations = int(argv[2])
-
-    first_dep = None
-    if len(argv) >= 4:
-        first_dep = argv[3]
-
-    cycles(first_gen, num_generations, first_dep)
-
-main()
-
-
-
-
-
-

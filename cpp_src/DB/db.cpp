@@ -194,7 +194,7 @@ namespace db {
     void DB::make_connection() {
         int rc;
 
-        rc = sqlite3_open("../db/db.db", &this->db);
+        rc = sqlite3_open("./db.db", &this->db);
 
         if( rc ) {
             fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));

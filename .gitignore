@@ -17,3 +17,7 @@ py_src/7x6.book
 cpp_src/simulation/simulation.cpp
 saved_runs/
 logs/
+vault/*/*/models
+vault/*/*/cached_data
+vault/*/*/db.db
+

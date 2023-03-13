@@ -64,6 +64,7 @@ set(FILES
     base/types.h    
     base/bitboard.h
     utils/utils.h
+    utils/utils.cpp
     utils/random.h
     utils/random.cpp
     utils/dirichlet.h

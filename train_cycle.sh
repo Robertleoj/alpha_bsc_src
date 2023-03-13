@@ -7,9 +7,10 @@
 #SBATCH --partition=beQuick
 
 
-RUNPATH=/home/gimli/AlphaBSc/alpha_bsc_src/cpp_src
+RUNPATH=/home/gimli/AlphaBSc/alpha_bsc_src
 
 cd $RUNPATH
 
-./eval_agent
+source ./py_src/.venv/bin/activate
 
+python3 train_cycle.py $1 $2
