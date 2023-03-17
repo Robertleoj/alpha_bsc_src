@@ -19,6 +19,12 @@ struct EvalRequest {
     std::unique_ptr<nn::NNOut> result;
 };
 
+struct Batch {
+    std::vector<EvalRequest*> requests;
+    at::Tensor batch_tensor;
+};
+
+
 struct ThreadData {
     std::queue<EvalRequest*> eval_q;
     std::mutex q_mutex;
@@ -38,7 +44,7 @@ struct ThreadData {
         : q_mutex(), db_mutex(), q_cv(), db(db), neural_net(neural_net) {
         // set all variables
         this->games_left = num_games;
-        this->num_active_games = 0;
+        this->num_active_games = config::hp["self_play_num_threads"].get<int>() * config::hp["games_per_thread"].get<int>();
         this->eval_q = std::queue<EvalRequest*>();
     }
 
@@ -103,18 +109,13 @@ game::move_id select_move(
 
 void pop_batch(
     ThreadData *thread_data, 
-    std::function<int()> bs,
-    std::vector<int> *thread_indices,
-    std::vector<at::Tensor> *states
+    std::function<int()> bs, 
+    std::vector<EvalRequest*> *states
 );
 
-void eval_batch(
-    std::vector<at::Tensor> &states,
-    std::vector<int> &thread_indices, 
-    ThreadData *thread_data
-);
+void eval_batch(Batch * batch, ThreadData *thread_data);
 
-void self_play_active_thread_work(ThreadData *thread_data);
+void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *batch_queue, std::mutex *batch_queue_mutex, std::condition_variable *batch_queue_cv);
 
 nn::NN * get_neural_net(
     std::string game, 
@@ -231,7 +232,6 @@ void write_evaluation_to_db(
 
 //     auto visit_counts = agent->root_visit_counts();
 //     auto pol_mcts = utils::softmax_map(visit_counts);
-
 //     std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts); // THIS
 
 //     auto eval_out = eval_func(game->get_board());
@@ -322,6 +322,48 @@ void write_evaluation_to_db(
 // }
 
 
+void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, std::mutex * batch_queue_mutex, std::condition_variable * batch_queue_cv){
+    auto bs = [thread_data](){
+        return (unsigned long)std::min(
+            (int)thread_data->num_active_games, 
+            config::hp["batch_size"].get<int>()
+        );
+    };
+
+    // while(thread_data->num_active_games > 0){
+    while(true){
+        std::unique_lock<std::mutex> nn_q_lock(thread_data->q_mutex);
+
+        thread_data->q_cv.wait(nn_q_lock, [&thread_data, &bs](){
+            return thread_data->eval_q.size() >= bs();
+        });
+
+        if(bs() == 0){
+            nn_q_lock.unlock();
+            break;
+        }
+
+        std::vector<EvalRequest *> states;
+
+        pop_batch(thread_data, bs, &states);
+
+        std::vector<at::Tensor> tensors;
+        for(auto &s: states){
+            tensors.push_back(s->state);
+        }
+
+        at::Tensor batch = thread_data->neural_net->prepare_batch(tensors);
+
+        batch_queue_mutex->lock();
+        batch_queue->push(Batch{states, batch});
+        // std::cout << "pushed batch to queue" << std::endl;
+        batch_queue_mutex->unlock();
+        batch_queue_cv->notify_one();
+    }
+    std::cout << "dl thread done" << std::endl;
+}
+
+
 /**
  * @brief Starts the self play process
  * 
@@ -336,13 +378,22 @@ void sim::self_play(std::string game){
 
     auto thread_data = init_thread_data(game, num_threads, num_games);
 
+    std::queue<Batch> batch_queue;
+    std::mutex batch_queue_mutex;
+    std::condition_variable batch_queue_cv;
+    std::thread dl_thread(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
+
+    // self_play_start_dl_thread(thread_data);
+
     self_play_start_threads(threads, thread_data, num_threads, game);
 
-    self_play_active_thread_work(thread_data);
+    self_play_active_thread_work(thread_data, &batch_queue, &batch_queue_mutex, &batch_queue_cv);
 
     for(auto &t: threads){
         t.join();
     }
+
+    dl_thread.join();
 }
 
 ThreadData * init_thread_data(std::string game_name, int num_threads, int num_games, int generation_num){
@@ -422,19 +473,13 @@ void pop_batch(
  * @param states 
  * @param thread_data 
  */
-void eval_batch(std::vector<EvalRequest*> &states, ThreadData *thread_data)
+void eval_batch(Batch * batch, ThreadData *thread_data)
 {
-    std::vector<at::Tensor> nn_input;
+    auto result = thread_data->neural_net->eval_batch(batch->batch_tensor);
 
-    for(auto er: states){
-        nn_input.push_back(er->state);
-    }
-
-    auto result = thread_data->neural_net->eval_tensors(nn_input);
-
-    for(int i = 0; i < (int)states.size(); i++){
-        states[i]->result = std::move(result[i]);
-        states[i]->completed = true;
+    for(int i = 0; i < (int)batch->requests.size(); i++){
+        batch->requests[i]->result = std::move(result[i]);
+        batch->requests[i]->completed = true;
     }
 }
 
@@ -446,34 +491,37 @@ void eval_batch(std::vector<EvalRequest*> &states, ThreadData *thread_data)
  * @param thread_data 
  * @param bs 
  */
-void self_play_active_thread_work(ThreadData *thread_data) {
+void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *batch_queue, std::mutex *batch_queue_mutex, std::condition_variable *batch_queue_cv) {
 
-    auto bs = [thread_data](){
-        return (unsigned long)std::min(
-            (int)thread_data->num_active_games, 
-            config::hp["batch_size"].get<int>()
-        );
-    };
 
     while(thread_data->num_active_games > 0){
-        std::unique_lock<std::mutex> nn_q_lock(thread_data->q_mutex);
 
-        thread_data->q_cv.wait(nn_q_lock, [&thread_data, &bs](){
-            return thread_data->eval_q.size() >= bs();
-        });
+        auto cond = [batch_queue](){
+            return batch_queue->size() >= 1;
+        };
 
-        if(bs() == 0){
-            nn_q_lock.unlock();
-            break;
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(2000);
+        std::unique_lock<std::mutex> lock(*batch_queue_mutex);
+
+        while (!cond()) {
+            batch_queue_cv->wait_for(lock, timeout);
         }
+
+        // std::unique_lock<std::mutex> batch_q_lock(*batch_queue_mutex);
+        // if(batch_queue->size() == 0){
+        //     batch_queue_cv->wait(batch_q_lock, [batch_queue](){
+        //         return batch_queue->size() >= 1;
+        //     });
+        // }
 
         std::vector<EvalRequest *> states;
 
-        pop_batch(thread_data, bs, &states);
+        auto batch = batch_queue->front();
+        batch_queue->pop();
 
-        nn_q_lock.unlock();
+        lock.unlock();
 
-        eval_batch(states, thread_data);
+        eval_batch(&batch, thread_data);
     }
 }
 
@@ -599,7 +647,7 @@ void thread_play(
     for(int i = 0; i < num_games; i++){
         games[i] = get_game_instance(game_name);
         agents[i] = new Agent(games[i]);
-        thread_data->num_active_games++;
+        // thread_data->num_active_games++;
         dead_game[i] = false;
         auto [done, board] = agents[i]->init_mcts(config::hp["search_depth"].get<int>());
         requests[i].completed = false;
@@ -614,7 +662,7 @@ void thread_play(
     while(true){
         for(int i = 0; i < num_games; i++){
             if(dead_game[i] || !requests[i].completed){
-                usleep(0);
+                usleep(0); // give other threads a chance to run
                 continue;
             }
 

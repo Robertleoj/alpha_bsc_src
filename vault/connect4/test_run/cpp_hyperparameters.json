@@ -3,7 +3,7 @@
     "batch_size": 1048,
     "search_depth": 800,
     "self_play_num_games" : 10000,
-    "games_per_thread" : 1000,
+    "games_per_thread" : 5000,
     "self_play_num_threads": 30,
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,
