@@ -220,9 +220,9 @@ std::tuple<MCNode *, double, bool> Agent::make_root(){
 
     this->tree->root = root;
 
-    if(!this->game->is_terminal()){
-        this->apply_noise(root);
-    }
+    // if(!this->game->is_terminal()){
+    //     this->apply_noise(root);
+    // }
 
     return ret;
 }
@@ -317,6 +317,11 @@ std::pair<bool, Board> Agent::step(std::unique_ptr<nn::NNOut> evaluation){
 
     // update node
     this->node_to_eval->add_prior(&evaluation->p);
+    if(this->node_to_eval == this->tree->root){
+        if (this->use_dirichlet_noise){
+            this->apply_noise(this->node_to_eval);
+        }
+    }
 
 
     // get new node to update

@@ -2,6 +2,9 @@
 #include "./connect4_nn.h"
 #include "../base/types.h"
 #include <fstream>
+#include <c10/cuda/CUDACachingAllocator.h>
+#include <cuda_runtime.h>
+
 
 
 namespace nn{
@@ -61,21 +64,28 @@ namespace nn{
     }
 
     c10::ivalue::TupleElements Connect4NN::run_batch(at::Tensor inp_tensor){
+
+        if(!inp_tensor.is_cuda()){
+            inp_tensor = inp_tensor.cuda();
+        }
+
         // Create the input value for the network
         std::vector<torch::jit::IValue> inp({inp_tensor});
 
         // Get the output from the network
         auto net_out = this->net.forward(inp).toTuple()->elements();
 
+        // cudaFree(inp_tensor.data_ptr());
+
         return net_out;
     }
 
-    std::vector<std::unique_ptr<NNOut>> Connect4NN::net_out_to_nnout(c10::ivalue::TupleElements net_out){
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::net_out_to_nnout(at::Tensor pol_tensors, at::Tensor val_tensors){
         // Get the policy and value tensors
-        auto pol_tensors = net_out.at(0).toTensor();
+        // auto pol_tensors = net_out.at(0).toTensor();
         pol_tensors = pol_tensors.softmax(1).cpu();
 
-        auto val_tensors = net_out.at(1).toTensor();
+        // auto val_tensors = net_out.at(1).toTensor();
         val_tensors = val_tensors.cpu();
 
         // Create the output
@@ -93,6 +103,8 @@ namespace nn{
 
 
     std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_batch(at::Tensor inp_tensor){
+
+
         // Create the input value for the network
         std::vector<torch::jit::IValue> inp({inp_tensor});
 
@@ -124,9 +136,9 @@ namespace nn{
     at::Tensor Connect4NN::prepare_batch(std::vector<at::Tensor>& tensors){
         auto inp_tensor = torch::stack(tensors, 0);
 
-        if(!inp_tensor.is_cuda()){
-            inp_tensor = inp_tensor.cuda();
-        }
+        // if(!inp_tensor.is_cuda()){
+        //     inp_tensor = inp_tensor.cuda();
+        // }
         return inp_tensor;
     }
 

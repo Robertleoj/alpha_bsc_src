@@ -29,7 +29,7 @@ namespace nn {
             at::Tensor value_tensor
         ) override;
         c10::ivalue::TupleElements run_batch(at::Tensor) override;
-        std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(c10::ivalue::TupleElements) override;
+        std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(at::Tensor, at::Tensor) override;
 
     private:
         torch::jit::script::Module net;

@@ -1,9 +1,9 @@
 {
     "PUCT_c" : 4,
-    "batch_size": 512,
-    "search_depth": 800,
-    "self_play_num_games" : 10000,
-    "games_per_thread" : 100,
+    "batch_size": 2056,
+    "search_depth": 600,
+    "self_play_num_games" : 5000,
+    "games_per_thread" : 500,
     "self_play_num_threads": 30,
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,

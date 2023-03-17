@@ -12,6 +12,7 @@
 #include <thread>
 #include <cstring>
 #include <unistd.h>
+#include <memory>
 
 struct EvalRequest {
     bool completed;
@@ -22,7 +23,7 @@ struct EvalRequest {
 struct Batch {
     std::vector<EvalRequest*> requests;
     at::Tensor batch_tensor;
-    c10::ivalue::TupleElements net_out;
+    std::pair<at::Tensor, at::Tensor> result;
 };
 
 
@@ -356,7 +357,7 @@ void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, s
         at::Tensor batch = thread_data->neural_net->prepare_batch(tensors);
 
         batch_queue_mutex->lock();
-        batch_queue->push(Batch{states, batch});
+        batch_queue->push(Batch{states, batch, std::make_pair(at::Tensor(), at::Tensor())});
         // std::cout << "pushed batch to queue" << std::endl;
         batch_queue_mutex->unlock();
         batch_queue_cv->notify_one();
@@ -389,9 +390,29 @@ void nn_thread_work(
         batch_queue->pop();
         lock.unlock();
 
+        if(batch.batch_tensor.is_cuda()){
+            throw std::runtime_error("batch tensor is on gpu");
+        }
+
         auto outputs = thread_data->neural_net->run_batch(batch.batch_tensor);
-        batch.net_out = outputs;
+
+        batch.batch_tensor.cpu();
+        batch.batch_tensor.reset();
         batch.batch_tensor = at::Tensor();
+        
+        at::Tensor t1 = outputs.at(0).toTensor();
+        at::Tensor t2 = outputs.at(1).toTensor();
+
+        batch.result = std::make_pair(
+            t1.cpu(),
+            t2.cpu()
+        );
+
+        t1.reset();
+        t2.reset();
+
+        // batch.result.first.reset();
+        // batch.result.second.reset();
 
         batch_result_queue_mutex->lock();
         batch_result_queue->push(batch);
@@ -417,21 +438,30 @@ void sim::self_play(std::string game){
     std::queue<Batch> batch_queue;
     std::mutex batch_queue_mutex;
     std::condition_variable batch_queue_cv;
-    std::thread dl_thread1(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
-    std::thread dl_thread2(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
-    // std::thread dl_thread3(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
+
+    std::vector<std::thread> dl_threads;
+    int n_dl_threads = 4;
+    for(int i = 0; i < n_dl_threads; i++){
+        dl_threads.push_back(std::thread(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv));
+    }
 
     std::queue<Batch> batch_result_queue;
     std::mutex batch_result_queue_mutex;
     std::condition_variable batch_result_queue_cv;
     std::thread nn_thread1(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
-    // std::thread nn_thread2(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
+    std::thread nn_thread2(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
 
     // self_play_start_dl_thread(thread_data);
 
     self_play_start_threads(threads, thread_data, num_threads, game);
 
-    self_play_active_thread_work(thread_data, &batch_result_queue, &batch_result_queue_mutex, &batch_result_queue_cv);
+    std::vector<std::thread> return_threads;
+
+    int n_return_threads = 5;
+
+    for(int i = 0; i < n_return_threads; i++){
+        return_threads.push_back(std::thread(self_play_active_thread_work, thread_data, &batch_result_queue, &batch_result_queue_mutex, &batch_result_queue_cv));
+    }
 
     for(auto &t: threads){
         t.join();
@@ -521,7 +551,10 @@ void pop_batch(
  */
 void eval_batch(Batch * batch, ThreadData *thread_data)
 {
-    auto result = thread_data->neural_net->net_out_to_nnout(batch->net_out);
+    auto result = thread_data->neural_net->net_out_to_nnout(
+        batch->result.first,
+        batch->result.second
+    );
 
     for(int i = 0; i < (int)batch->requests.size(); i++){
         batch->requests[i]->result = std::move(result[i]);
@@ -767,5 +800,12 @@ void thread_play(
             thread_data->q_mutex.unlock();
             thread_data->q_cv.notify_one();
         }
+
+        // get max moves
+        // int max_moves = 0;
+        // for(int i = 0; i < num_games; i++){
+        //     max_moves = std::max(max_moves, num_moves[i]);
+        // }
+        // std::cout << "Max moves: " << max_moves << std::endl;
     }
 }
