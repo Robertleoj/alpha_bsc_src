@@ -8,11 +8,9 @@
 
 Agent::Agent(
     game::IGame * game, 
-    eval_f eval_func,
     bool apply_noise,
     bool delete_on_move
 ) : game(game), 
-    eval_func(eval_func), 
     use_dirichlet_noise(apply_noise), 
     delete_on_move(delete_on_move) 
 {  
@@ -123,37 +121,42 @@ double Agent::switch_eval(double v) {
  * @param move_id 
  * @return std::pair<MCNode *, double> 
  */
-std::pair<MCNode *, double> Agent::make_node(MCNode * parent, game::move_id move_id){
+std::tuple<MCNode *, double, bool> Agent::make_node(MCNode * parent, game::move_id move_id){
     MCNode * new_node = nullptr;
     double v;
+    bool terminal;
+
 
     if(game->is_terminal()){
         v = this->outcome_to_value(game->outcome());
+        terminal = true;
 
         new_node = new MCNode(
             parent,
             move_id
         );
+
+        // return std::make_tuple(new_node, v, true);
     } else {
 
-        auto evaluation = this->eval_func(this->game->get_board());
+        // auto evaluation = this->eval_func(this->game->get_board());
+        v = 0;
+        terminal = false;
 
         // Make new node 
         new_node = new MCNode(
             parent,
             this->game->moves(),
-            move_id,
-            &evaluation->p
+            move_id
         );
-
-        v = evaluation->v;
+        // return std::make_tuple(new_node, 0, false);
     }
 
     if(parent != nullptr){
         parent->children[move_id] = new_node;
     }
 
-    return std::make_pair(new_node, v);
+    return std::make_tuple(new_node, v, terminal);
 }
 
 
@@ -210,10 +213,10 @@ game::move_id Agent::select_puct_move(MCNode * node){
  * 
  * @return pair with the new root and its evaluation
  */
-std::pair<MCNode *, double> Agent::make_root(){
+std::tuple<MCNode *, double, bool> Agent::make_root(){
     auto ret = this->make_node(nullptr, -1);
 
-    auto [root, value] = ret;
+    auto [root, value, _] = ret;
 
     this->tree->root = root;
 
@@ -229,7 +232,7 @@ std::pair<MCNode *, double> Agent::make_root(){
  * 
  * @return Pair with the selected node and its evaluation from the perspective of the player whose move it is
  */
-std::pair<MCNode *, double> Agent::selection(){
+std::tuple<MCNode *, double, bool> Agent::selection(){
 
     // If root doesn't exist, create it
     if (this->tree->root == nullptr){
@@ -242,7 +245,7 @@ std::pair<MCNode *, double> Agent::selection(){
 
         // if the current node is terminal, the selection phase is over, and there is no expansion.
         if(current_node->is_terminal){
-            return std::make_pair(current_node, current_node->value_approx);
+            return std::make_tuple(current_node, current_node->value_approx, true);
         }
 
         // find move with highest puct
@@ -294,14 +297,76 @@ void Agent::backpropagation(MCNode * node, double v){
  * @param playout_cap 
  */
 void Agent::search(int playout_cap){
+    return;
 
-    for(int i = 0; i < playout_cap; i++){
-        std::pair<MCNode *, double> selection_result = this->selection();
+    // for(int i = 0; i < playout_cap; i++){
+    //     std::pair<MCNode *, double> selection_result = this->selection();
 
-        auto [created_node, v] = selection_result;
+    //     auto [created_node, v] = selection_result;
 
-        this->backpropagation(created_node, v);
+    //     this->backpropagation(created_node, v);
+    // }
+}
+
+std::pair<bool, Board> Agent::step(std::unique_ptr<nn::NNOut> evaluation){
+
+    // get node to evaluate
+    if(this->node_to_eval == nullptr){
+        throw std::runtime_error("No node to evaluate, did you forget to call init_mcts()?");
     }
+
+    // update node
+    this->node_to_eval->add_prior(&evaluation->p);
+
+
+    // get new node to update
+    bool terminal;
+    MCNode * new_node = this->node_to_eval;
+    double v = evaluation->v;
+    do {
+        // backprop
+        this->backpropagation(new_node, v);
+        this->num_playouts++;
+        if(this->num_playouts >= this->max_playouts){
+            return std::make_pair(true, this->game->get_board());
+        }
+        auto res = this->selection();
+
+        new_node = std::get<0>(res);
+        v = std::get<1>(res);
+        terminal = std::get<2>(res);
+    } while(terminal);
+
+    this->node_to_eval = new_node;
+
+    // return board of node
+    return std::make_pair(false,this->game->get_board());
+}
+
+std::pair<bool, Board> Agent::init_mcts(int max_playouts){
+    this->max_playouts = max_playouts;
+    this->num_playouts = 0;
+
+    auto [new_node, v, terminal] = this->selection();
+
+    do {
+        // backprop
+        this->backpropagation(new_node, v);
+        this->num_playouts++;
+        if(this->num_playouts >= this->max_playouts){
+            return std::make_pair(true, this->game->get_board());
+        }
+        auto res = this->selection();
+
+        new_node = std::get<0>(res);
+        v = std::get<1>(res);
+        terminal = std::get<2>(res);
+    } while(terminal);
+
+    this->node_to_eval = new_node;
+
+    // return board of node
+    return std::make_pair(false, this->game->get_board());
 }
 
 /**

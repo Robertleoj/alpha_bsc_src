@@ -17,8 +17,8 @@ public:
     MCNode(
         MCNode * parent, 
         std::vector<game::move_id> legal_moves,
-        game::move_id move_from_parent, 
-        nn::move_dist * nn_prior
+        game::move_id move_from_parent
+        // nn::move_dist * nn_prior
     );
     
     //// terminal constructor
@@ -26,6 +26,8 @@ public:
         MCNode * parent,
         game::move_id move_from_parent
     );
+
+    void add_prior(nn::move_dist * nn_prior);
 
     // variables
     int plays;

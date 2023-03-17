@@ -11,21 +11,21 @@
 #include <stdexcept>
 #include <thread>
 #include <cstring>
+#include <unistd.h>
 
-typedef std::pair<int, at::Tensor> eval_request;
+struct EvalRequest {
+    bool completed;
+    at::Tensor state;
+    std::unique_ptr<nn::NNOut> result;
+};
 
 struct ThreadData {
-    std::queue<eval_request> eval_q;
+    std::queue<EvalRequest*> eval_q;
     std::mutex q_mutex;
     std::mutex db_mutex;
-    bool *req_completed;
-    std::mutex req_completed_mutex;
-    std::unique_ptr<nn::NNOut> *evaluations;
-    std::condition_variable eval_cv;
     std::condition_variable q_cv;
-    std::mutex results_mutex;
     std::atomic<int> games_left;
-    std::atomic<int> num_active_threads;
+    std::atomic<int> num_active_games;
     db::DB * db;
     nn::NN * neural_net;
 
@@ -33,23 +33,16 @@ struct ThreadData {
         int num_threads, 
         nn::NN * neural_net,
         db::DB * db,
-        int num_games, 
-        bool *req_completed,
-        std::unique_ptr<nn::NNOut> *evaluations
+        int num_games
     )
-        : q_mutex(), db_mutex(), req_completed(req_completed),
-            req_completed_mutex(), evaluations(evaluations), eval_cv(), q_cv(),
-            results_mutex(), db(db), neural_net(neural_net) {
+        : q_mutex(), db_mutex(), q_cv(), db(db), neural_net(neural_net) {
         // set all variables
         this->games_left = num_games;
-        this->num_active_threads = num_threads;
-        this->eval_q = std::queue<eval_request>();
-
+        this->num_active_games = 0;
+        this->eval_q = std::queue<EvalRequest*>();
     }
 
     ~ThreadData(){
-        delete[] req_completed;
-        delete[] evaluations;
     }
 };
 
@@ -72,11 +65,6 @@ void thread_play(
     int thread_idx, 
     ThreadData *thread_data,
     std::string game_name
-);
-
-eval_f make_eval_function(
-    int thread_idx, 
-    ThreadData *thread_data
 );
 
 void self_play_start_threads(
@@ -227,111 +215,111 @@ void write_evaluation_to_db(
 }
 
 
-void evaluate_request(GroundTruthRequest * gt, ThreadData * thread_data, int thread_idx){
+// void evaluate_request(GroundTruthRequest * gt, ThreadData * thread_data, int thread_idx){
 
-    game::IGame* game = get_game_instance("connect4");
+//     game::IGame* game = get_game_instance("connect4");
 
-    for(char mv: gt->moves){
-        game->make(mv - '0');
-    }
+//     for(char mv: gt->moves){
+//         game->make(mv - '0');
+//     }
 
-    eval_f eval_func = make_eval_function(thread_idx, thread_data);
+//     eval_f eval_func = make_eval_function(thread_idx, thread_data);
 
-    Agent * agent = new Agent(game, eval_func, false);
+//     Agent * agent = new Agent(game, false);
 
-    agent->search(config::hp["eval_search_depth"].get<int>());
+//     agent->search(config::hp["eval_search_depth"].get<int>());
 
-    auto visit_counts = agent->root_visit_counts();
-    auto pol_mcts = utils::softmax_map(visit_counts);
+//     auto visit_counts = agent->root_visit_counts();
+//     auto pol_mcts = utils::softmax_map(visit_counts);
 
-    std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts); // THIS
+//     std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts); // THIS
 
-    auto eval_out = eval_func(game->get_board());
+//     auto eval_out = eval_func(game->get_board());
 
-    auto pol_prior = eval_out->p;
-    std::vector<double> pol_prior_vec = get_policy_vector(pol_prior); // THIS
+//     auto pol_prior = eval_out->p;
+//     std::vector<double> pol_prior_vec = get_policy_vector(pol_prior); // THIS
 
-    double nn_value = eval_out->v; // THIS
+//     double nn_value = eval_out->v; // THIS
 
-    double mcts_value = agent->tree->root->value_approx; // THIS
+//     double mcts_value = agent->tree->root->value_approx; // THIS
 
-    write_evaluation_to_db(
-        thread_data,
-        gt,
-        pol_prior_vec, 
-        nn_value,
-        pol_mcts_vec, 
-        mcts_value
-    );
+//     write_evaluation_to_db(
+//         thread_data,
+//         gt,
+//         pol_prior_vec, 
+//         nn_value,
+//         pol_mcts_vec, 
+//         mcts_value
+//     );
     
 
-    delete agent;
-    delete game;
-}
+//     delete agent;
+//     delete game;
+// }
 
-void thread_eval(
-    int thread_idx,
-    ThreadData * thread_data,
-    EvalData * eval_data
-) {
-
-
-    while(true){
-        eval_data->board_queue_mutex.lock();
-        if(eval_data->board_queue.empty()){
-            eval_data->board_queue_mutex.unlock();
-            break;
-        }
-
-        GroundTruthRequest req = eval_data->board_queue.front();
-
-        eval_data->board_queue.pop();
-        eval_data->board_queue_mutex.unlock();
+// void thread_eval(
+//     int thread_idx,
+//     ThreadData * thread_data,
+//     EvalData * eval_data
+// ) {
 
 
-        evaluate_request(&req, thread_data, thread_idx);
-    }
+//     while(true){
+//         eval_data->board_queue_mutex.lock();
+//         if(eval_data->board_queue.empty()){
+//             eval_data->board_queue_mutex.unlock();
+//             break;
+//         }
 
-    thread_data->num_active_threads--;
-    thread_data->q_cv.notify_one();
-}
+//         GroundTruthRequest req = eval_data->board_queue.front();
+
+//         eval_data->board_queue.pop();
+//         eval_data->board_queue_mutex.unlock();
+
+
+//         evaluate_request(&req, thread_data, thread_idx);
+//     }
+
+//     // thread_data->num_active_threads--;
+//     thread_data->q_cv.notify_one();
+// }
 
 
 
-void start_eval_threads(
-    ThreadData * thread_data, 
-    EvalData * eval_data, 
-    std::thread * threads, 
-    int num_threads
-){
-    for(int i = 0; i < num_threads; i++){
-        threads[i] = std::thread(thread_eval, i, thread_data, eval_data);
-    }
-}
+// void start_eval_threads(
+//     ThreadData * thread_data, 
+//     EvalData * eval_data, 
+//     std::thread * threads, 
+//     int num_threads
+// ){
+//     for(int i = 0; i < num_threads; i++){
+//         threads[i] = std::thread(thread_eval, i, thread_data, eval_data);
+//     }
+// }
 
-void sim::eval_targets(std::string eval_targets_filename, int generation_num){
-    int num_threads = config::hp["num_parallel_games"].get<int>();
-    int num_games = config::hp["self_play_num_games"].get<int>();
+// void sim::eval_targets(std::string eval_targets_filename, int generation_num){
+//     int num_threads = config::hp["num_parallel_games"].get<int>();
+//     int num_games = config::hp["self_play_num_games"].get<int>();
 
-    auto eval_data_queue = make_eval_data_queue(eval_targets_filename);
+//     auto eval_data_queue = make_eval_data_queue(eval_targets_filename);
 
-    EvalData eval_data;
-    eval_data.board_queue = eval_data_queue;
+//     EvalData eval_data;
+//     eval_data.board_queue = eval_data_queue;
 
-    std::thread threads[num_threads];
-    auto thread_data = init_thread_data("connect4", num_threads, num_games, generation_num);
+//     std::thread threads[num_threads];
+//     auto thread_data = init_thread_data("connect4", num_threads, num_games, generation_num);
 
-    start_eval_threads(thread_data, &eval_data, threads, num_threads);
+//     start_eval_threads(thread_data, &eval_data, threads, num_threads);
 
-    self_play_active_thread_work(thread_data);
-    std::cout << std::endl;
+//     self_play_active_thread_work(thread_data);
+//     std::cout << std::endl;
 
-    for(auto &t: threads){
-        t.join();
-    }
+//     for(auto &t: threads){
+//         t.join();
+//     }
 
-    delete thread_data;
-}
+//     delete thread_data;
+// }
 
 
 /**
@@ -341,7 +329,7 @@ void sim::eval_targets(std::string eval_targets_filename, int generation_num){
  */
 void sim::self_play(std::string game){
 
-    int num_threads = config::hp["num_parallel_games"].get<int>();
+    int num_threads = config::hp["self_play_num_threads"].get<int>();
     int num_games = config::hp["self_play_num_games"].get<int>();
 
     std::thread threads[num_threads];
@@ -362,18 +350,12 @@ ThreadData * init_thread_data(std::string game_name, int num_threads, int num_ga
 
     auto nn = get_neural_net(game_name, db);
 
-    bool * req_completed = new bool[num_threads];
-    memset(req_completed, false, num_threads * sizeof(bool));
-
-    auto evaluations = new std::unique_ptr<nn::NNOut>[num_threads];
 
     return new ThreadData(
         num_threads, 
         nn,
         db,
-        num_games, 
-        req_completed, 
-        evaluations
+        num_games
     );
 }
 
@@ -425,16 +407,12 @@ void self_play_start_threads(std::thread *threads, ThreadData *thread_data, int 
 void pop_batch(
     ThreadData *thread_data, 
     std::function<int()> bs, 
-    std::vector<int> *thread_indices, 
-    std::vector<at::Tensor> *states
-    )
-{
+    std::vector<EvalRequest*> *states
+){
     for(int i = 0; i < bs(); i++){
         auto p = thread_data->eval_q.front();
         thread_data->eval_q.pop();
-
-        thread_indices->push_back(p.first);
-        states->push_back(p.second);
+        states->push_back(p);
     }
 }
 
@@ -442,20 +420,22 @@ void pop_batch(
  * @brief Evaluate a batch of states.
  * 
  * @param states 
- * @param thread_indices 
  * @param thread_data 
  */
-void eval_batch(std::vector<at::Tensor> &states, std::vector<int> &thread_indices, ThreadData *thread_data)
+void eval_batch(std::vector<EvalRequest*> &states, ThreadData *thread_data)
 {
-    auto result = thread_data->neural_net->eval_tensors(states);
-        for(int i = 0; i < (int)thread_indices.size(); i++){
-            int thread_idx = thread_indices[i];
+    std::vector<at::Tensor> nn_input;
 
-            thread_data->evaluations[thread_idx] = std::move(result[i]);
+    for(auto er: states){
+        nn_input.push_back(er->state);
+    }
 
-            thread_data->req_completed[thread_idx] = true;
-        }
-        thread_data->eval_cv.notify_all();
+    auto result = thread_data->neural_net->eval_tensors(nn_input);
+
+    for(int i = 0; i < (int)states.size(); i++){
+        states[i]->result = std::move(result[i]);
+        states[i]->completed = true;
+    }
 }
 
 /**
@@ -468,12 +448,12 @@ void self_play_active_thread_work(ThreadData *thread_data) {
 
     auto bs = [thread_data](){
         return (unsigned long)std::min(
-            (int)thread_data->num_active_threads, 
+            (int)thread_data->num_active_games, 
             config::hp["batch_size"].get<int>()
         );
     };
 
-    while(thread_data->num_active_threads > 0){
+    while(thread_data->num_active_games > 0){
         std::unique_lock<std::mutex> nn_q_lock(thread_data->q_mutex);
 
         thread_data->q_cv.wait(nn_q_lock, [&thread_data, &bs](){
@@ -485,68 +465,16 @@ void self_play_active_thread_work(ThreadData *thread_data) {
             break;
         }
 
-        std::vector<int> thread_indices;
-        std::vector<at::Tensor> states;
+        std::vector<EvalRequest *> states;
 
-        pop_batch(thread_data, bs, &thread_indices, &states);
+        pop_batch(thread_data, bs, &states);
 
         nn_q_lock.unlock();
 
-        eval_batch(states, thread_indices, thread_data);
+        eval_batch(states, thread_data);
     }
 }
 
-
-
-/**
- * @brief Creates an eval function for a thread
- * 
- * @param thread_idx 
- * @param thread_data 
- * @param nn_ptr 
- * @return eval_f 
- */
-eval_f make_eval_function(int thread_idx, ThreadData * thread_data){
-    nn::NN * nn_ptr = thread_data->neural_net;
-    return [
-        thread_idx, 
-        thread_data,
-        nn_ptr
-    ](Board b){
-        
-        // Make thread create the tensor from state so main thread does not have to
-        auto t = nn_ptr->state_to_tensor(b).cuda();
-
-        // Put item in queue
-        thread_data->q_mutex.lock();
-        thread_data->eval_q.push({thread_idx, t});
-        thread_data->q_mutex.unlock();
-
-        // notify main thread that there is an item in the queue
-        thread_data->q_cv.notify_one();
-
-        // Wait for result
-        std::mutex m;
-        std::unique_lock<std::mutex> lq(m);
-
-        // Wait for main thread to notify that the result is ready
-        thread_data->eval_cv.wait(lq, [thread_data, thread_idx](){
-            return thread_data->req_completed[thread_idx];
-        });
-        
-        // Reset flag
-        thread_data->req_completed[thread_idx] = false;
-        lq.unlock();
-
-        // Get results
-        // thread_data->results_mutex.lock();
-        auto result = std::move(thread_data->evaluations[thread_idx]);
-        thread_data->evaluations[thread_idx] = nullptr;
-        // thread_data->results_mutex.unlock();
-
-        return result;
-    };   
-}
 
 /**
  * @brief Gets the correct game instance based on the game name (this->game).
@@ -612,56 +540,6 @@ db::TrainingSample get_training_sample(
 
 
 /**
- * @brief Plays a single game
- * 
- * @param thread_idx 
- * @param thread_data 
- */
-void thread_game(int thread_idx, ThreadData * thread_data, std::string game_name){
-    // decrement games left
-    (thread_data->games_left)--;
-
-    game::IGame* game = get_game_instance(game_name);
-
-    eval_f eval_func = make_eval_function(thread_idx, thread_data);
-    Agent * agent = new Agent(game, eval_func);
-
-    std::vector<db::TrainingSample> samples;
-
-    std::stringstream moves;
-    int num_moves = 0;
-    while(!game->is_terminal()){
-
-        agent->search(config::hp["search_depth"].get<int>());
-
-        auto visit_counts = agent->root_visit_counts();
-        auto normalized_visit_counts = utils::softmax_map(visit_counts);
-
-        samples.push_back(get_training_sample(
-            normalized_visit_counts, 
-            moves.str(), 
-            game->get_board(),
-            thread_data->neural_net
-        ));
-
-        auto best_move = select_move(normalized_visit_counts, num_moves);
-
-        moves << game->move_as_str(best_move) << ";";
-
-        game->make(best_move);
-        agent->update_tree(best_move);
-
-        num_moves++;
-    }
-
-    write_samples(&samples, agent, thread_data, game, num_moves);
-
-    delete agent;
-    delete game;
-
-}
-
-/**
  * @brief Writes the training samples to the database
  * 
  * @param training_samples 
@@ -704,13 +582,94 @@ void thread_play(
     std::string game_name
 ) {
 
-    while((thread_data->games_left) > 0){
-        thread_game(thread_idx, thread_data, game_name);
-        std::cout << "finished game" << std::endl;
-        std::cout << "Games left: " 
-                  << thread_data->games_left + thread_data->num_active_threads 
-                  << std::endl;
+    const int num_games = config::hp["games_per_thread"].get<int>();
+
+    Agent * agents[num_games];
+    game::IGame * games[num_games];
+    EvalRequest requests[num_games];
+    bool dead_game[num_games];
+    std::vector<db::TrainingSample> samples[num_games];
+    std::stringstream moves[num_games];
+    int num_moves[num_games];
+    memset(num_moves, 0, sizeof(num_moves));
+
+    // start the games
+    for(int i = 0; i < num_games; i++){
+        games[i] = get_game_instance(game_name);
+        agents[i] = new Agent(games[i]);
+        thread_data->num_active_games++;
+        dead_game[i] = false;
+        auto [done, board] = agents[i]->init_mcts(config::hp["search_depth"].get<int>());
+        requests[i].completed = false;
+        requests[i].result = nullptr;
+        requests[i].state = thread_data->neural_net->state_to_tensor(board);
+        thread_data->q_mutex.lock();
+        thread_data->eval_q.push(&requests[i]);
+        thread_data->q_mutex.unlock();
+        thread_data->q_cv.notify_one();
     }
-    thread_data->num_active_threads--;
-    thread_data->q_cv.notify_one();
+
+    while(true){
+        for(int i = 0; i < num_games; i++){
+            if(dead_game[i] || !requests[i].completed){
+                continue;
+            }
+
+            // get answer
+            std::unique_ptr<nn::NNOut> answer = std::move(requests[i].result);
+            auto [done, board] = agents[i]->step(std::move(answer));
+
+            while(done){
+                // agent is ready to move
+                auto visit_counts = agents[i]->root_visit_counts();
+                auto normalized_visit_counts = utils::softmax_map(visit_counts);
+
+                samples[i].push_back(get_training_sample(
+                    normalized_visit_counts, 
+                    moves[i].str(), 
+                    games[i]->get_board(),
+                    thread_data->neural_net
+                ));
+
+                auto best_move = select_move(normalized_visit_counts, num_moves[i]);
+
+                moves[i] << games[i]->move_as_str(best_move) << ";";
+
+                games[i]->make(best_move);
+                agents[i]->update_tree(best_move);
+
+                num_moves[i]++;
+                bool game_completed = games[i]->is_terminal();
+
+                if(game_completed){
+                    write_samples(&samples[i], agents[i], thread_data, games[i], num_moves[i]);
+
+                    // restart game
+                    samples[i].clear();
+                    num_moves[i] = 0;
+                    delete agents[i];
+                    delete games[i];
+
+                    thread_data->games_left--;
+                    std::cout << "Games left: " << thread_data->games_left << std::endl;
+
+                    games[i] = get_game_instance(game_name);
+                    agents[i] = new Agent(games[i]);
+                }
+
+                auto res = agents[i]->init_mcts(config::hp["search_depth"].get<int>());
+                done = res.first;
+                board = res.second;
+            }
+
+            requests[i].completed = false;
+            requests[i].result = nullptr;
+            requests[i].state = thread_data->neural_net->state_to_tensor(board);
+            thread_data->q_mutex.lock();
+            thread_data->eval_q.push(&requests[i]);
+            thread_data->q_mutex.unlock();
+            thread_data->q_cv.notify_one();
+            usleep(0);
+        }
+    }
 }
