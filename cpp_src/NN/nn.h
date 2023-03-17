@@ -31,6 +31,8 @@ namespace nn {
         virtual std::vector<std::unique_ptr<NNOut>> eval_batch(at::Tensor) = 0;
 
         virtual at::Tensor state_to_tensor(Board board) = 0;
+        virtual c10::ivalue::TupleElements run_batch(at::Tensor) = 0;
+        virtual std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(c10::ivalue::TupleElements net_out) = 0;
         virtual at::Tensor prepare_batch(std::vector<at::Tensor>&) = 0;
 
         virtual at::Tensor move_map_to_policy_tensor(move_dist) = 0;

@@ -22,6 +22,7 @@ struct EvalRequest {
 struct Batch {
     std::vector<EvalRequest*> requests;
     at::Tensor batch_tensor;
+    c10::ivalue::TupleElements net_out;
 };
 
 
@@ -330,8 +331,8 @@ void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, s
         );
     };
 
-    // while(thread_data->num_active_games > 0){
-    while(true){
+    while(thread_data->num_active_games > 0){
+    // while(true){
         std::unique_lock<std::mutex> nn_q_lock(thread_data->q_mutex);
 
         thread_data->q_cv.wait(nn_q_lock, [&thread_data, &bs](){
@@ -363,6 +364,41 @@ void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, s
     std::cout << "dl thread done" << std::endl;
 }
 
+void nn_thread_work(
+    std::queue<Batch> * batch_queue, 
+    std::queue<Batch> * batch_result_queue, 
+    ThreadData * thread_data, 
+    std::mutex * batch_queue_mutex, 
+    std::condition_variable * batch_queue_cv, 
+    std::mutex * batch_result_queue_mutex, 
+    std::condition_variable * batch_result_queue_cv
+){
+    while(true){
+        auto cond = [batch_queue](){
+            return batch_queue->size() >= 1;
+        };
+
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(0);
+        std::unique_lock<std::mutex> lock(*batch_queue_mutex);
+
+        while (!cond()) {
+            batch_queue_cv->wait_for(lock, timeout);
+        }
+
+        Batch batch = batch_queue->front();
+        batch_queue->pop();
+        lock.unlock();
+
+        auto outputs = thread_data->neural_net->run_batch(batch.batch_tensor);
+        batch.net_out = outputs;
+        batch.batch_tensor = at::Tensor();
+
+        batch_result_queue_mutex->lock();
+        batch_result_queue->push(batch);
+        batch_result_queue_mutex->unlock();
+        batch_result_queue_cv->notify_one();
+    }
+}
 
 /**
  * @brief Starts the self play process
@@ -381,20 +417,30 @@ void sim::self_play(std::string game){
     std::queue<Batch> batch_queue;
     std::mutex batch_queue_mutex;
     std::condition_variable batch_queue_cv;
-    std::thread dl_thread(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
+    std::thread dl_thread1(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
+    std::thread dl_thread2(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
+    // std::thread dl_thread3(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv);
+
+    std::queue<Batch> batch_result_queue;
+    std::mutex batch_result_queue_mutex;
+    std::condition_variable batch_result_queue_cv;
+    std::thread nn_thread1(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
+    // std::thread nn_thread2(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
 
     // self_play_start_dl_thread(thread_data);
 
     self_play_start_threads(threads, thread_data, num_threads, game);
 
-    self_play_active_thread_work(thread_data, &batch_queue, &batch_queue_mutex, &batch_queue_cv);
+    self_play_active_thread_work(thread_data, &batch_result_queue, &batch_result_queue_mutex, &batch_result_queue_cv);
 
     for(auto &t: threads){
         t.join();
     }
 
-    dl_thread.join();
+    // dl_thread.join();
 }
+
+
 
 ThreadData * init_thread_data(std::string game_name, int num_threads, int num_games, int generation_num){
     auto db = new db::DB(game_name, generation_num);
@@ -475,7 +521,7 @@ void pop_batch(
  */
 void eval_batch(Batch * batch, ThreadData *thread_data)
 {
-    auto result = thread_data->neural_net->eval_batch(batch->batch_tensor);
+    auto result = thread_data->neural_net->net_out_to_nnout(batch->net_out);
 
     for(int i = 0; i < (int)batch->requests.size(); i++){
         batch->requests[i]->result = std::move(result[i]);
@@ -491,20 +537,20 @@ void eval_batch(Batch * batch, ThreadData *thread_data)
  * @param thread_data 
  * @param bs 
  */
-void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *batch_queue, std::mutex *batch_queue_mutex, std::condition_variable *batch_queue_cv) {
+void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *batch_res_queue, std::mutex *batch_res_queue_mutex, std::condition_variable *batch_res_queue_cv) {
 
 
     while(thread_data->num_active_games > 0){
 
-        auto cond = [batch_queue](){
-            return batch_queue->size() >= 1;
+        auto cond = [batch_res_queue](){
+            return batch_res_queue->size() >= 1;
         };
 
-        std::chrono::milliseconds timeout = std::chrono::milliseconds(2000);
-        std::unique_lock<std::mutex> lock(*batch_queue_mutex);
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(0);
+        std::unique_lock<std::mutex> lock(*batch_res_queue_mutex);
 
         while (!cond()) {
-            batch_queue_cv->wait_for(lock, timeout);
+            batch_res_queue_cv->wait_for(lock, timeout);
         }
 
         // std::unique_lock<std::mutex> batch_q_lock(*batch_queue_mutex);
@@ -516,8 +562,8 @@ void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *ba
 
         std::vector<EvalRequest *> states;
 
-        auto batch = batch_queue->front();
-        batch_queue->pop();
+        auto batch = batch_res_queue->front();
+        batch_res_queue->pop();
 
         lock.unlock();
 

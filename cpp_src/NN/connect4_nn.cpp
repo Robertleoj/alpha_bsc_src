@@ -60,6 +60,38 @@ namespace nn{
         return out;
     }
 
+    c10::ivalue::TupleElements Connect4NN::run_batch(at::Tensor inp_tensor){
+        // Create the input value for the network
+        std::vector<torch::jit::IValue> inp({inp_tensor});
+
+        // Get the output from the network
+        auto net_out = this->net.forward(inp).toTuple()->elements();
+
+        return net_out;
+    }
+
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::net_out_to_nnout(c10::ivalue::TupleElements net_out){
+        // Get the policy and value tensors
+        auto pol_tensors = net_out.at(0).toTensor();
+        pol_tensors = pol_tensors.softmax(1).cpu();
+
+        auto val_tensors = net_out.at(1).toTensor();
+        val_tensors = val_tensors.cpu();
+
+        // Create the output
+        std::vector<std::unique_ptr<NNOut>> out;
+        for(int i = 0; i < pol_tensors.size(0); i++){
+            auto nnout = this->make_nnout_from_tensors(
+                pol_tensors[i], val_tensors[i]
+            );
+            out.push_back(std::move(nnout));
+        }
+        
+        return out;
+    }
+
+
+
     std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_batch(at::Tensor inp_tensor){
         // Create the input value for the network
         std::vector<torch::jit::IValue> inp({inp_tensor});
@@ -85,6 +117,8 @@ namespace nn{
         
         return out;
     }
+
+
 
 
     at::Tensor Connect4NN::prepare_batch(std::vector<at::Tensor>& tensors){
