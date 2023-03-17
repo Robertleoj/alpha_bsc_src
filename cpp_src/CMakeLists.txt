@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(AlphaBSc)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-g -Wall -O3 -Wextra -pthread -pipe -march=native")# -DNDEBUG")
+set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra -pthread -pipe -march=native")# -DNDEBUG")
 # set(CMAKE_CXX_FLAGS " -O3") #-DNDEBUG
 
 set(USERNAME $ENV{USER})

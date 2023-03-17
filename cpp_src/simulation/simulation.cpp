@@ -438,6 +438,8 @@ void eval_batch(std::vector<EvalRequest*> &states, ThreadData *thread_data)
     }
 }
 
+
+
 /**
  * @brief Main thread work loop. Waits until the queue contains a batch, pops it and evaluates it.
  * 
@@ -612,6 +614,7 @@ void thread_play(
     while(true){
         for(int i = 0; i < num_games; i++){
             if(dead_game[i] || !requests[i].completed){
+                usleep(0);
                 continue;
             }
 
@@ -669,7 +672,6 @@ void thread_play(
             thread_data->eval_q.push(&requests[i]);
             thread_data->q_mutex.unlock();
             thread_data->q_cv.notify_one();
-            usleep(0);
         }
     }
 }
