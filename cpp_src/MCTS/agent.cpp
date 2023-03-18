@@ -295,17 +295,15 @@ void Agent::backpropagation(MCNode * node, double v){
  * @brief Performs a search with the given playout cap
  * 
  * @param playout_cap 
+ * @param eval_func
  */
-void Agent::search(int playout_cap){
-    return;
+void Agent::search(int playout_cap, eval_f eval_func){
 
-    // for(int i = 0; i < playout_cap; i++){
-    //     std::pair<MCNode *, double> selection_result = this->selection();
-
-    //     auto [created_node, v] = selection_result;
-
-    //     this->backpropagation(created_node, v);
-    // }
+    auto [done, board] = this->init_mcts(playout_cap);
+    while(!done){
+        auto evaluation = eval_func(board);
+        std::tie(done, board) = this->step(std::move(evaluation));
+    }
 }
 
 std::pair<bool, Board> Agent::step(std::unique_ptr<nn::NNOut> evaluation){
@@ -317,6 +315,7 @@ std::pair<bool, Board> Agent::step(std::unique_ptr<nn::NNOut> evaluation){
 
     // update node
     this->node_to_eval->add_prior(&evaluation->p);
+
     if(this->node_to_eval == this->tree->root){
         if (this->use_dirichlet_noise){
             this->apply_noise(this->node_to_eval);
@@ -335,11 +334,8 @@ std::pair<bool, Board> Agent::step(std::unique_ptr<nn::NNOut> evaluation){
         if(this->num_playouts >= this->max_playouts){
             return std::make_pair(true, this->game->get_board());
         }
-        auto res = this->selection();
+        std::tie(new_node, v, terminal) = this->selection();
 
-        new_node = std::get<0>(res);
-        v = std::get<1>(res);
-        terminal = std::get<2>(res);
     } while(terminal);
 
     this->node_to_eval = new_node;
@@ -354,7 +350,7 @@ std::pair<bool, Board> Agent::init_mcts(int max_playouts){
 
     auto [new_node, v, terminal] = this->selection();
 
-    do {
+    while(terminal) {
         // backprop
         this->backpropagation(new_node, v);
         this->num_playouts++;
@@ -362,11 +358,8 @@ std::pair<bool, Board> Agent::init_mcts(int max_playouts){
             return std::make_pair(true, this->game->get_board());
         }
         auto res = this->selection();
-
-        new_node = std::get<0>(res);
-        v = std::get<1>(res);
-        terminal = std::get<2>(res);
-    } while(terminal);
+        std::tie(new_node, v, terminal) = res;
+    }
 
     this->node_to_eval = new_node;
 

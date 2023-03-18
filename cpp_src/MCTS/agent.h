@@ -6,7 +6,7 @@
 #include "../NN/nn.h"
 #include <map>
 
-// typedef std::function<std::unique_ptr<nn::NNOut>(Board)> eval_f;
+typedef std::function<std::unique_ptr<nn::NNOut>(Board)> eval_f;
 
 class Agent {
 public:
@@ -27,7 +27,7 @@ public:
 
     // functions
     void update_tree(game::move_id move_id);
-    void search(int playout_cap);
+    void search(int playout_cap, eval_f eval_func);
     std::map<game::move_id, int> root_visit_counts();
     double outcome_to_value(out::Outcome);
     double eval_for_player(double eval, pp::Player player);

@@ -333,7 +333,6 @@ void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, s
     };
 
     while(thread_data->num_active_games > 0){
-    // while(true){
         std::unique_lock<std::mutex> nn_q_lock(thread_data->q_mutex);
 
         thread_data->q_cv.wait(nn_q_lock, [&thread_data, &bs](){
@@ -375,6 +374,7 @@ void nn_thread_work(
     std::condition_variable * batch_result_queue_cv
 ){
     while(true){
+
         auto cond = [batch_queue](){
             return batch_queue->size() >= 1;
         };
@@ -396,6 +396,7 @@ void nn_thread_work(
 
         auto outputs = thread_data->neural_net->run_batch(batch.batch_tensor);
 
+        // try to clear memory
         batch.batch_tensor.cpu();
         batch.batch_tensor.reset();
         batch.batch_tensor = at::Tensor();
@@ -410,9 +411,6 @@ void nn_thread_work(
 
         t1.reset();
         t2.reset();
-
-        // batch.result.first.reset();
-        // batch.result.second.reset();
 
         batch_result_queue_mutex->lock();
         batch_result_queue->push(batch);
@@ -440,7 +438,8 @@ void sim::self_play(std::string game){
     std::condition_variable batch_queue_cv;
 
     std::vector<std::thread> dl_threads;
-    int n_dl_threads = 4;
+
+    int n_dl_threads = config::hp["num_dl_threads"].get<int>();
     for(int i = 0; i < n_dl_threads; i++){
         dl_threads.push_back(std::thread(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv));
     }
@@ -448,12 +447,13 @@ void sim::self_play(std::string game){
     std::queue<Batch> batch_result_queue;
     std::mutex batch_result_queue_mutex;
     std::condition_variable batch_result_queue_cv;
-    std::thread nn_thread1(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
-    std::thread nn_thread2(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv);
 
-    // self_play_start_dl_thread(thread_data);
+    int n_nn_threads = config::hp["num_nn_threads"].get<int>();
+    std::vector<std::thread> nn_threads;
 
-    self_play_start_threads(threads, thread_data, num_threads, game);
+    for(int i = 0; i < n_nn_threads; i++){
+        nn_threads.push_back(std::thread(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv));
+    }
 
     std::vector<std::thread> return_threads;
 
@@ -463,11 +463,13 @@ void sim::self_play(std::string game){
         return_threads.push_back(std::thread(self_play_active_thread_work, thread_data, &batch_result_queue, &batch_result_queue_mutex, &batch_result_queue_cv));
     }
 
+
+    self_play_start_threads(threads, thread_data, num_threads, game);
+
     for(auto &t: threads){
         t.join();
     }
 
-    // dl_thread.join();
 }
 
 
@@ -585,13 +587,6 @@ void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *ba
         while (!cond()) {
             batch_res_queue_cv->wait_for(lock, timeout);
         }
-
-        // std::unique_lock<std::mutex> batch_q_lock(*batch_queue_mutex);
-        // if(batch_queue->size() == 0){
-        //     batch_queue_cv->wait(batch_q_lock, [batch_queue](){
-        //         return batch_queue->size() >= 1;
-        //     });
-        // }
 
         std::vector<EvalRequest *> states;
 
@@ -769,6 +764,8 @@ void thread_play(
                 agents[i]->update_tree(best_move);
 
                 num_moves[i]++;
+                // std::cout << "Made move " << num_moves[i] << std::endl;
+
                 bool game_completed = games[i]->is_terminal();
 
                 if(game_completed){
@@ -800,12 +797,5 @@ void thread_play(
             thread_data->q_mutex.unlock();
             thread_data->q_cv.notify_one();
         }
-
-        // get max moves
-        // int max_moves = 0;
-        // for(int i = 0; i < num_games; i++){
-        //     max_moves = std::max(max_moves, num_moves[i]);
-        // }
-        // std::cout << "Max moves: " << max_moves << std::endl;
     }
 }
