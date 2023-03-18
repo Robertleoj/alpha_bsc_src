@@ -15,7 +15,7 @@
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,
     "depth_until_pi_argmax": 4,
-    "eval_search_depth": 600
+    "eval_search_depth": 60
 }
 
 

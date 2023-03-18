@@ -94,6 +94,7 @@ set(FILES
     config/config.cpp
     sqlite/sqlite3.h
     sqlite/sqlite3.c
+    global.h
 )
 
 add_executable(self_play

@@ -8,6 +8,7 @@
 #include "../config/config.h"
 #include "../base/types.h"
 #include "../utils/utils.h"
+#include "../global.h"
 #include <stdexcept>
 #include <thread>
 #include <cstring>
@@ -90,6 +91,8 @@ void thread_play(
     std::string game_name
 );
 
+void join_threads(std::vector<std::vector<std::thread>*> threads);
+
 void self_play_start_threads(
     std::vector<std::thread> &threads, 
     ThreadData *thread_data, 
@@ -132,6 +135,7 @@ void pop_batch(
 
 void start_batching_threads(
     ThreadData * thread_data, 
+    BatchData * batch_data,
     std::vector<std::thread> &dl_threads, 
     std::vector<std::thread> &nn_threads,
     std::vector<std::thread> &return_threads
@@ -256,16 +260,16 @@ void write_evaluation_to_db(
 
 //     auto visit_counts = agent->root_visit_counts();
 //     auto pol_mcts = utils::softmax_map(visit_counts);
-//     std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts); // THIS
+//     std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts);
 
 //     auto eval_out = eval_func(game->get_board());
 
 //     auto pol_prior = eval_out->p;
-//     std::vector<double> pol_prior_vec = get_policy_vector(pol_prior); // THIS
+//     std::vector<double> pol_prior_vec = get_policy_vector(pol_prior);
 
-//     double nn_value = eval_out->v; // THIS
+//     double nn_value = eval_out->v;
 
-//     double mcts_value = agent->tree->root->value_approx; // THIS
+//     double mcts_value = agent->tree->root->value_approx;
 
 //     write_evaluation_to_db(
 //         thread_data,
@@ -282,10 +286,14 @@ void write_evaluation_to_db(
 // }
 
 // void thread_eval(
-//     int thread_idx,
 //     ThreadData * thread_data,
 //     EvalData * eval_data
 // ) {
+
+//     int num_games = config::hp["games_per_thread"].get<int>();
+
+//     Agent * agents[num_games];
+    
 
 
 //     while(true){
@@ -308,61 +316,233 @@ void write_evaluation_to_db(
 //     thread_data->q_cv.notify_one();
 // }
 
+/**
+ * @brief Plays games on separate threads until all games are completed
+ * 
+ * @param thread_idx 
+ * @param eval_data
+ */
+void thread_eval(
+    ThreadData * thread_data,
+    EvalData * eval_data
+) {
+    if(DEBUG){
+        std::cout << "Started eval thread" << std::endl;
+    }
+
+    const int num_games = config::hp["games_per_thread"].get<int>();
+
+    Agent * agents[num_games];
+    game::IGame * games[num_games];
+    EvalRequest requests[num_games];
+    GroundTruthRequest gt_requests[num_games];
+    bool dead_game[num_games];
+    nn::NNOut first_nn_out[num_games];
+    bool first_nn_out_set[num_games];
+    // Initialize to false
+    memset(first_nn_out_set, 0, sizeof(bool) * num_games);
+
+    // start the games
+    for(int i = 0; i < num_games; i++){
+
+        if(DEBUG){
+            std::cout << "Starting game " << i << std::endl;
+        }
+
+        eval_data->board_queue_mutex.lock();
+
+        if(eval_data->board_queue.empty()){
+            eval_data->board_queue_mutex.unlock();
+            dead_game[i] = true;
+            thread_data->num_active_games--;
+            thread_data->q_cv.notify_all();
+            continue;
+        }
+
+        auto req = eval_data->board_queue.front();
+        eval_data->board_queue.pop();
+        eval_data->board_queue_mutex.unlock();
+        gt_requests[i] = req;
+
+        games[i] = get_game_instance("connect4");
+
+        for(char mv: req.moves){
+            games[i]->make(mv - '0');
+        }
+
+        agents[i] = new Agent(games[i], false);
+
+        dead_game[i] = false;
+
+        auto [done, board] = agents[i]->init_mcts(config::hp["eval_search_depth"].get<int>());
+
+        requests[i].completed = false;
+        requests[i].result = nullptr;
+        requests[i].state = thread_data->neural_net->state_to_tensor(board);
+
+        thread_data->q_mutex.lock();
+        thread_data->eval_q.push(&requests[i]);
+        thread_data->q_mutex.unlock();
+        thread_data->q_cv.notify_one();
+    }
+
+    if(DEBUG){
+        std::cout << "Started games" << std::endl;
+    }
+
+    while(true){
+        bool all_dead = true;
+        for(int i = 0; i < num_games; i++){
+
+            if(!dead_game[i]){
+                all_dead = false;
+            }
+
+            if(dead_game[i] || !requests[i].completed){
+                usleep(0); // give other threads a chance to run
+                continue;
+            }
+
+            // get answer
+            if(DEBUG){
+                std::cout << "Got answer" << std::endl;
+            }
+
+            std::unique_ptr<nn::NNOut> answer = std::move(requests[i].result);
+
+            if(!first_nn_out_set[i]){
+                first_nn_out[i] = *answer;
+                first_nn_out_set[i] = true;
+            }
+
+            auto [done, board] = agents[i]->step(std::move(answer));
+
+            if(done){
+                if(DEBUG){
+                    std::cout << "Evaluated board" <<  std::endl;
+                }
+
+                auto visit_counts = agents[i]->root_visit_counts();
+                auto pol_mcts = utils::softmax_map(visit_counts);
+                std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts);
 
 
-// void start_eval_threads(
-//     ThreadData * thread_data, 
-//     EvalData * eval_data, 
-//     std::thread * threads, 
-//     int num_threads
-// ){
-//     for(int i = 0; i < num_threads; i++){
-//         threads[i] = std::thread(thread_eval, i, thread_data, eval_data);
-//     }
-// }
+                auto pol_prior = first_nn_out[i].p;
+                std::vector<double> pol_prior_vec = get_policy_vector(pol_prior);
 
-// void sim::eval_targets(std::string eval_targets_filename, int generation_num){
+                double nn_value = first_nn_out[i].v;
 
-//     int num_threads = config::hp["self_play_num_threads"].get<int>();
-//     int num_games = config::hp["self_play_num_games"].get<int>();
-//     std::string game = "connect4";
+                double mcts_value = agents[i]->tree->root->value_approx;
 
-//     std::vector<std::thread> threads;
+                write_evaluation_to_db(
+                    thread_data,
+                    &gt_requests[i],
+                    pol_prior_vec, 
+                    nn_value,
+                    pol_mcts_vec, 
+                    mcts_value
+                );
 
-//     auto thread_data = init_thread_data(game, num_threads, num_games);
+                // restart game
+                delete agents[i];
+                delete games[i];
 
-//     std::vector<std::thread> dl_threads;
-//     std::vector<std::thread> nn_threads;
-//     std::vector<std::thread> return_threads;
 
-//     start_batching_threads(thread_data, dl_threads, nn_threads, return_threads);
+                eval_data->board_queue_mutex.lock();
+                if(eval_data->board_queue.empty()){
+                    eval_data->board_queue_mutex.unlock();
+                    dead_game[i] = true;
+                    thread_data->num_active_games--;
+                    thread_data->q_cv.notify_all();
+                    continue;
+                } else {
+                    // start new game
+                    auto req = eval_data->board_queue.front();
+                    eval_data->board_queue.pop();
+                    eval_data->board_queue_mutex.unlock();
+                    gt_requests[i] = req;
+                    first_nn_out_set[i] = false;
 
-//     start_eval_threads(threads, thread_data, num_threads, game);
+                    games[i] = get_game_instance("connect4");
 
-//     join_threads({&dl_threads, &nn_threads, &return_threads, &threads});
+                    for(char mv: req.moves){
+                        games[i]->make(mv - '0');
+                    }
 
-    // int num_threads = config::hp["num_parallel_games"].get<int>();
-    // int num_games = config::hp["self_play_num_games"].get<int>();
+                    agents[i] = new Agent(games[i], false);
 
-    // auto eval_data_queue = make_eval_data_queue(eval_targets_filename);
+                    std::tie(done, board) = agents[i]->init_mcts(config::hp["eval_search_depth"].get<int>());
+                }
+            }
 
-    // EvalData eval_data;
-    // eval_data.board_queue = eval_data_queue;
+            requests[i].completed = false;
+            requests[i].result = nullptr;
+            requests[i].state = thread_data->neural_net->state_to_tensor(board);
 
-    // std::thread threads[num_threads];
-    // auto thread_data = init_thread_data("connect4", num_threads, num_games, generation_num);
+            thread_data->q_mutex.lock();
+            thread_data->eval_q.push(&requests[i]);
+            thread_data->q_mutex.unlock();
+            thread_data->q_cv.notify_one();
 
-    // start_eval_threads(thread_data, &eval_data, threads, num_threads);
+        }
+        if(all_dead){
+            break;
+        }
+    }
 
-    // self_play_active_thread_work(thread_data);
-    // std::cout << std::endl;
+    std::cout << "Eval thread done" << std::endl;
+}
 
-    // for(auto &t: threads){
-    //     t.join();
-    // }
 
-    // delete thread_data;
-// }
+
+void start_eval_threads(
+    ThreadData * thread_data, 
+    EvalData * eval_data, 
+    std::vector<std::thread> &threads, 
+    int num_threads
+){
+    for(int i = 0; i < num_threads; i++){
+        threads.push_back(std::thread(thread_eval, thread_data, eval_data));
+    }
+}
+
+void sim::eval_targets(std::string eval_targets_filename, int generation_num){
+
+    int num_threads = config::hp["self_play_num_threads"].get<int>();
+    int num_games = config::hp["self_play_num_games"].get<int>();
+
+    EvalData eval_data;
+
+    auto eval_data_queue = make_eval_data_queue(eval_targets_filename);
+    eval_data.board_queue = eval_data_queue;
+
+    std::vector<std::thread> threads;
+
+    auto thread_data = init_thread_data("connect4", num_threads, num_games, generation_num);
+
+    std::vector<std::thread> dl_threads;
+    std::vector<std::thread> nn_threads;
+    std::vector<std::thread> return_threads;
+
+    BatchData batch_data = BatchData();
+
+    if(DEBUG){
+        std::cout << "Starting batching threads" << std::endl;
+    }
+
+    start_batching_threads(thread_data, &batch_data, dl_threads, nn_threads, return_threads);
+
+    // self_play_start_threads(threads, thread_data, num_threads, game);
+
+    if(DEBUG){
+        std::cout << "Starting eval threads" << std::endl;
+    }
+
+    start_eval_threads(thread_data, &eval_data, threads, num_threads);
+
+    join_threads({&dl_threads, &nn_threads, &return_threads, &threads});
+
+}
 
 
 void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, std::mutex * batch_queue_mutex, std::condition_variable * batch_queue_cv){
