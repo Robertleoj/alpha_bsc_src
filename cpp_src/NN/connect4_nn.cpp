@@ -2,6 +2,9 @@
 #include "./connect4_nn.h"
 #include "../base/types.h"
 #include <fstream>
+#include <c10/cuda/CUDACachingAllocator.h>
+#include <cuda_runtime.h>
+
 
 
 namespace nn{
@@ -58,9 +61,87 @@ namespace nn{
         }
         
         return out;
-
-
     }
+
+    c10::ivalue::TupleElements Connect4NN::run_batch(at::Tensor inp_tensor){
+
+        if(!inp_tensor.is_cuda()){
+            inp_tensor = inp_tensor.cuda();
+        }
+
+        // Create the input value for the network
+        std::vector<torch::jit::IValue> inp({inp_tensor});
+
+        // Get the output from the network
+        auto net_out = this->net.forward(inp).toTuple()->elements();
+
+        // cudaFree(inp_tensor.data_ptr());
+
+        return net_out;
+    }
+
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::net_out_to_nnout(at::Tensor pol_tensors, at::Tensor val_tensors){
+        // Get the policy and value tensors
+        // auto pol_tensors = net_out.at(0).toTensor();
+        pol_tensors = pol_tensors.softmax(1).cpu();
+
+        // auto val_tensors = net_out.at(1).toTensor();
+        val_tensors = val_tensors.cpu();
+
+        // Create the output
+        std::vector<std::unique_ptr<NNOut>> out;
+        for(int i = 0; i < pol_tensors.size(0); i++){
+            auto nnout = this->make_nnout_from_tensors(
+                pol_tensors[i], val_tensors[i]
+            );
+            out.push_back(std::move(nnout));
+        }
+        
+        return out;
+    }
+
+
+
+    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_batch(at::Tensor inp_tensor){
+
+
+        // Create the input value for the network
+        std::vector<torch::jit::IValue> inp({inp_tensor});
+
+        // Get the output from the network
+        auto net_out = this->net.forward(inp).toTuple()->elements();
+
+        // Get the policy and value tensors
+        auto pol_tensors = net_out.at(0).toTensor();
+        pol_tensors = pol_tensors.softmax(1).cpu();
+
+        auto val_tensors = net_out.at(1).toTensor();
+        val_tensors = val_tensors.cpu();
+
+        // Create the output
+        std::vector<std::unique_ptr<NNOut>> out;
+        for(int i = 0; i < inp_tensor.size(0); i++){
+            auto nnout = this->make_nnout_from_tensors(
+                pol_tensors[i], val_tensors[i]
+            );
+            out.push_back(std::move(nnout));
+        }
+        
+        return out;
+    }
+
+
+
+
+    at::Tensor Connect4NN::prepare_batch(std::vector<at::Tensor>& tensors){
+        auto inp_tensor = torch::stack(tensors, 0);
+
+        // if(!inp_tensor.is_cuda()){
+        //     inp_tensor = inp_tensor.cuda();
+        // }
+        return inp_tensor;
+    }
+
 
     /**
      * @brief Evaluate a list of states

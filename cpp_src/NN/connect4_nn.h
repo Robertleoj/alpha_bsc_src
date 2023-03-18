@@ -18,6 +18,8 @@ namespace nn {
         std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) override;
 
 
+        at::Tensor prepare_batch(std::vector<at::Tensor>&) override;
+        std::vector<std::unique_ptr<NNOut>> eval_batch(at::Tensor) override;
         at::Tensor state_to_tensor(Board board) override;
         at::Tensor move_map_to_policy_tensor(move_dist) override;
         std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards) override;
@@ -26,6 +28,8 @@ namespace nn {
             at::Tensor policy_tensor,
             at::Tensor value_tensor
         ) override;
+        c10::ivalue::TupleElements run_batch(at::Tensor) override;
+        std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(at::Tensor, at::Tensor) override;
 
     private:
         torch::jit::script::Module net;
