@@ -1,15 +1,15 @@
 {
     "PUCT_c" : 4,
 
-    "batch_size": 1024,
+    "batch_size": 512,
     "search_depth": 600,
 
-    "self_play_num_games" : 5000,
-    "games_per_thread" : 200,
+    "self_play_num_games" : 2500,
+    "games_per_thread" : 100,
     "self_play_num_threads": 25,
-    "num_dl_threads": 4,
-    "num_nn_threads": 2,
-    "num_return_threads": 4,
+    "num_dl_threads": 8,
+    "num_nn_threads": 1,
+    "num_return_threads": 8,
 
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,
