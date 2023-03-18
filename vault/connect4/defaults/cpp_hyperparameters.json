@@ -11,7 +11,6 @@
     "num_nn_threads": 2,
     "num_return_threads": 4,
 
-
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,
     "depth_until_pi_argmax": 4,

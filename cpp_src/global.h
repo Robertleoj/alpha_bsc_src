@@ -1,2 +1,2 @@
 #pragma once
-extern bool DEBUG = true;
+extern bool DEBUG = false;
