@@ -30,6 +30,7 @@ for i, eval in enumerate(evals):
                 "error": eval[col].mean()
             }, ignore_index=True)
 
+print(eval_df)
 # for i, eval in enumerate(evals):
 #     eval_df = eval_df.append({
 #         "gen": i,
