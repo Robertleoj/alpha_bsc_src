@@ -26,21 +26,12 @@ struct Batch {
     std::pair<at::Tensor, at::Tensor> result;
 };
 
-struct BatchData {
-    std::queue<Batch> batch_queue;
-    std::mutex batch_queue_mutex;
-    std::condition_variable batch_queue_cv;
-    std::queue<Batch> batch_result_queue;
-    std::mutex batch_result_queue_mutex;
-    std::condition_variable batch_result_queue_cv;
-};
-
 
 struct ThreadData {
     std::queue<EvalRequest*> eval_q;
     std::mutex q_mutex;
     std::mutex db_mutex;
-    std::mutex start_game_mutex;
+    // std::mutex start_game_mutex;
     std::condition_variable q_cv;
     std::atomic<int> games_left;
     std::atomic<int> num_active_games;
@@ -55,7 +46,7 @@ struct ThreadData {
     ): 
         q_mutex(), 
         db_mutex(), 
-        start_game_mutex(), 
+        // start_game_mutex(), 
         q_cv(), 
         db(db), 
         neural_net(neural_net) 
@@ -91,7 +82,7 @@ void thread_play(
 );
 
 void self_play_start_threads(
-    std::vector<std::thread> &threads, 
+    std::thread *threads, 
     ThreadData *thread_data, 
     int num_threads,
     std::string game_name
@@ -128,13 +119,6 @@ void pop_batch(
     ThreadData *thread_data, 
     std::function<int()> bs, 
     std::vector<EvalRequest*> *states
-);
-
-void start_batching_threads(
-    ThreadData * thread_data, 
-    std::vector<std::thread> &dl_threads, 
-    std::vector<std::thread> &nn_threads,
-    std::vector<std::thread> &return_threads
 );
 
 void eval_batch(Batch * batch, ThreadData *thread_data);
@@ -322,46 +306,27 @@ void write_evaluation_to_db(
 // }
 
 // void sim::eval_targets(std::string eval_targets_filename, int generation_num){
-
-//     int num_threads = config::hp["self_play_num_threads"].get<int>();
+//     int num_threads = config::hp["num_parallel_games"].get<int>();
 //     int num_games = config::hp["self_play_num_games"].get<int>();
-//     std::string game = "connect4";
 
-//     std::vector<std::thread> threads;
+//     auto eval_data_queue = make_eval_data_queue(eval_targets_filename);
 
-//     auto thread_data = init_thread_data(game, num_threads, num_games);
+//     EvalData eval_data;
+//     eval_data.board_queue = eval_data_queue;
 
-//     std::vector<std::thread> dl_threads;
-//     std::vector<std::thread> nn_threads;
-//     std::vector<std::thread> return_threads;
+//     std::thread threads[num_threads];
+//     auto thread_data = init_thread_data("connect4", num_threads, num_games, generation_num);
 
-//     start_batching_threads(thread_data, dl_threads, nn_threads, return_threads);
+//     start_eval_threads(thread_data, &eval_data, threads, num_threads);
 
-//     start_eval_threads(threads, thread_data, num_threads, game);
+//     self_play_active_thread_work(thread_data);
+//     std::cout << std::endl;
 
-//     join_threads({&dl_threads, &nn_threads, &return_threads, &threads});
+//     for(auto &t: threads){
+//         t.join();
+//     }
 
-    // int num_threads = config::hp["num_parallel_games"].get<int>();
-    // int num_games = config::hp["self_play_num_games"].get<int>();
-
-    // auto eval_data_queue = make_eval_data_queue(eval_targets_filename);
-
-    // EvalData eval_data;
-    // eval_data.board_queue = eval_data_queue;
-
-    // std::thread threads[num_threads];
-    // auto thread_data = init_thread_data("connect4", num_threads, num_games, generation_num);
-
-    // start_eval_threads(thread_data, &eval_data, threads, num_threads);
-
-    // self_play_active_thread_work(thread_data);
-    // std::cout << std::endl;
-
-    // for(auto &t: threads){
-    //     t.join();
-    // }
-
-    // delete thread_data;
+//     delete thread_data;
 // }
 
 
@@ -386,7 +351,7 @@ void dl_thread_work(std::queue<Batch> * batch_queue, ThreadData * thread_data, s
         }
 
         std::vector<EvalRequest *> states;
-
+        // std::cout << "dl thread pop" << std::endl;
         pop_batch(thread_data, bs, &states);
 
         std::vector<at::Tensor> tensors;
@@ -425,9 +390,8 @@ void nn_thread_work(
 
         while (!cond()) {
             batch_queue_cv->wait_for(lock, timeout);
-            if(thread_data->num_active_games <= 0){
+            if(thread_data->num_active_games == 0){
                 lock.unlock();
-                std::cout << "nn thread done" << std::endl;
                 return;
             }
         }
@@ -435,6 +399,8 @@ void nn_thread_work(
         Batch batch = batch_queue->front();
         batch_queue->pop();
         lock.unlock();
+
+        // std::cout << "nn thread pop" << std::endl;
 
         if(batch.batch_tensor.is_cuda()){
             throw std::runtime_error("batch tensor is on gpu");
@@ -463,44 +429,6 @@ void nn_thread_work(
         batch_result_queue_mutex->unlock();
         batch_result_queue_cv->notify_one();
     }
-
-}
-
-void start_batching_threads(
-    ThreadData * thread_data, 
-    BatchData * batch_data,
-    std::vector<std::thread> &dl_threads, 
-    std::vector<std::thread> &nn_threads,
-    std::vector<std::thread> &return_threads
-){
-
-
-    int n_dl_threads = config::hp["num_dl_threads"].get<int>();
-    for(int i = 0; i < n_dl_threads; i++){
-        dl_threads.push_back(std::thread(dl_thread_work, &batch_data->batch_queue, thread_data, &batch_data->batch_queue_mutex, &batch_data->batch_queue_cv));
-    }
-
-
-
-    int n_nn_threads = config::hp["num_nn_threads"].get<int>();
-
-    for(int i = 0; i < n_nn_threads; i++){
-        nn_threads.push_back(std::thread(nn_thread_work, &batch_data->batch_queue, &batch_data->batch_result_queue, thread_data, &batch_data->batch_queue_mutex, &batch_data->batch_queue_cv, &batch_data->batch_result_queue_mutex, &batch_data->batch_result_queue_cv));
-    }
-
-    int n_return_threads = config::hp["num_return_threads"].get<int>();
-
-    for(int i = 0; i < n_return_threads; i++){
-        return_threads.push_back(std::thread(self_play_active_thread_work, thread_data, &batch_data->batch_result_queue, &batch_data->batch_result_queue_mutex, &batch_data->batch_result_queue_cv));
-    }
-}
-
-void join_threads(std::vector<std::vector<std::thread>*> threads){
-    for(auto t: threads){
-        for(auto &t2: *t){
-            t2.join();
-        }
-    }
 }
 
 /**
@@ -513,21 +441,60 @@ void sim::self_play(std::string game){
     int num_threads = config::hp["self_play_num_threads"].get<int>();
     int num_games = config::hp["self_play_num_games"].get<int>();
 
-    std::vector<std::thread> threads;
+    std::thread threads[num_threads];
 
     auto thread_data = init_thread_data(game, num_threads, num_games);
 
+    std::queue<Batch> batch_queue;
+    std::mutex batch_queue_mutex;
+    std::condition_variable batch_queue_cv;
+
     std::vector<std::thread> dl_threads;
+
+    int n_dl_threads = config::hp["num_dl_threads"].get<int>();
+    for(int i = 0; i < n_dl_threads; i++){
+        dl_threads.push_back(std::thread(dl_thread_work, &batch_queue, thread_data, &batch_queue_mutex, &batch_queue_cv));
+    }
+
+    std::queue<Batch> batch_result_queue;
+    std::mutex batch_result_queue_mutex;
+    std::condition_variable batch_result_queue_cv;
+
+    int n_nn_threads = config::hp["num_nn_threads"].get<int>();
     std::vector<std::thread> nn_threads;
+
+    for(int i = 0; i < n_nn_threads; i++){
+        nn_threads.push_back(std::thread(nn_thread_work, &batch_queue, &batch_result_queue, thread_data, &batch_queue_mutex, &batch_queue_cv, &batch_result_queue_mutex, &batch_result_queue_cv));
+    }
+
     std::vector<std::thread> return_threads;
 
-    BatchData batch_data = BatchData();
+    int n_return_threads = 5;
 
-    start_batching_threads(thread_data, &batch_data, dl_threads, nn_threads, return_threads);
+    for(int i = 0; i < n_return_threads; i++){
+        return_threads.push_back(std::thread(self_play_active_thread_work, thread_data, &batch_result_queue, &batch_result_queue_mutex, &batch_result_queue_cv));
+    }
+
 
     self_play_start_threads(threads, thread_data, num_threads, game);
 
-    join_threads({&dl_threads, &nn_threads, &return_threads, &threads});
+    // join all the threads
+    for(auto &t: threads){
+        t.join();
+    }
+
+    for(auto &t: dl_threads){
+        t.join();
+    }
+
+    for(auto &t: nn_threads){
+        t.join();
+    }
+
+    for(auto &t: return_threads){
+        t.join();
+    }
+
 }
 
 
@@ -571,12 +538,12 @@ nn::NN * get_neural_net(std::string game, db::DB *db){
  * @param thread_data 
  * @param num_threads 
  */
-void self_play_start_threads(std::vector<std::thread> &threads, ThreadData *thread_data, int num_threads, std::string game_name)
+void self_play_start_threads(std::thread *threads, ThreadData *thread_data, int num_threads, std::string game_name)
 {
     for(int i = 0; i < num_threads; i++){
-        threads.push_back(std::thread(
+        threads[i] = std::thread(
             &thread_play, thread_data, game_name
-        ));
+        );
     }
 }
 
@@ -612,7 +579,7 @@ void pop_batch(
 void eval_batch(Batch * batch, ThreadData *thread_data)
 {
 
-
+    
     auto result = thread_data->neural_net->net_out_to_nnout(
         batch->result.first,
         batch->result.second
@@ -623,7 +590,8 @@ void eval_batch(Batch * batch, ThreadData *thread_data)
     }
 
     for(int i = 0; i < (int)batch->requests.size(); i++){
-        batch->requests[i]->result = std::move(result[i]);
+        auto res = std::move(result[i]);
+        batch->requests[i]->result = std::move(res);
         batch->requests[i]->completed = true;
     }
 }
@@ -652,7 +620,6 @@ void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *ba
             batch_res_queue_cv->wait_for(lock, timeout);
             if(thread_data->num_active_games == 0){
                 lock.unlock();
-                std::cout << "return thread donw" << std::endl;
                 return;
             }
         }
@@ -661,12 +628,12 @@ void self_play_active_thread_work(ThreadData *thread_data, std::queue<Batch> *ba
 
         auto batch = batch_res_queue->front();
         batch_res_queue->pop();
+        // std::cout << "return pop batch" << std::endl;   
 
         lock.unlock();
 
         eval_batch(&batch, thread_data);
     }
-
 }
 
 
@@ -788,26 +755,29 @@ void thread_play(
 
     // start the games
     for(int i = 0; i < num_games; i++){
-        thread_data->start_game_mutex.lock();
+        // thread_data->start_game_mutex.lock();
+
         if(thread_data->games_left <= 0){
-            thread_data->start_game_mutex.unlock();
+            // thread_data->start_game_mutex.unlock();
             dead_game[i] = true;
             thread_data->num_active_games--;
-            thread_data->q_cv.notify_all();
+            thread_data->q_cv.notify_one();
             continue;
         }
 
         thread_data->games_left--;
-        thread_data->start_game_mutex.unlock();
+
+        // thread_data->start_game_mutex.unlock();
 
         games[i] = get_game_instance(game_name);
         agents[i] = new Agent(games[i]);
         // thread_data->num_active_games++;
         dead_game[i] = false;
         auto [done, board] = agents[i]->init_mcts(config::hp["search_depth"].get<int>());
-        requests[i].completed = false;
-        requests[i].result = nullptr;
-        requests[i].state = thread_data->neural_net->state_to_tensor(board);
+        requests[i] = EvalRequest{false, thread_data->neural_net->state_to_tensor(board), nullptr};
+        // requests[i].completed = false;
+        // requests[i].result = nullptr;
+        // requests[i].state = thread_data->neural_net->state_to_tensor(board);
         thread_data->q_mutex.lock();
         thread_data->eval_q.push(&requests[i]);
         thread_data->q_mutex.unlock();
@@ -817,17 +787,11 @@ void thread_play(
     while(true){
         bool all_dead = true;
         for(int i = 0; i < num_games; i++){
-
-            if(!dead_game[i]){
-                all_dead = false;
-            }
-
             if(dead_game[i] || !requests[i].completed){
                 usleep(0); // give other threads a chance to run
                 continue;
             }
-
-
+            all_dead = false;
 
             // get answer
             std::unique_ptr<nn::NNOut> answer = std::move(requests[i].result);
@@ -867,19 +831,19 @@ void thread_play(
                     delete games[i];
                     std::cout << "Games left: " << thread_data->games_left + thread_data->num_active_games << std::endl;
 
+                    // thread_data->start_game_mutex.lock();
+                    thread_data->games_left--;
 
-                    thread_data->start_game_mutex.lock();
                     if(thread_data->games_left <= 0){
-                        thread_data->start_game_mutex.unlock();
+                        // thread_data->start_game_mutex.unlock();
 
                         dead_game[i] = true;
                         thread_data->num_active_games--;
-                        thread_data->q_cv.notify_all();
-
-                        goto cnt; // this is a goto, but it's the only way to break out of two loops
+                        thread_data->q_cv.notify_one();
+                        goto cnt;
                     }
-                    thread_data->games_left--;
-                    thread_data->start_game_mutex.unlock();
+
+                    // thread_data->start_game_mutex.unlock();
 
                     games[i] = get_game_instance(game_name);
                     agents[i] = new Agent(games[i]);
@@ -889,10 +853,11 @@ void thread_play(
                 done = res.first;
                 board = res.second;
             }
+            requests[i] = EvalRequest{false, thread_data->neural_net->state_to_tensor(board), nullptr};
 
-            requests[i].completed = false;
-            requests[i].result = nullptr;
-            requests[i].state = thread_data->neural_net->state_to_tensor(board);
+            // requests[i].completed = false;
+            // requests[i].result = nullptr;
+            // requests[i].state = thread_data->neural_net->state_to_tensor(board);
             thread_data->q_mutex.lock();
             thread_data->eval_q.push(&requests[i]);
             thread_data->q_mutex.unlock();
@@ -904,6 +869,4 @@ void thread_play(
             break;
         }
     }
-
-    std::cout << "Game thread done" << std::endl;
 }

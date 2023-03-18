@@ -136,10 +136,8 @@ std::tuple<MCNode *, double, bool> Agent::make_node(MCNode * parent, game::move_
             move_id
         );
 
-        // return std::make_tuple(new_node, v, true);
     } else {
 
-        // auto evaluation = this->eval_func(this->game->get_board());
         v = 0;
         terminal = false;
 
@@ -149,7 +147,6 @@ std::tuple<MCNode *, double, bool> Agent::make_node(MCNode * parent, game::move_
             this->game->moves(),
             move_id
         );
-        // return std::make_tuple(new_node, 0, false);
     }
 
     if(parent != nullptr){
