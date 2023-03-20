@@ -20,27 +20,7 @@ else
     GAME_NAME="connect4"
 fi
 
-RUN_DIR=./vault/$GAME_NAME/$RUN_NAME
-DEFAULT_DIR=./vault/$GAME_NAME/defaults
+CACHED_DIR=./vault/$GAME_NAME/$RUN_NAME/cached_data
 
-mkdir -p $RUN_DIR
-
-mkdir $RUN_DIR/cached_data
-mkdir $RUN_DIR/models
-
-# copy the default files
-cp $DEFAULT_DIR/* $RUN_DIR
-
-sqlite3 $RUN_DIR/db.db < ./db/configure_db.sql
-
-cd ./py_src
-
-source .venv/bin/activate
-
-python3 init_conn4_net.py ../$RUN_DIR/models/
-
-echo "Run $RUN_NAME has been creatd."
-echo "REMEMBER TO EDIT THE CONFIG"
-
-
+find $CACHED_DIR -name '*.pt' | awk -F/ '{print $NF}' | awk -F. '{print $1}' | sort -n | tail -1
 

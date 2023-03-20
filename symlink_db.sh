@@ -21,26 +21,13 @@ else
 fi
 
 RUN_DIR=./vault/$GAME_NAME/$RUN_NAME
-DEFAULT_DIR=./vault/$GAME_NAME/defaults
-
-mkdir -p $RUN_DIR
-
-mkdir $RUN_DIR/cached_data
-mkdir $RUN_DIR/models
-
-# copy the default files
-cp $DEFAULT_DIR/* $RUN_DIR
-
-sqlite3 $RUN_DIR/db.db < ./db/configure_db.sql
-
-cd ./py_src
-
-source .venv/bin/activate
-
-python3 init_conn4_net.py ../$RUN_DIR/models/
-
-echo "Run $RUN_NAME has been creatd."
-echo "REMEMBER TO EDIT THE CONFIG"
 
 
+SSD_DIR=/media/bigbrainman/stuff/alpha_bsc_dbs/$GAME_NAME/$RUN_NAME
+
+mkdir -p $SSD_DIR
+
+mv $RUN_DIR/db.db $SSD_DIR/db.db
+
+ln -s $SSD_DIR/db.db `pwd`/vault/$GAME_NAME/$RUN_NAME/db.db
 
