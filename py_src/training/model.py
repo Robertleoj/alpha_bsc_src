@@ -23,7 +23,7 @@ class Model:
             self._set_generation(generation)
 
     def _set_newest_generation(self) -> None:
-        generation = self.db.newest_generation(self.game)
+        generation = self.db.newest_generation()
         self._set_generation(generation)
 
     def _set_generation(self, generation:int) -> None:
@@ -32,7 +32,7 @@ class Model:
         self.nn = self.get_checkpoint(self.generation)
 
     def get_dataloader(self, generation:int) -> torch.utils.data.DataLoader:
-        return get_dataloader(self.game, generation)
+        return get_dataloader(generation)
 
     def get_checkpoint(self, generation:int) -> nn.Module:
         
@@ -58,7 +58,7 @@ class Model:
         serialized.save(new_gen_path)
 
     def add_db_gen(self):
-        self.db.add_generation(self.game, self.generation)
+        self.db.add_generation(self.generation)
 
     def save_and_next_gen(self):
         self.generation += 1
@@ -69,7 +69,7 @@ class Model:
         del self.__dict__
 
     def log_loss(self, iteration:int, loss: float):
-        self.db.add_loss(self.game, self.generation, iteration, loss)
+        self.db.add_loss(self.generation, iteration, loss)
     
     def train(self, num_iterations: int=None):
         if num_iterations is None:

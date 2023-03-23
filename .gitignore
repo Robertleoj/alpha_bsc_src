@@ -21,4 +21,5 @@ vault/*/*/models
 vault/*/*/cached_data
 vault/*/*/db.db
 vault/*/*/training_data/
-
+vault/*/*.7z
+vault/*/test*

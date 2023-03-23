@@ -37,9 +37,7 @@ namespace db {
 
     class DB {
     public:
-        std::string game;
-        int game_id;
-        DB(std::string game, int generation_num = -1);
+        DB(int generation_num = -1);
         sqlite3 * db;
         int curr_generation;
         int generation_id;

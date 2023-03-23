@@ -70,7 +70,7 @@ def get_sampler(data:Data, generation: int):
 
 
 class DS(IterableDataset):
-    def __init__(self, generation:int, game: str) -> None:
+    def __init__(self, generation:int) -> None:
         
         num_generations = utils.training_gens(generation)
 
@@ -79,7 +79,7 @@ class DS(IterableDataset):
 
         print(f"Training generations: {','.join(map(str, training_generations))}")
 
-        data: Data = load_generations(game, training_generations)
+        data: Data = load_generations(training_generations)
 
         self.sampler = get_sampler(data, generation)
 
@@ -88,12 +88,11 @@ class DS(IterableDataset):
             yield self.sampler.sample()
 
 
-def get_dataloader(
-    game: str, 
+def get_dataloader( 
     generation: int
 ):
 
-    dataset = DS(generation, game)
+    dataset = DS(generation)
 
     return DataLoader(
         dataset=dataset, 

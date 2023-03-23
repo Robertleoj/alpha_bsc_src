@@ -652,10 +652,9 @@ void sim::self_play(std::string game){
 
 
 ThreadData * init_thread_data(std::string game_name, int num_threads, int num_games, int generation_num){
-    auto db = new db::DB(game_name, generation_num);
+    auto db = new db::DB(generation_num);
 
     auto nn = get_neural_net(game_name, db);
-
 
     return new ThreadData(
         num_threads, 
