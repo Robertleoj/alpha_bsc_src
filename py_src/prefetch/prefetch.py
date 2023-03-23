@@ -10,11 +10,11 @@ init(autoreset=True)
 CACHED_DATA_PATH = Path("./cached_data")
 CACHED_DATA_PATH.mkdir(parents=True, exist_ok=True)
 
-def prefetch_generation(game:str, generation:int):
+def prefetch_generation(generation:int):
     db = DB()
-    states, policies, outcomes, moves_left = db.prefetch_generation(game, generation)
+    states, policies, outcomes, moves_left = db.prefetch_generation(generation)
 
-    print(f"Prefeched {states.shape[0]} samples for {Fore.GREEN}{game}{Fore.RESET} generation {Fore.GREEN}{generation}{Fore.RESET}.")
+    print(f"Prefeched {states.shape[0]} samples for generation {Fore.GREEN}{generation}{Fore.RESET}.")
 
     # Ensure that folders exist
 
@@ -29,23 +29,22 @@ def prefetch_generation(game:str, generation:int):
     )
 
 
-def generation_exists(game:str, generation:int):
+def generation_exists(generation:int):
     return (CACHED_DATA_PATH/f"{generation}.pt").exists()
 
 
-def load_generation(game:str, generation:int):
+def load_generation(generation:int):
     
-    if not generation_exists(game, generation):
-        prefetch_generation(game, generation)
+    if not generation_exists(generation):
+        prefetch_generation(generation)
 
     return torch.load(CACHED_DATA_PATH/f"{generation}.pt")
 
 
-def load_generations(game:str, generations:list):
+def load_generations(generations:list):
     """Loads multiple generations of data
 
     Args:
-        game (str): _description_
         generations (list): _description_
 
     Returns:
@@ -55,7 +54,7 @@ def load_generations(game:str, generations:list):
     generation_data = []
 
     for generation in generations:
-        generation_data.append(load_generation(game, generation))
+        generation_data.append(load_generation(generation))
 
     states = torch.concat([x.states for x in generation_data], 0)
     policies = torch.concat([x.policies for x in generation_data], 0)

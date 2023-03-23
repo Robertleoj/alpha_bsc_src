@@ -14,7 +14,7 @@ set_run(sys.argv[1], game_name)
 
 db = DB()
 
-max_gen = db.newest_generation(game_name)  
+max_gen = db.newest_generation()  
 
 evals = [db.evals(game_name, i) for i in range(max_gen + 1)]
 

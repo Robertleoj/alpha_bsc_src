@@ -7,6 +7,8 @@ import numpy as np
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import pandas as pd
+from glob import glob
+import bson 
 
 
 def read_tensors(arg):
@@ -32,25 +34,14 @@ class DB:
 
         return sqlite3.connect('./db.db')
 
-    def add_generation(self, game:str, generation_num:int):
-
-        game_id = self.get_game_id(game)
+    def add_generation(self, generation_num:int):
 
         query = f"""
-            insert into generations (game_id, generation_num)
-            values ({game_id}, {generation_num})
+            insert into generations (generation_num)
+            values ({generation_num})
         """
 
         self.query(query, True)
-
-    def get_game_id(self, game:str):
-
-        query = f"""
-            select id from games where game_name = "{game}"
-        """
-
-        res = self.query(query)
-        return res[0][0]
 
     def query(self, query, no_data=False):
         conn = self.connect()
@@ -66,7 +57,7 @@ class DB:
 
         return res
 
-    def evals(self, game:str, gen: int):
+    def evals(self, gen: int):
         query = f"""
             select
                 gt.id,
@@ -80,15 +71,11 @@ class DB:
                 gt.mcts_value_error,
                 gt.prior_error,
                 gt.mcts_error
-                
             from
-                games g
                 join generations gens
-                    on gens.game_id = g.id
                 join ground_truth_evals gt
                     on gt.generation_id = gens.id
             where
-                g.game_name = "{game}"
                 and gens.generation_num = {gen}
         """
 
@@ -122,30 +109,24 @@ class DB:
 
 
 
-    def newest_generation(self, game:str) -> int:
+    def newest_generation(self) -> int:
         query = f"""
             select 
                 max(gens.generation_num)
             from
                 generations gens
-                join games g
-                    on g.id = gens.game_id
-            where
-                g.game_name = "{game}"
         """
 
         res = self.query(query)
 
         return res[0][0]
 
-    def add_loss(self, game: str, generation, iteration, loss):
-
-        game_id = self.get_game_id(game)
+    def add_loss(self, generation, iteration, loss):
 
         query = f"""
             insert into losses (generation_id, iteration, loss)
             values (
-                (select id from generations where game_id = {game_id} and generation_num = {generation}),
+                (select id from generations where generation_num = {generation}),
                 {iteration},
                 {loss}
             )
@@ -154,115 +135,44 @@ class DB:
         self.query(query, True)
 
 
-    def prefetch_generation(self, game:str, generation:int):
-        query = f"""
-            select 
-                t.state, 
-                t.policy, 
-                t.outcome,
-                t.moves_left
-            from 
-                games g
-                join generations gens
-                    on gens.game_id = g.id
-                join training_data t
-                    on t.generation_id = gens.id
-            where
-                g.game_name = "{game}"
-                and gens.generation_num = {generation}
-        """
+    def prefetch_generation(self, generation:int):
+        
+        game_files = glob(f"./training_data/{generation}/*.bson")
+        print(f"Found {len(game_files)} files")
 
-        res = self.query(query)
+        tuples = []
 
-        print(f"Fetched {len(res)} rows")
+        for file in game_files:
+            with open(file, "rb") as f:
+                data = bson.loads(f.read())['samples']
+
+            for row in data:
+                tuples.append((
+                    row["state"],
+                    row["policy"],
+                    row["outcome"],
+                    row["moves_left"]
+                ))
+
+        print(f"Fetched {len(tuples)} positions")
 
         with Pool(cpu_count()) as p:
-            result = list(tqdm(p.imap_unordered(read_tensors, res, chunksize=16), total=len(res), desc="Making tensors"))
+            result = list(tqdm(p.imap_unordered(read_tensors, tuples, chunksize=16), total=len(tuples), desc="Making tensors"))
         
         result = tuple(
             map(np.stack, zip(*result))
         )
       
         return tuple(map(torch.tensor, result))
+
+    def generation_nums(self):
+        query = """
+            select generation_num from generations
+        """
+
+        res = self.query(query)
+        return [x[0] for x in res]
         
-    def get_ids(self, generation: int, game: str) -> list[int]:
-
-        min_gen = max(generation - config['buffer_generations'], 0)
-        
-        query = f"""
-            select t.id
-            from 
-                games g
-                join generations gens
-                    on gens.game_id = g.id
-                join training_data t
-                    on t.generation_id = gens.id
-            where
-                gens.generation_num 
-                    between {min_gen} and {generation} 
-                and g.game_name = "{game}"
-        """
-
-        res = self.query(query)
-        res = [c[0] for c in res]
-
-        return res
-
-    def get_training_sample(self, id):
-        query = f"""
-            select 
-                state, policy, outcome
-            from 
-                training_data 
-            where
-                id = {id}
-        """
-
-        res = self.query(query)
-
-        for (state, policy, outcome) in res:
-            state_t = tensor_from_blob(state)
-            policy_t = tensor_from_blob(policy)
-            outcome_t = torch.tensor(outcome)
-            break
-
-        return state_t, policy_t, outcome_t
-
-
-    def get_training_samples(self, ids):
-        query = f"""
-            select 
-                state, policy, outcome
-            from 
-                training_data 
-            where
-                id in (
-                    {",".join(map(str,ids))}
-                )
-        """
-
-
-        res = self.query(query)
-
-        states = []
-        policies = []
-        outcomes = []
-
-        for (state, policy, outcome) in res:
-            state_t = tensor_from_blob(state)
-            policy_t = tensor_from_blob(policy)
-            outcome_t = torch.tensor(outcome)
-
-            states.append(state_t)
-            policies.append(policy_t)
-            outcomes.append(outcome_t)
-
-        states = torch.stack(states, 0)
-        policies = torch.stack(policies, 0)
-        outcomes = torch.stack(outcomes, 0)
-
-        return states, policies, outcomes
-
 if __name__ == "__main__":
     db = DB()
 

@@ -1,42 +1,13 @@
-create table games (
-    id integer primary key asc,
-    game_name varchar(45) unique not null
-);
-
-insert into games (game_name) 
-values
-("connect4"),
-("breakthrough");
-
 create table generations (
     id integer primary key asc,
-    game_id integer not null,
     generation_num integer not null,
     created_at timestamp default current_timestamp,
-    unique (game_id, generation_num),
-    foreign key (game_id) references games (id)
+    unique (generation_num)
 );
 
-create index generations_game_id_idx 
-on generations (game_id);
-
-insert into generations (game_id, generation_num)
-values
-((select id from games where game_name = 'connect4'), 0),
-((select id from games where game_name = 'breakthrough'), 0);
-
-create table training_data(
-    id integer primary key asc,
-    generation_id integer not null,
-    state blob not null,
-    policy blob not null,
-    outcome float,
-    player tinyint not null,
-    moves text,
-    moves_left integer not null,
-    created_at timestamp default current_timestamp,
-    foreign key (generation_id) references generations (id)
-);
+-- When fixing the db comment the following 2 lines out.
+insert into generations (generation_num)
+values (0);
 
 create table losses(
     id integer primary key asc,
