@@ -53,6 +53,7 @@ link_directories(./.libs/gsl/lib)
 link_libraries(
     ${TORCH_LIBRARIES}
     gsl 
+    uuid
     gslcblas
     dl
 )

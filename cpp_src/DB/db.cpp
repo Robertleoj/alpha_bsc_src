@@ -2,6 +2,24 @@
 #include <torch/torch.h>
 #include <istream>
 #include "../config/config.h"
+#include <sys/stat.h>
+#include <uuid/uuid.h>
+
+std::vector<uint8_t> tensor_to_binary(at::Tensor t){
+    std::stringstream ss;
+    torch::save(t, ss);
+    auto str = ss.str();
+    auto buffer = str.data();
+    int buffer_size = str.size();
+
+    std::vector<uint8_t> ret(buffer_size);
+
+    for(int i = 0; i < buffer_size; i++){
+        ret[i] = buffer[i];
+    }
+
+    return ret;
+}
 
 namespace db {
 
@@ -228,71 +246,51 @@ namespace db {
     }
 
 
-
     void DB::insert_training_samples(std::vector<TrainingSample> *samples) {
-        sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
-        for(auto &sample : *samples){
+        // Write to bson file
+        using json=nlohmann::json;
 
-            sqlite3_stmt * stmt = nullptr;
-            sqlite3_prepare_v2(
-                this->db,
-                R"(
-                insert into training_data (
-                    generation_id,
-                    state,
-                    policy,
-                    outcome,
-                    moves,
-                    player,
-                    moves_left
-                ) 
-                values
-                (?, ?, ?, ?, ?, ?, ?)
-                )",
-                -1,
-                &stmt,
-                NULL
-            );
-            
-            // generation_id
-            sqlite3_bind_int(stmt, 1, this->generation_id);
+        json j_arr;
+
+        for(auto &sample : *samples){
+            json sample_j;
 
             // state
-            std::stringstream state_ss;
-            torch::save(sample.state, state_ss);
-            auto state_str = state_ss.str();
+            auto state_bin = tensor_to_binary(sample.state);
 
-            sqlite3_bind_blob(stmt, 2, state_str.c_str(), state_str.size(), SQLITE_STATIC);
+            sample_j["state"] = json::binary(tensor_to_binary(sample.state));
+            sample_j["policy"] = json::binary(tensor_to_binary(sample.target_policy));
+            sample_j["outcome"] = sample.outcome;
+            sample_j["moves"] = sample.moves;
+            sample_j["player"] = (sample.player == pp::First ? 1 : 0);
+            sample_j["moves_left"] = sample.moves_left;
 
-            // target policy
-            std::stringstream policy_ss;
-            torch::save(sample.target_policy, policy_ss);
-            auto pol_str = policy_ss.str();
-
-            sqlite3_bind_blob(stmt, 3, pol_str.c_str(), pol_str.size(), SQLITE_STATIC);
-
-            // outcome
-            sqlite3_bind_double(stmt, 4, sample.outcome);
-
-            // moves
-            sqlite3_bind_text(stmt, 5, sample.moves.c_str(), sample.moves.size(), SQLITE_TRANSIENT);
-
-            // player
-            sqlite3_bind_int(stmt, 6, (sample.player == pp::First ? 1 : 0));
-
-            // moves_left
-            sqlite3_bind_int(stmt, 7, sample.moves_left);
-
-            int rc = sqlite3_step(stmt);
-
-            if (rc != SQLITE_DONE){
-                std::cerr << "Failed to insert training sample!" << std::endl;
-                std::cerr << sqlite3_errmsg(this->db) << std::endl;
-                throw std::runtime_error("Failed to insert");
-            }
-
-            sqlite3_finalize(stmt);
+            j_arr.push_back(sample_j);
         }
-        sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+
+        json j_top;
+        j_top["samples"] = j_arr;
+
+        // make sure training_data directory exists
+        mkdir("training_data", 0777);
+
+        // ensure generation directory exists
+        auto dir_name = utils::string_format("./training_data/%d", this->curr_generation);
+        mkdir(dir_name.c_str(), 0777);
+
+        // Create uuid
+        uuid_t uuid;
+        uuid_generate(uuid);
+
+        char uuid_str[37];
+        uuid_unparse(uuid, uuid_str);
+
+        std::string fname = utils::string_format("./training_data/%d/%s.bson", this->curr_generation, uuid_str);
+
+        auto v = json::to_bson(j_top);
+
+        std::ofstream out(fname, std::ios::binary);
+        out.write((char *)v.data(), v.size());
     }
+
 }
