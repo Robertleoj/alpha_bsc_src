@@ -1,5 +1,7 @@
 #include <iostream>
 #include <random>
+#include <unistd.h>
+#include <dirent.h>
 
 #include "./NN/nn.h"
 #include "./NN/connect4_nn.h"
@@ -9,6 +11,7 @@
 #include "./games/connect4.h"
 #include "./base/types.h"
 #include "./utils/utils.h"
+
 
 
 std::string model_path(std::string model_name){
@@ -62,7 +65,7 @@ void play_user(std::string model_name){
         return std::move(neural_net->eval_state(b));
     };
 
-    Agent agent(game, efunc);
+    Agent agent(game);
 
     bool agent_turn = false;
 
@@ -72,7 +75,7 @@ void play_user(std::string model_name){
     while(!game->is_terminal()){
 
         if(agent_turn){
-            agent.search(config::hp["search_depth"].get<int>());
+            agent.search(config::hp["search_depth"].get<int>(), efunc);
 
             auto visit_counts = agent.root_visit_counts();
 
@@ -134,8 +137,8 @@ void play_self(std::string m1, std::string m2){
         return std::move(neural_net2->eval_state(b));
     };
 
-    Agent agent1(game, efunc1, false);
-    Agent agent2(game, efunc2, false);
+    Agent agent1(game, false);
+    Agent agent2(game, false);
 
     bool agent1_turn = true;
 
@@ -147,11 +150,11 @@ void play_self(std::string m1, std::string m2){
         
         std::map<game::move_id, int> visit_counts;
         if(agent1_turn){
-            agent1.search(config::hp["search_depth"].get<int>());
+            agent1.search(config::hp["search_depth"].get<int>(), efunc1);
             visit_counts = agent1.root_visit_counts();
             print_pucts(&agent1);
         } else {
-            agent2.search(config::hp["search_depth"].get<int>());
+            agent2.search(config::hp["search_depth"].get<int>(), efunc2);
             visit_counts = agent2.root_visit_counts();
             print_pucts(&agent2);
         }
@@ -193,13 +196,35 @@ void play_self(std::string m1, std::string m2){
 
 
 int main(int argc, char * argv[]){
-
-    config::initialize();
     srand(time(NULL));
 
-    if(argc == 2){
-        play_user(argv[1]);
+
+    if(argc < 2 || argc > 4){
+        std::cout << "Usage: ./play_agent <run_name> <model_1> [model_2]" << std::endl;
+        return 0;
+    }
+
+    std::string run_name = utils::string_format("%s", argv[1]);
+    std::cout << "Run name: " << run_name << std::endl;
+    std::string game_name = "connect4";
+
+    std::string run_path = "../vault/" + game_name + '/' + run_name;
+
+    std::cout << "Run path: " << run_path << std::endl;
+
+    // make sure run exists 
+    if(!utils::dir_exists(run_path)) {
+        std::cout << "Run " << run_name << " does not exist." << std::endl;
+        return 1;
+    }
+
+    chdir(run_path.c_str());
+
+    config::initialize();
+
+    if(argc == 3){
+        play_user(argv[2]);
     } else {
-        play_self(argv[1], argv[2]);
+        play_self(argv[2], argv[3]);
     }
 }

@@ -1,7 +1,11 @@
 from training import Model
 from utils import set_run
 import sys
+import torch
 import os
+
+torch.backends.benchmark = True
+torch.backends.cudnn.benchmark = True
 
 if len(sys.argv) < 2:
     print("Usage: python3 train.py <run_name> [<game>]")

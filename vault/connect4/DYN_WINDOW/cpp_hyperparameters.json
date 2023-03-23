@@ -5,11 +5,11 @@
     "search_depth": 600,
 
     "self_play_num_games" : 5000,
-    "games_per_thread" : 100,
+    "games_per_thread" : 200,
     "self_play_num_threads": 25,
-    "num_dl_threads": 8,
-    "num_nn_threads": 1,
-    "num_return_threads": 8,
+    "num_dl_threads": 6,
+    "num_nn_threads": 3,
+    "num_return_threads": 6,
 
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,

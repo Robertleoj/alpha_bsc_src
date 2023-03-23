@@ -3,12 +3,12 @@
     "batch_size":4096,
     "value_loss_ratio":1.0,
     "weight_decay":1e-4,
-    "learning_rate": 1e-3,
+    "learning_rate": 1e-4,
     "num_iterations":5000,
-    "sample_method": "uniform",
+    "sample_method": "endgame",
 
     "dynamic_window":{
-        "on": false,
+        "on": true,
         "min": 1,
         "max":20,
         "increase_every":3

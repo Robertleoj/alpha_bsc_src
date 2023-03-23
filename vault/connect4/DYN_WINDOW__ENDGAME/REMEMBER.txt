@@ -1,0 +1,1 @@
+killed on self-play, so first self-play, then eval, then run cycle.
