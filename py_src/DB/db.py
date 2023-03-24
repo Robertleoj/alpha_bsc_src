@@ -74,11 +74,11 @@ class DB:
                 gt.prior_error,
                 gt.mcts_error
             from
-                join generations gens
+                generations gens
                 join ground_truth_evals gt
                     on gt.generation_id = gens.id
             where
-                and gens.generation_num = {gen}
+                gens.generation_num = {gen}
         """
 
         res = self.query(query)

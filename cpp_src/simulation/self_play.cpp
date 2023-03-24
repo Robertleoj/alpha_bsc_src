@@ -29,6 +29,16 @@ db::TrainingSample get_training_sample(
     return ts;
 }
 
+void endgame_update_training_sample(
+    db::TrainingSample* sample, 
+    nn::move_dist move_map,
+    nn::NN * neural_net
+){
+    auto policy_tensor = neural_net->move_map_to_policy_tensor(move_map);
+    sample->target_policy = policy_tensor;
+    sample->weight = 1;
+}
+
 void write_samples(
     std::vector<db::TrainingSample>* training_samples,
     Agent* agent,
@@ -161,13 +171,15 @@ void thread_play(
                     weight = 1;
                 }
 
-                samples[i].push_back(get_training_sample(
-                    normalized_visit_counts,
-                    moves[i].str(),
-                    games[i]->get_board(),
-                    thread_data->neural_net,
-                    weight
-                ));
+                if(!on_backtrack_move[i]){
+                    samples[i].push_back(get_training_sample(
+                        normalized_visit_counts,
+                        moves[i].str(),
+                        games[i]->get_board(),
+                        thread_data->neural_net,
+                        weight
+                    ));
+                }
 
                 auto best_move = select_move(normalized_visit_counts, num_moves[i]);
 
@@ -184,12 +196,18 @@ void thread_play(
                 if (game_completed || on_backtrack_move[i]) {
                     if(!on_backtrack_move[i] && use_endgame_playout){
                         delete agents[i];
-                        samples[i].pop_back();
+                        // samples[i].pop_back();
+                        games[i]->push();
                         games[i]->retract(best_move);
                         agents[i] = new Agent(games[i]);
                         on_backtrack_move[i] = true;
                         num_moves[i]--;
                     } else{
+                        if(on_backtrack_move[i]){
+                            games[i]->pop();
+                            endgame_update_training_sample(&samples[i].back(), normalized_visit_counts, thread_data->neural_net);
+                        }
+
                         write_samples(&samples[i], agents[i], thread_data, games[i], num_moves[i]);
 
                         // restart game
