@@ -12,7 +12,7 @@ CACHED_DATA_PATH.mkdir(parents=True, exist_ok=True)
 
 def prefetch_generation(generation:int):
     db = DB()
-    states, policies, outcomes, moves_left = db.prefetch_generation(generation)
+    states, policies, outcomes, moves_left, weights = db.prefetch_generation(generation)
 
     print(f"Prefeched {states.shape[0]} samples for generation {Fore.GREEN}{generation}{Fore.RESET}.")
 
@@ -23,7 +23,8 @@ def prefetch_generation(generation:int):
             states=states, 
             policies=policies, 
             outcomes=outcomes,
-            moves_left=moves_left
+            moves_left=moves_left,
+            weights=weights
         ), 
         CACHED_DATA_PATH/f"{generation}.pt"
     )
@@ -38,7 +39,21 @@ def load_generation(generation:int):
     if not generation_exists(generation):
         prefetch_generation(generation)
 
-    return torch.load(CACHED_DATA_PATH/f"{generation}.pt")
+
+    data = torch.load(CACHED_DATA_PATH/f"{generation}.pt")
+    ok = False
+    try:
+        data.weights
+        ok = True
+    except:
+        pass
+
+    if ok:
+        return data
+    else:
+        new_data = Data(data.states, data.policies, data.outcomes, data.moves_left, torch.ones(data.states.shape[0]))
+        torch.save(new_data, CACHED_DATA_PATH/f"{generation}.pt")
+        return new_data
 
 
 def load_generations(generations:list):
@@ -60,6 +75,7 @@ def load_generations(generations:list):
     policies = torch.concat([x.policies for x in generation_data], 0)
     outcomes = torch.concat([x.outcomes for x in generation_data], 0)
     moves_left = torch.concat([x.moves_left for x in generation_data], 0)
+    weights = torch.concat([x.weights for x in generation_data], 0)
 
-    return Data(states, policies, outcomes, moves_left)
+    return Data(states, policies, outcomes, moves_left, weights)
     

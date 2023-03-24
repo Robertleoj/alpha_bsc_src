@@ -12,12 +12,14 @@ import bson
 
 
 def read_tensors(arg):
-    state, policy, outcome, moves_left = arg
+    state, policy, outcome, moves_left, weights = arg
+
     return (
         np.array(tensor_from_blob(state)),
         np.array(tensor_from_blob(policy)),
         np.array(outcome),
-        np.array(moves_left)
+        np.array(moves_left),
+        np.array(weights)
     )
 
 def tensor_from_blob(blob) -> torch.Tensor:
@@ -151,7 +153,8 @@ class DB:
                     row["state"],
                     row["policy"],
                     row["outcome"],
-                    row["moves_left"]
+                    row["moves_left"],
+                    row["weight"] if "weight" in row else 1
                 ))
 
         print(f"Fetched {len(tuples)} positions")

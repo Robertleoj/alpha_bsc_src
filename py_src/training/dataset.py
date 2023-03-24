@@ -36,7 +36,7 @@ class EndgameSampling:
 
         idx = self.idx_q.pop()
 
-        return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx]
+        return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx], self.data.weights[idx]
 
     def refresh_indices(self):
         mult_sample = torch.multinomial(self.weights, config['endgame_sampling_q_size'], replacement=True)
@@ -59,7 +59,7 @@ class UniformSampler:
 
     def sample(self):
         idx = random.randint(0, self.num_samples - 1)
-        return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx]
+        return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx], self.data.weights[idx]
 
 
 def get_sampler(data:Data, generation: int):
