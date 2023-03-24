@@ -234,6 +234,7 @@ namespace db {
             sample_j["moves"] = sample.moves;
             sample_j["player"] = (sample.player == pp::First ? 1 : 0);
             sample_j["moves_left"] = sample.moves_left;
+            sample_j["weight"] = sample.weight;
 
             j_arr.push_back(sample_j);
         }

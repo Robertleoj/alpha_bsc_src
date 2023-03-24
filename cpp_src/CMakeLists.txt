@@ -90,7 +90,12 @@ set(FILES
     DB/db.h
     DB/db.cpp
     simulation/simulation.h
-    simulation/simulation.cpp
+    simulation/evaluation.cpp
+    simulation/self_play.cpp
+    simulation/structs.h
+    simulation/mutual.h
+    simulation/mutual.cpp
+    simulation/endgame_playouts.h
     config/config.h
     config/config.cpp
     sqlite/sqlite3.h

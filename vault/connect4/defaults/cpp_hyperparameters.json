@@ -14,7 +14,16 @@
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,
     "depth_until_pi_argmax": 4,
-    "eval_search_depth": 600
+    "eval_search_depth": 600,
+
+    "use_endgame_playouts": false,
+    "endgame_playout_shift": 10.5,
+    "endgame_playout_slope": 3.0,
+    "endgame_playout_uniform_const": -4.0,
+    "endgame_playout_uniform_generation": 100.0,
+    "endgame_playout_b": 0.595,
+    "endgame_playout_power": 2.0,
+    "endgame_min_playouts": 20
 }
 
 
