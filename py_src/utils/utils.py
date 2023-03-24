@@ -11,6 +11,7 @@ class Data:
     policies: torch.Tensor
     outcomes: torch.Tensor
     moves_left: torch.Tensor
+    weights: torch.Tensor
 
 
 def make_folder(path):

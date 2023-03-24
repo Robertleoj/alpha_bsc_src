@@ -20,16 +20,20 @@ def policy_loss(
 
     out = nn_policy * target_policy
 
-    return -out.sum(dim=1).mean()
+    return -out.sum(dim=1)
 
 
 def value_loss(nn_value: torch.Tensor, real_value: torch.Tensor):
-    return (nn_value - real_value).pow(2).mean()
+    return (nn_value - real_value).pow(2)
 
 
-def loss_fn(nn_val, nn_pol, target_val, target_pol) -> torch.Tensor:
-    return (
-        config['value_loss_ratio'] * value_loss(nn_val, target_val) 
-        +policy_loss(nn_pol, target_pol)
-    )
+def loss_fn(nn_val:torch.Tensor, nn_pol:torch.Tensor, target_val:torch.Tensor, target_pol:torch.Tensor, weights:torch.Tensor) -> torch.Tensor:
+
+    val_loss = value_loss(nn_val, target_val)
+    pol_loss = policy_loss(nn_pol, target_pol)
+
+    val_loss = (weights * val_loss).mean()
+    pol_loss = (weights * pol_loss).mean()
+
+    return (config['value_loss_ratio'] * val_loss + pol_loss)
 

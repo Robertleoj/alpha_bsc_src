@@ -33,6 +33,7 @@ namespace db {
         pp::Player player;
         std::string moves;
         int moves_left;
+        double weight;
     };
 
     class DB {

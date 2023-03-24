@@ -83,17 +83,18 @@ class Model:
 
         optimizer = self.get_optimizer()
 
-        for states, policies, outcomes in tqdm_dl:
+        for states, policies, outcomes, weights in tqdm_dl:
             states = states.to(self.device)
             policies = policies.to(self.device)
             outcomes = outcomes.to(self.device)
+            weights = weights.to(self.device)
             
             optimizer.zero_grad()
             
             nn_pol, nn_val = self.nn(states)
             nn_pol = torch.log_softmax(nn_pol, 1)
 
-            loss = loss_fn(nn_val, nn_pol, outcomes, policies)    
+            loss = loss_fn(nn_val, nn_pol, outcomes, policies, weights)
             loss.backward()
             optimizer.step()
 

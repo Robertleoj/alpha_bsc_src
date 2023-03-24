@@ -16,7 +16,7 @@ db = DB()
 
 max_gen = db.newest_generation()  
 
-evals = [db.evals(game_name, i) for i in range(max_gen + 1)]
+evals = [db.evals(i) for i in range(max_gen + 1)]
 
 # eval_df = pd.DataFrame(cols = ["gen", "nn_value_error", "mcts_value_error", "prior_error", "mcts_pol_error"])
 eval_df = pd.DataFrame(columns = ["gen", "error_type", "error"])
