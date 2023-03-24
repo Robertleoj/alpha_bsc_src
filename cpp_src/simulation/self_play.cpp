@@ -79,6 +79,8 @@ void thread_play(
     std::stringstream moves[num_games];
     int num_moves[num_games];
     memset(num_moves, 0, sizeof(num_moves));
+    bool on_backtrack_move[num_games];
+    memset(on_backtrack_move, false, sizeof(on_backtrack_move));
 
     double current_gen = thread_data->db->curr_generation;
 
@@ -155,6 +157,10 @@ void thread_play(
 
                 double weight = get_weight(num_moves[i]);
 
+                if(on_backtrack_move[i]){
+                    weight = 1;
+                }
+
                 samples[i].push_back(get_training_sample(
                     normalized_visit_counts,
                     moves[i].str(),
@@ -175,36 +181,49 @@ void thread_play(
 
                 bool game_completed = games[i]->is_terminal();
 
-                if (game_completed) {
-                    write_samples(&samples[i], agents[i], thread_data, games[i], num_moves[i]);
+                if (game_completed || on_backtrack_move[i]) {
+                    if(!on_backtrack_move[i] && use_endgame_playout){
+                        delete agents[i];
+                        samples[i].pop_back();
+                        games[i]->retract(best_move);
+                        agents[i] = new Agent(games[i]);
+                        on_backtrack_move[i] = true;
+                        num_moves[i]--;
+                    } else{
+                        write_samples(&samples[i], agents[i], thread_data, games[i], num_moves[i]);
 
-                    // restart game
-                    samples[i].clear();
-                    num_moves[i] = 0;
-                    delete agents[i];
-                    delete games[i];
-                    std::cout << "Games left: " << thread_data->games_left + thread_data->num_active_games << std::endl;
+                        // restart game
+                        samples[i].clear();
+                        num_moves[i] = 0;
+                        delete agents[i];
+                        delete games[i];
+                        std::cout << "Games left: " << thread_data->games_left + thread_data->num_active_games << std::endl;
 
 
-                    thread_data->start_game_mutex.lock();
-                    if (thread_data->games_left <= 0) {
+                        thread_data->start_game_mutex.lock();
+                        if (thread_data->games_left <= 0) {
+                            thread_data->start_game_mutex.unlock();
+
+                            dead_game[i] = true;
+                            thread_data->num_active_games--;
+                            thread_data->q_cv.notify_all();
+
+                            goto cnt; // this is a goto, but it's the only way to break out of two loops
+                        }
+                        thread_data->games_left--;
                         thread_data->start_game_mutex.unlock();
 
-                        dead_game[i] = true;
-                        thread_data->num_active_games--;
-                        thread_data->q_cv.notify_all();
-
-                        goto cnt; // this is a goto, but it's the only way to break out of two loops
+                        games[i] = get_game_instance(game_name);
+                        agents[i] = new Agent(games[i]);
+                        on_backtrack_move[i] = false;
                     }
-                    thread_data->games_left--;
-                    thread_data->start_game_mutex.unlock();
-
-                    games[i] = get_game_instance(game_name);
-                    agents[i] = new Agent(games[i]);
                 }
-
-
-                std::tie(done, board) = agents[i]->init_mcts(get_playouts(num_moves[i])); // TODO
+                
+                int playouts = get_playouts(num_moves[i]);
+                if(on_backtrack_move[i]){
+                    playouts = search_depth;
+                }
+                std::tie(done, board) = agents[i]->init_mcts(playouts);
             }
 
             queue_request(thread_data, board, &requests[i]);

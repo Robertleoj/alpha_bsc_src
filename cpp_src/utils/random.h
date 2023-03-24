@@ -50,7 +50,8 @@ namespace utils {
     // multinomial argmax from map<T, double>
     template <typename T, typename K> 
     T argmax_map(const std::map<T, K>& probs) {
-        T best_elem;
+
+        [[maybe_unused]] T best_elem;
         K best_prob = -1;
 
         for (auto& kv : probs) {
