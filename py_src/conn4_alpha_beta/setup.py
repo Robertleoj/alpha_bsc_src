@@ -1,4 +1,5 @@
 import setuptools, sysconfig
+import pybind11
 
 setuptools.setup(
     name="conn4_solver",
@@ -9,7 +10,7 @@ setuptools.setup(
     ext_modules=[setuptools.Extension(
         "conn4_solver",
         ["lib.cpp","generator.cpp","Solver.cpp"],
-        include_dirs=[sysconfig.get_paths()['include']],
+        include_dirs=[pybind11.get_include(), sysconfig.get_paths()['include']],
         language="c++"
     )]
 )
