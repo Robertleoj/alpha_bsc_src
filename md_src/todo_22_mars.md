@@ -15,3 +15,5 @@ where $x$ is the number of moves that have been played in the game. $k$ is a hyp
 
 2. tune endgame sampling, and run
 3. measure data quality
+
+4. Fix eval positions: we only have 2500 positions. Then evaluate everything again.

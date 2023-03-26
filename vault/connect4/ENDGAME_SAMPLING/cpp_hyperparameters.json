@@ -23,9 +23,7 @@
     "endgame_playout_uniform_generation": 100.0,
     "endgame_playout_b": 0.595,
     "endgame_playout_power": 2.0,
-    "endgame_min_playouts": 20,
-
-    "opening_softmax_temp": 1
+    "endgame_min_playouts": 20
 }
 
 

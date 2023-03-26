@@ -8,6 +8,7 @@ import torch
 import bson
 from pathlib import Path
 from os import system
+import os
 
 print("Remember to comment out the magic line in db configuration file!")
 
@@ -78,12 +79,18 @@ generations = get_generation_nums()
 
 for gen_num in generations:
     print(f"Processing generation {gen_num}")
-    data = get_generation(gen_num)
+
 
     path = Path(f"./training_data/{gen_num}")
     path.mkdir(parents=True, exist_ok=True)
 
     file_name = path / "all.bson"
+
+    if os.path.exists(file_name):
+        print("Already copied this data. Continuing...")
+        continue
+
+    data = get_generation(gen_num)
 
     samples = []
 

@@ -29,6 +29,15 @@ def prefetch_generation(generation:int):
         CACHED_DATA_PATH/f"{generation}.pt"
     )
 
+    print("Compressing training data...")
+
+    ret_code = os.system(f"7z a ./training_data/{generation}.7z ./training_data/{generation}")
+
+    if ret_code != 0:
+        print("WARNING: failed to compress, will not delete uncompressed training_data")
+    else:
+        os.system(f"rm -r ./training_data/{generation}")
+
 
 def generation_exists(generation:int):
     return (CACHED_DATA_PATH/f"{generation}.pt").exists()

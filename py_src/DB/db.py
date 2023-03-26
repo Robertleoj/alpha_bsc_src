@@ -146,7 +146,10 @@ class DB:
 
         for file in game_files:
             with open(file, "rb") as f:
-                data = bson.loads(f.read())['samples']
+                try:
+                    data = bson.loads(f.read())['samples']
+                except:
+                    raise Exception(f"Could not read file\n{file}")
 
             for row in data:
                 tuples.append((

@@ -32,7 +32,7 @@ namespace utils {
     // normalize map<T, K> 
     template <typename T, typename K>
     std::map<T, double> softmax_map(std::map<T, K>& probs) {
-
+        
         double sum = 0;
         for (auto& kv : probs) {
             sum += kv.second;

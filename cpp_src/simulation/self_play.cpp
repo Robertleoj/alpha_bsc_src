@@ -80,7 +80,7 @@ void thread_play(
 
     const int num_games = config::hp["games_per_thread"].get<int>();
     const int search_depth = config::hp["search_depth"].get<int>();
-    
+
     Agent* agents[num_games];
     game::IGame* games[num_games];
     EvalRequest requests[num_games];
