@@ -10,7 +10,7 @@ import os
 
 ILLEGAL_MOVE = -1000
 VALUE = 0.7
-THREADS = 32
+THREADS = 2
 
 def fix_scores(scores: list[int]) -> torch.Tensor:
     for i in range(len(scores)):
@@ -52,7 +52,7 @@ def select_move(scores):
 def play_game() -> list[str]:
     move_list = []
 
-    while True:
+    while len(move_list) < 41:
 
         try:
             scores = solve(move_list)
@@ -86,7 +86,7 @@ def generate(n: int, curr_games: list[dict])-> list[str]:
 
     while len(new_games) < n:
         with Pool(THREADS) as p:
-            sampled = p.map(random_position, range(n))
+            sampled = p.map(random_position, range(n-len(new_games)))
 
         sampled = [''.join(pos) for pos in sampled]
         sampled = list(set(sampled))
@@ -131,7 +131,7 @@ def main():
         return
 
     games = generate(n_games, curr_games)
-    print(*games, sep='\n')
+    # print(*games, sep='\n')
     print(f"Generated {len(games)} positions")
     save_json(games, fname)
 

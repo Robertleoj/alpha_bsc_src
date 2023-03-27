@@ -72,17 +72,17 @@ void write_evaluation_to_db(
     // create eval entry
     db::EvalEntry eval_entry {
         gt->moves,
-            config::hp["eval_search_depth"].get<int>(),
-            gt->ground_truth,
-            gt->value,
-            policy_prior,
-            policy_prior_error,
-            policy_mcts,
-            policy_mcts_error,
-            nn_value,
-            nn_value_error,
-            mcts_value,
-            mcts_value_error
+        config::hp["eval_search_depth"].get<int>(),
+        gt->ground_truth,
+        gt->value,
+        policy_prior,
+        policy_prior_error,
+        policy_mcts,
+        policy_mcts_error,
+        nn_value,
+        nn_value_error,
+        mcts_value,
+        mcts_value_error
     };
 
     // write to db

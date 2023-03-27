@@ -4,6 +4,7 @@ import torch
 from dataclasses import dataclass
 import sys
 import os
+import shutil
 
 @dataclass
 class Data:
@@ -12,6 +13,18 @@ class Data:
     outcomes: torch.Tensor
     moves_left: torch.Tensor
     weights: torch.Tensor
+
+def cmd_exists(cmd):
+    return shutil.which(cmd) is not None
+
+
+def sevenzip_cmd():
+    possibilities = ['7z', '7zz']
+    for p in possibilities:
+        if cmd_exists(p):
+            return p
+
+    raise RuntimeError("No compression program")
 
 
 def make_folder(path):

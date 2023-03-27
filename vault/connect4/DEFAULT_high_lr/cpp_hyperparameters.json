@@ -1,9 +1,17 @@
 {
     "PUCT_c" : 4,
-    "batch_size": 256,
-    "num_parallel_games" : 512,
     "search_depth": 600,
+
+    "batch_size": 1024,
+
     "self_play_num_games" : 5000,
+    "games_per_thread" : 200,
+    "self_play_num_threads": 25,
+
+    "num_dl_threads": 10,
+    "num_nn_threads": 10,
+    "num_return_threads": 10,
+
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.7,
     "depth_until_pi_argmax": 4,

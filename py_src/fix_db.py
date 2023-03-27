@@ -9,6 +9,7 @@ import bson
 from pathlib import Path
 from os import system
 import os
+import shutil
 
 print("Remember to comment out the magic line in db configuration file!")
 
@@ -85,9 +86,28 @@ for gen_num in generations:
     path.mkdir(parents=True, exist_ok=True)
 
     file_name = path / "all.bson"
+    compressed_path = f"./training_data/{gen_num}.7z"
 
-    if os.path.exists(file_name):
-        print("Already copied this data. Continuing...")
+    if os.path.exists(file_name) or os.path.exists(compressed_path):
+        if not os.path.exists(compressed_path):
+            print("Found data, but no compressed version. Compressing...")
+
+            cmd_exists = lambda x: shutil.which(x) is not None
+            comp_program = "7z" if cmd_exists("7z") else "7zz"
+
+            ret_code = system(f"{comp_program} a {compressed_path} ./{path}")
+            if ret_code != 0:
+                print("WARNING: compression failed, will not delete uncompressed data")
+                print(f"{comp_program} a {compressed_path} ./{path}")
+            else:
+                system(f"rm -r {path}")
+        else:
+            print("Already copied and compressed this data. Continuing...")
+
+            if os.path.exists(path):
+                print("Deleting uncompressed data...")
+                system(f"rm -r {path}")
+
         continue
 
     data = get_generation(gen_num)
@@ -110,7 +130,16 @@ for gen_num in generations:
     with open(file_name, 'wb') as f:
         f.write(dumped)
 
+    print("Compressing...")
+    cmd_exists = lambda x: shutil.which(x) is not None
+    comp_program = "7z" if cmd_exists("7z") else "7zz"
 
+    ret_code = system(f"{comp_program} a {compressed_path} ./{path}")
+    if ret_code != 0:
+        print("WARNING: compression failed, will not delete uncompressed data")
+        print(f"{comp_program} a {compressed_path} ./{path}")
+    else:
+        system(f"rm -r {path}")
 
 # generations table
 gens_fields = [
