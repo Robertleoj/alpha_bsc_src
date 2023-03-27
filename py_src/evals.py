@@ -42,8 +42,10 @@ gen_playouts = {}
 evals = {}
 for file in eval_files:
     gen = int(file.stem)
-
-    gen_playouts[gen] = (load_generation(gen).weights.sum() * max_playouts).item()
+    if gen != 0:
+        gen_playouts[gen] = (load_generation(gen - 1).weights.sum() * max_playouts).item()
+    else:
+        gen_playouts[gen] = 0
 
     with open(file, "r") as f:
         evals[gen] = json.load(f)['evals']
