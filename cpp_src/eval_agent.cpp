@@ -11,9 +11,9 @@
 int main(int argc, char *argv[])
 {
 
-    if(argc != 2){
+    if(argc < 2){
         std::cout << "Usage: ./eval_agent <run_name>" << std::endl;
-        return 0;
+        return 1;
     }
 
     std::string run_name = argv[1];
@@ -21,6 +21,11 @@ int main(int argc, char *argv[])
     std::string game_name = "connect4";
 
     std::string run_path = "../vault/" + game_name + '/' + run_name;
+
+    int generation = -1;
+    if(argc == 3){
+        generation = atoi(argv[2]);
+    }
 
     if(!utils::dir_exists(run_path)) {
         std::cout << "Run " << run_name << " does not exist." << std::endl;
@@ -43,7 +48,7 @@ int main(int argc, char *argv[])
     // initialize config
     config::initialize();
 
-    sim::eval_targets("../../../db/test_data.json", -1);
+    sim::eval_targets("../../../db/test_data.json", generation);
 
     return 0;
 }

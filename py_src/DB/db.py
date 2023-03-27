@@ -32,7 +32,7 @@ def tensor_from_blob(blob) -> torch.Tensor:
 
 class DB:
 
-    def connect(self):
+    def __connect(self):
 
         return sqlite3.connect('./db.db')
 
@@ -46,7 +46,7 @@ class DB:
         self.query(query, True)
 
     def query(self, query, no_data=False):
-        conn = self.connect()
+        conn = self.__connect()
         cursor = conn.execute(query)
 
         res = None
@@ -58,6 +58,28 @@ class DB:
         conn.close()
 
         return res
+
+    def generation_id(self, gen):
+        query = f"""
+            select id
+            from generations
+            where generation_num = {gen}
+        """
+
+        query_res = self.query(query)
+        try:
+            return query_res[0][0]
+        except:
+            print("Query result:")
+            print(query_res)
+            raise Exception(f"Could not find generation {gen}")
+
+    def delete_eval(self, gen):
+        gen_id = self.generation_id(gen)
+        query = f"""
+            delete from ground_truth_evals where generation_id = {gen_id}
+        """
+        self.query(query, True)
 
     def evals(self, gen: int):
         query = f"""
@@ -198,7 +220,7 @@ class DB:
         return tuple(map(torch.tensor, result))
 
 
-    def generation_nums(self):
+    def generation_nums(self) -> list[int]:
         query = """
             select generation_num from generations
         """

@@ -1,4 +1,5 @@
 #include "./db.h"
+#include <stdexcept>
 #include <torch/torch.h>
 #include <istream>
 #include "../config/config.h"
@@ -206,9 +207,9 @@ namespace db {
 
         if( rc ) {
             fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            exit(0);
+            throw std::runtime_error("Can't open database");
         } else {
-            fprintf(stderr, "Opened database successfully\n");
+            fprintf(stdout, "Opened database successfully\n");
         }
 
         // sqlite3_close(db);
