@@ -5,7 +5,7 @@ from utils import set_run
 from pathlib import Path
 import pandas as pd
 from glob import glob
-from conn4_solver import solve
+from conn4_solver import solve, evaluate_many
 from DB import DB
 import bson
 import numpy as np
@@ -34,10 +34,11 @@ game_outcome
 """
 
 COLUMNS = ["generation", "moves_left", "moves_played", "gt_eval", "game_outcome"]
-THREADS = 16
+THREADS = 32
 ILLEGAL_MOVE = -1000
 GEN_SAMPLES = 10000
 FNAME = Path("./td_evaluations.csv")
+BOOK_PATH = '../../../db/7x6.book'
 
 @dataclass
 class Position:
@@ -68,7 +69,7 @@ def sample_to_pos(sample):
     moves_left = sample['moves_left']
     game_outcome = sample['outcome']
     moves_played = sample['moves'].count(';')
-    moves = sample['moves']
+    moves = sample['moves'].replace(';', '')
     return Position(
         moves_left=moves_left,
         moves_played=moves_played,
@@ -88,26 +89,33 @@ def get_positions(generation) -> list[Position]:
 
     positions = []
 
+    samples = []
+
 
     for game_file in tqdm(game_files, desc="Reading data files"):
         with open(game_file, "rb") as f:
             data = bson.loads(f.read())['samples']
+
+        samples.extend(data)
+
             
-        with Pool(THREADS) as p:
-            ret = p.map(sample_to_pos, data)
-            positions.extend(ret)
+    with Pool(THREADS) as p:
+        positions = p.map(sample_to_pos, samples)
 
     db.compress_generation(generation)
 
     return positions
  
 
-def eval_position(position: Position) -> float:
-    moves = position.moves.split(';')
-    scores = solve(moves)
-    pos_score = scores_to_pos_score(scores)
-    return pos_score
+# def eval_position(position: Position) -> float:
+#     moves = position.moves.replace(';', '')
+#     scores = solve(moves)
+#     pos_score = scores_to_pos_score(scores)
+#     return pos_score
 
+
+# def clean_pos(pos: Position) -> Position:
+#     moves = pos.moves.replace(';', '')
 
 
 def eval_td_generation(generation:int) -> pd.DataFrame:
@@ -126,8 +134,10 @@ def eval_td_generation(generation:int) -> pd.DataFrame:
                         "gt_eval": np.nan,
                         "game_outcome": position.game_outcome}, ignore_index=True)
 
-    with Pool(THREADS) as p:
-        scores = list(tqdm(p.imap(eval_position, positions, chunksize=16), total=len(positions), desc="Evaluating positions"))
+    # with Pool(THREADS) as p:
+    #     scores = list(tqdm(p.imap(eval_position, positions, chunksize=16), total=len(positions), desc="Evaluating positions"))
+
+    scores = evaluate_many([p.moves for p in positions], BOOK_PATH)
 
     df['gt_eval'] = scores
 
@@ -169,11 +179,13 @@ def make_plots(evals: pd.DataFrame):
     plot_df = plot_df[['generation', 'moves_left', 'eval_error']]
     
     sns.lineplot(data=plot_df, x="moves_left", y="eval_error", hue="generation")
+    plt.title("Moves left MSE")
     plt.savefig(fig_path / "eval_vs_moves_left_mse.png")
     plt.clf()
 
     plot_df['eval_error'] = plot_df['eval_error']**0.5
     sns.lineplot(data=plot_df, x="moves_left", y="eval_error", hue="generation")
+    plt.title("Moves Left RMSE")
     plt.savefig(fig_path / "eval_vs_moves_left_rmse.png")
     plt.clf()
 
@@ -182,11 +194,13 @@ def make_plots(evals: pd.DataFrame):
     plot_df = plot_df[['generation', 'moves_played','eval_error']]
     
     sns.lineplot(data=plot_df, x="moves_played", y="eval_error", hue="generation")
+    plt.title("Moves Played MSE")
     plt.savefig(fig_path / "eval_vs_moves_played_mse.png")
     plt.clf()
 
     plot_df['eval_error'] = plot_df['eval_error']**0.5
     sns.lineplot(data=plot_df, x="moves_played", y="eval_error", hue="generation")
+    plt.title("Moves Played RMSE")
     plt.savefig(fig_path / "eval_vs_moves_played_rmse.png")
     plt.clf()
 
