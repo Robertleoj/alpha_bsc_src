@@ -11,6 +11,7 @@ import bson
 import numpy as np
 import os
 from dataclasses import dataclass
+import dataclasses
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -36,7 +37,7 @@ game_outcome
 COLUMNS = ["generation", "moves_left", "moves_played", "gt_eval", "game_outcome"]
 THREADS = 32
 ILLEGAL_MOVE = -1000
-GEN_SAMPLES = 10000
+# GEN_SAMPLES = 10000
 FNAME = Path("./td_evaluations.csv")
 BOOK_PATH = '../../../db/7x6.book'
 
@@ -100,7 +101,7 @@ def get_positions(generation) -> list[Position]:
 
             
     with Pool(THREADS) as p:
-        positions = p.map(sample_to_pos, samples)
+        positions = p.map(sample_to_pos, samples, chunksize=128)
 
     db.compress_generation(generation)
 
@@ -120,19 +121,37 @@ def get_positions(generation) -> list[Position]:
 
 def eval_td_generation(generation:int) -> pd.DataFrame:
     positions = get_positions(generation)
-    random.shuffle(positions)
-
-    positions = positions[:GEN_SAMPLES]
-
-    df = pd.DataFrame(columns=COLUMNS)
+    # random.shuffle(positions)
+    # positions = positions[:GEN_SAMPLES]
 
     # turn to dataframe
-    for position in positions:
-        df = df.append({"generation": generation,
-                        "moves_left": position.moves_left,
-                        "moves_played": position.moves_played,
-                        "gt_eval": np.nan,
-                        "game_outcome": position.game_outcome}, ignore_index=True)
+    print("Doing pandas stuff...")
+
+    dict_list = [dataclasses.asdict(p) for p in positions]
+    df = pd.DataFrame(
+        dict_list,
+        # columns=COLUMNS, 
+        # dtype={
+        #     'generation': pd.Int64Dtype(), 
+        #     'moves_left': pd.Int64Dtype(),
+        #     'moves_played': pd.Int64Dtype(),
+        #     'gt_eval': pd.Float64Dtype(),
+        #     'game_outcome': pd.Float64Dtype(),
+        #     "moves": pd.StringDtype()
+        # }
+    )
+    df.drop(['moves'], axis=1, inplace=True)
+
+    df['gt_eval'] = np.nan
+    df['gt_eval'] = df['gt_eval'].astype(float)
+    df['generation'] = generation
+    df['generation'] = df['generation'].astype(int)
+
+    df['moves_played'] = df['moves_played'].astype(int)
+    df['game_outcome'] = df['game_outcome'].astype(float)
+    df['moves_left'] = df['moves_left'].astype(int)
+
+    print("Done with pandas stuff...")
 
     # with Pool(THREADS) as p:
     #     scores = list(tqdm(p.imap(eval_position, positions, chunksize=16), total=len(positions), desc="Evaluating positions"))
@@ -173,7 +192,7 @@ def make_plots(evals: pd.DataFrame):
     # make new dataframe for the plot
     # add error column to df
     evals['eval_error'] = (evals['gt_eval'] - evals['game_outcome'])**2
-    evals['generation'] = evals['generation'].round().astype(int)
+    # evals['generation'] = evals['generation']#.round().astype(int)
 
     plot_df = evals.groupby(['generation', 'moves_left'])['eval_error'].mean().reset_index()
     plot_df = plot_df[['generation', 'moves_left', 'eval_error']]
@@ -221,6 +240,8 @@ def main():
 
     elif sys.argv[2] == "plot":
         evals = get_eval_df()
+        # mask = evals.isna().any(axis=1)
+        # print(evals[mask])
         make_plots(evals)
 
     else:
