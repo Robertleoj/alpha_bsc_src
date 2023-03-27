@@ -70,7 +70,7 @@ void push_evaluation(
 
     int a;
     if ( (a = (*games_done)++) % 100 == 0 ) {
-        std::cout << *games_done << std::endl;
+        std::cout << a << std::endl;
     }
     // printf("Eval: %s\n", gt->moves.c_str());
 
