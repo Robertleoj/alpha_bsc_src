@@ -68,8 +68,9 @@ void push_evaluation(
     double nn_value_error = std::pow(nn_value - gt->value, 2);
     double mcts_value_error = std::pow(mcts_value - gt->value, 2);
 
-    if ( (*games_done)++ % 100 == 0 ) {
-        std::cout << games_done << std::endl;
+    int a;
+    if ( (a = (*games_done)++) % 100 == 0 ) {
+        std::cout << *games_done << std::endl;
     }
     // printf("Eval: %s\n", gt->moves.c_str());
 
