@@ -17,7 +17,7 @@ def main():
 
     set_run(run_name, game_name)
 
-    # run_path = os.getcwd()
+    run_path = os.getcwd()
 
     db = DB()
     db.query("drop table if exists ground_truth_evals", True)
@@ -29,6 +29,9 @@ def main():
     os.chdir(cpp_src_path)
 
     for gen in tq:
+
+        if (Path(run_path) / "evals" / f"{gen}.json").exists():
+            continue
 
         tq.desc = f"Deleting"
 
