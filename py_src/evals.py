@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import set_run
 import sys
+from pathlib import Path
 
 import warnings
 
@@ -36,6 +37,17 @@ for i, eval in enumerate(evals):
                 "error_type": col,
                 "error": eval[col].mean()
             }, ignore_index=True)
+    eval_df = eval_df.append({
+        "gen": i,
+        "error_type": "rmse_nn_value_error",
+        "error": eval["nn_value_error"].mean() ** 0.5
+    }, ignore_index=True)
+
+    eval_df = eval_df.append({
+        "gen": i,
+        "error_type": "rmse_mcts_value_error",
+        "error": eval["mcts_value_error"].mean() ** 0.5
+    }, ignore_index=True)
 
 print(eval_df)
 # for i, eval in enumerate(evals):
@@ -47,9 +59,18 @@ print(eval_df)
 #         "mcts_pol_error": eval.mcts_error.mean()
 #     }, ignore_index=True)
 
+fig_path = Path("./figures")
+fig_path.mkdir(exist_ok=True)
+
 sns.lineplot(data=eval_df.query("error_type == 'mcts_value_error' or error_type == 'nn_value_error'"), x="gen", y="error",hue="error_type")
-plt.savefig("value_err.png")
+plt.savefig(fig_path / "value_err_mse.png")
 plt.clf()
 
+rmse_df = eval_df.query("error_type == 'rmse_mcts_value_error' or error_type == 'rmse_nn_value_error'")
+sns.lineplot(data=rmse_df, x="gen", y="error",hue="error_type")
+plt.savefig(fig_path / "value_err_rmse.png")
+plt.clf()
+
+
 sns.lineplot(data=eval_df.query("error_type == 'prior_error' or error_type == 'mcts_error'"), x="gen", y="error",hue="error_type")
-plt.savefig("pol_evals.png")
+plt.savefig(fig_path / "pol_evals.png")
