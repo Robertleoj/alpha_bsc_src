@@ -18,6 +18,7 @@ class BuildExt(build_ext):
             ext.extra_compile_args = opts
         build_ext.build_extensions(self)
 
+
 setuptools.setup(
     name="conn4_solver",
     version="1",
