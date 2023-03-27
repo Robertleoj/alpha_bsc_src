@@ -37,95 +37,43 @@ namespace db {
 
 
 
-    void DB::insert_evaluation(EvalEntry * eval_entry){
 
-        sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
-
-
-        sqlite3_stmt * stmt = nullptr;
-
-        sqlite3_prepare_v2(
-            this->db,
-            R"(
-            insert into ground_truth_evals (
-                generation_id,
-                moves,
-                search_depth,
-                policy_target,
-                value_target,
-                policy_prior,
-                policy_mcts,
-                nn_value,
-                nn_value_error,
-                mcts_value,
-                mcts_value_error,
-                prior_error,
-                mcts_error
-            ) 
-            values
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            )",
-            -1,
-            &stmt,
-            NULL
-        );
+    void DB::insert_evaluations(std::vector<EvalEntry> & eval_entries){
         
+        using json = nlohmann::json;
 
-        // generation_id
-        sqlite3_bind_int(stmt, 1, this->generation_id);
+        json j_arr;
 
-        // moves
-        sqlite3_bind_text(
-            stmt, 2, eval_entry->moves.c_str(), eval_entry->moves.length(), SQLITE_TRANSIENT
-        );
+        for(auto & eval_entry : eval_entries){
+            json j;
+            // j["generation_id"] = this->generation_id;
+            j["moves"] = eval_entry.moves;
+            j["search_depth"] = eval_entry.search_depth;
+            j["policy_target"] = eval_entry.policy_target;
+            j["value_target"] = eval_entry.value_target;
+            j["policy_prior"] = eval_entry.policy_prior;
+            j["policy_mcts"] = eval_entry.policy_mcts;
+            j["nn_value"] = eval_entry.nn_value;
+            j["nn_value_error"] = eval_entry.nn_value_error;
+            j["mcts_value"] = eval_entry.mcts_value;
+            j["mcts_value_error"] = eval_entry.mcts_value_error;
+            j["policy_prior_error"] = eval_entry.policy_prior_error;
+            j["policy_mcts_error"] = eval_entry.policy_mcts_error;
 
-        // search_depth
-        sqlite3_bind_int(stmt, 3, eval_entry->search_depth);
-
-        // policy_target
-        std::string policy_target = nlohmann::json(eval_entry->policy_target).dump();
-        sqlite3_bind_text(stmt, 4, policy_target.c_str(), policy_target.length(), SQLITE_TRANSIENT);
-
-        // value_target
-        sqlite3_bind_double(stmt, 5, eval_entry->value_target);
-
-        // policy_prior
-        std::string policy_prior = nlohmann::json(eval_entry->policy_prior).dump();
-        sqlite3_bind_text(stmt, 6, policy_prior.c_str(), policy_prior.length(), SQLITE_TRANSIENT);
-
-        // policy_mcts
-        std::string policy_mcts = nlohmann::json(eval_entry->policy_mcts).dump();
-        sqlite3_bind_text(stmt, 7, policy_mcts.c_str(), policy_mcts.length(), SQLITE_TRANSIENT);
-
-        // nn_value
-        sqlite3_bind_double(stmt, 8, eval_entry->nn_value);
-
-        // nn_value_error
-        sqlite3_bind_double(stmt, 9, eval_entry->nn_value_error);
-        // std::cout << "nn_value_error: " << eval_entry->nn_value_error << std::endl;
-
-        // mcts_value
-        sqlite3_bind_double(stmt, 10, eval_entry->mcts_value);
-
-        // mcts_value_error
-        sqlite3_bind_double(stmt, 11, eval_entry->mcts_value_error);
-
-        // prior_error
-        sqlite3_bind_double(stmt, 12, eval_entry->policy_prior_error);
-
-        // mcts_error
-        sqlite3_bind_double(stmt, 13, eval_entry->policy_mcts_error);
-
-        int rc = sqlite3_step(stmt);
-
-        if (rc != SQLITE_DONE){
-            std::cerr << "Failed to insert evaluation! " << rc << std::endl;
-            std::cerr << sqlite3_errmsg(this->db) << std::endl;
-            throw std::runtime_error("Failed to insert");
+            j_arr.push_back(j);
         }
 
-        sqlite3_finalize(stmt);
-        sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+        json j_top;
+        j_top["evals"] = j_arr;
+
+        std::string json_str = j_top.dump(4);
+
+        std::string folder = "evals";
+        mkdir(folder.c_str(), 0777);
+        std::string file_name = folder + "/" + std::to_string(this->curr_generation) + ".json";
+        std::ofstream file(file_name);
+        file << json_str;
+        file.close();
     }
 
     sqlite3_stmt * DB::query(std::string q) {

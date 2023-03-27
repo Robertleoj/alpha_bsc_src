@@ -17,23 +17,23 @@ def main():
 
     set_run(run_name, game_name)
 
-    run_path = os.getcwd()
+    # run_path = os.getcwd()
 
     db = DB()
+    db.query("drop table if exists ground_truth_evals", True)
 
     generations = db.generation_nums()
 
     tq = tqdm(generations)
 
+    os.chdir(cpp_src_path)
+
     for gen in tq:
 
         tq.desc = f"Deleting"
-        os.chdir(run_path)
-        db.delete_eval(gen)
 
-        os.chdir(cpp_src_path)
         tq.desc = f"Evaluating"
-        ret_code = os.system(f"./eval_agent {run_name} {gen} > /dev/null")
+        ret_code = os.system(f"./eval_agent {run_name} {gen} ")
         if ret_code != 0:
             print("Error in evaluation")
             return

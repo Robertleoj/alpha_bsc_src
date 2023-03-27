@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import set_run
 import sys
+import json
 from pathlib import Path
 
 import warnings
@@ -24,29 +25,46 @@ db = DB()
 
 max_gen = db.newest_generation()  
 
-evals = [db.evals(i) for i in range(max_gen + 1)]
+# evals = [db.evals(i) for i in range(max_gen + 1)]
+
+eval_files = Path("./evals").glob("*.json")
+evals = {}
+for file in eval_files:
+    gen = int(file.stem)
+    with open(file, "r") as f:
+        evals[gen] = json.load(f)['evals']
+
+cols = list(evals[0][0].keys())
+
+if len(evals) != max_gen + 1:
+    print("WARNING: evals not found for all generations")
 
 # eval_df = pd.DataFrame(cols = ["gen", "nn_value_error", "mcts_value_error", "prior_error", "mcts_pol_error"])
 eval_df = pd.DataFrame(columns = ["gen", "error_type", "error"])
 
-for i, eval in enumerate(evals):
-    for col in eval.columns:
+mean = lambda j, k: sum([obj[k] for obj in j]) / len(j)
+
+for i, eval in evals.items():
+    # print(eval)
+    for col in cols:
         if "error" in col:
+            
             eval_df = eval_df.append({
                 "gen": i,
                 "error_type": col,
-                "error": eval[col].mean()
+                "error": mean(eval, col)
             }, ignore_index=True)
+
     eval_df = eval_df.append({
         "gen": i,
         "error_type": "rmse_nn_value_error",
-        "error": eval["nn_value_error"].mean() ** 0.5
+        "error": mean(eval, "nn_value_error") ** 0.5
     }, ignore_index=True)
 
     eval_df = eval_df.append({
         "gen": i,
         "error_type": "rmse_mcts_value_error",
-        "error": eval["mcts_value_error"].mean() ** 0.5
+        "error": mean(eval, "mcts_value_error") ** 0.5
     }, ignore_index=True)
 
 print(eval_df)
@@ -62,15 +80,21 @@ print(eval_df)
 fig_path = Path("./figures")
 fig_path.mkdir(exist_ok=True)
 
-sns.lineplot(data=eval_df.query("error_type == 'mcts_value_error' or error_type == 'nn_value_error'"), x="gen", y="error",hue="error_type")
+palette = {'mcts_value_error': "red", 'nn_value_error': 'blue'}
+sns.lineplot(data=eval_df.query("error_type == 'mcts_value_error' or error_type == 'nn_value_error'"), x="gen", y="error",hue="error_type", palette=palette)
+plt.title("Value Error MSE")
 plt.savefig(fig_path / "value_err_mse.png")
 plt.clf()
 
+palette = {'rmse_mcts_value_error': "red", 'rmse_nn_value_error': 'blue'}
 rmse_df = eval_df.query("error_type == 'rmse_mcts_value_error' or error_type == 'rmse_nn_value_error'")
-sns.lineplot(data=rmse_df, x="gen", y="error",hue="error_type")
+plt.title("Value Error RMSE")
+sns.lineplot(data=rmse_df, x="gen", y="error",hue="error_type", palette=palette)
 plt.savefig(fig_path / "value_err_rmse.png")
 plt.clf()
 
 
-sns.lineplot(data=eval_df.query("error_type == 'prior_error' or error_type == 'mcts_error'"), x="gen", y="error",hue="error_type")
+palette = {'policy_mcts_error': "red", 'policy_prior_error': 'blue'}
+sns.lineplot(data=eval_df.query("error_type == 'policy_prior_error' or error_type == 'policy_mcts_error'"), x="gen", y="error",hue="error_type", palette=palette)
+plt.title("Policy Error Cross Entropy")
 plt.savefig(fig_path / "pol_evals.png")

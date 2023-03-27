@@ -49,13 +49,14 @@ double get_ce_loss(std::vector<double> vec1, std::vector<double> vec2) {
 }
 
 
-void write_evaluation_to_db(
+void push_evaluation(
     ThreadData* thread_data,
     GroundTruthRequest* gt,
     std::vector<double>& policy_prior,
     double nn_value,
     std::vector<double>& policy_mcts,
-    double mcts_value
+    double mcts_value,
+    EvalData* eval_data
 ) {
 
     // calculate errors
@@ -87,7 +88,8 @@ void write_evaluation_to_db(
 
     // write to db
     thread_data->db_mutex.lock();
-    thread_data->db->insert_evaluation(&eval_entry);
+    eval_data->eval_entries.push_back(eval_entry);
+    // thread_data->db->insert_evaluation(&eval_entry);
     thread_data->db_mutex.unlock();
 }
 
@@ -200,13 +202,14 @@ void thread_eval(
 
                 double mcts_value = ed.agent->tree->root->value_approx;
 
-                write_evaluation_to_db(
+                push_evaluation(
                     thread_data,
                     &ed.gt_request,
                     pol_prior_vec,
                     nn_value,
                     pol_mcts_vec,
-                    mcts_value
+                    mcts_value,
+                    eval_data
                 );
 
                 // restart game
@@ -303,4 +306,5 @@ void sim::eval_targets(std::string eval_targets_filename, int generation_num) {
 
     join_threads({ &dl_threads, &nn_threads, &return_threads, &threads });
 
+    thread_data->db->insert_evaluations(eval_data.eval_entries);
 }
