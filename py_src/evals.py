@@ -67,7 +67,7 @@ for i, eval in evals.items():
         "error": mean(eval, "mcts_value_error") ** 0.5
     }, ignore_index=True)
 
-print(eval_df)
+print(eval_df.sort_values(by="gen").tail(6))
 # for i, eval in enumerate(evals):
 #     eval_df = eval_df.append({
 #         "gen": i,
