@@ -3,9 +3,11 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import set_run
+from prefetch import load_generation
 import sys
 import json
 from pathlib import Path
+import config
 
 import warnings
 
@@ -27,10 +29,22 @@ max_gen = db.newest_generation()
 
 # evals = [db.evals(i) for i in range(max_gen + 1)]
 
+with open('./cpp_hyperparameters.json', 'r') as f:
+    cpp_config = json.load(f)
+
+max_playouts = cpp_config['search_depth']
+
+
+
 eval_files = Path("./evals").glob("*.json")
+
+gen_playouts = {}
 evals = {}
 for file in eval_files:
     gen = int(file.stem)
+
+    gen_playouts[gen] = (load_generation(gen).weights.sum() * max_playouts).item()
+
     with open(file, "r") as f:
         evals[gen] = json.load(f)['evals']
 
@@ -98,3 +112,31 @@ palette = {'policy_mcts_error': "red", 'policy_prior_error': 'blue'}
 sns.lineplot(data=eval_df.query("error_type == 'policy_prior_error' or error_type == 'policy_mcts_error'"), x="gen", y="error",hue="error_type", palette=palette)
 plt.title("Policy Error Cross Entropy")
 plt.savefig(fig_path / "pol_evals.png")
+plt.clf()
+
+
+eval_df = eval_df.sort_values(by=['gen'])
+eval_df['playouts'] = eval_df['gen'].apply(lambda x: gen_playouts[x])
+# change to cumulative sum
+eval_df['playouts'] = eval_df['playouts'].cumsum()
+
+palette = {'mcts_value_error': "red", 'nn_value_error': 'blue'}
+sns.lineplot(data=eval_df.query("error_type == 'mcts_value_error' or error_type == 'nn_value_error'"), x="playouts", y="error",hue="error_type", palette=palette)
+plt.title("Value Error MSE Playouts")
+plt.savefig(fig_path / "value_err_mse_playouts.png")
+plt.clf()
+
+palette = {'rmse_mcts_value_error': "red", 'rmse_nn_value_error': 'blue'}
+rmse_df = eval_df.query("error_type == 'rmse_mcts_value_error' or error_type == 'rmse_nn_value_error'")
+plt.title("Value Error RMSE Playouts")
+sns.lineplot(data=rmse_df, x="playouts", y="error",hue="error_type", palette=palette)
+plt.savefig(fig_path / "value_err_rmse_playouts.png")
+plt.clf()
+
+
+palette = {'policy_mcts_error': "red", 'policy_prior_error': 'blue'}
+sns.lineplot(data=eval_df.query("error_type == 'policy_prior_error' or error_type == 'policy_mcts_error'"), x="playouts", y="error",hue="error_type", palette=palette)
+plt.title("Policy Error Cross Entropy Playouts")
+plt.savefig(fig_path / "pol_evals_playouts.png")
+plt.clf()
+
