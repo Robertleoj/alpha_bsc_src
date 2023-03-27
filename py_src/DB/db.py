@@ -9,7 +9,7 @@ from tqdm import tqdm
 import pandas as pd
 from glob import glob
 import bson 
-
+from utils import sevenzip_cmd
 
 def read_tensors(arg):
     state, policy, outcome, moves_left, weights = arg
@@ -136,9 +136,33 @@ class DB:
 
         self.query(query, True)
 
+    def compress_generation(self, generation):
+        sz_cmd = sevenzip_cmd()
+
+        if not os.path.exists(f"./training_data/{generation}.7z"):
+            print("Compressing training data...")
+
+            ret_code = os.system(f"{sz_cmd} a -bso0 -bsp0 ./training_data/{generation}.7z ./training_data/{generation}")
+
+            if ret_code != 0:
+                print("WARNING: failed to compress, will not delete uncompressed training_data")
+            else:
+                os.system(f"rm -r ./training_data/{generation}")
+        else:
+            os.system(f"rm -r ./training_data/{generation}")
+
+    def uncompress_generation(self, generation):
+        sz_cmd = sevenzip_cmd()
+        if os.path.exists(f"./training_data/{generation}.7z"):
+            print("Found compressed data, extracting...")
+            ret_code = os.system(f"{sz_cmd} x -bso0 -bsp0 ./training_data/{generation}.7z -o./training_data/ -y")
+            if ret_code != 0:
+                raise Exception("Could not extract data")
 
     def prefetch_generation(self, generation:int):
         
+        self.uncompress_generation(generation)
+       
         game_files = glob(f"./training_data/{generation}/*.bson")
         print(f"Found {len(game_files)} files")
 
@@ -168,8 +192,11 @@ class DB:
         result = tuple(
             map(np.stack, zip(*result))
         )
+
+        self.compress_generation(generation)
       
         return tuple(map(torch.tensor, result))
+
 
     def generation_nums(self):
         query = """

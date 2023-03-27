@@ -5,6 +5,13 @@ import matplotlib.pyplot as plt
 from utils import set_run
 import sys
 
+import warnings
+
+# Suppress FutureWarning and DeprecationWarning
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
 if len(sys.argv) < 2:
     print("Usage: python3 train.py <run_name>")
 

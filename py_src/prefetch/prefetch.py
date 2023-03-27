@@ -11,6 +11,7 @@ CACHED_DATA_PATH = Path("./cached_data")
 CACHED_DATA_PATH.mkdir(parents=True, exist_ok=True)
 
 def prefetch_generation(generation:int):
+
     db = DB()
     states, policies, outcomes, moves_left, weights = db.prefetch_generation(generation)
 
@@ -28,15 +29,6 @@ def prefetch_generation(generation:int):
         ), 
         CACHED_DATA_PATH/f"{generation}.pt"
     )
-
-    print("Compressing training data...")
-
-    ret_code = os.system(f"7z a ./training_data/{generation}.7z ./training_data/{generation}")
-
-    if ret_code != 0:
-        print("WARNING: failed to compress, will not delete uncompressed training_data")
-    else:
-        os.system(f"rm -r ./training_data/{generation}")
 
 
 def generation_exists(generation:int):

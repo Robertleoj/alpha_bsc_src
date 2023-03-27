@@ -3,6 +3,7 @@ from .utils import (
     training_gens,
     Data,
     set_run,
+    sevenzip_cmd
 )
 
 
