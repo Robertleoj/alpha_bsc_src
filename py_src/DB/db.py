@@ -82,55 +82,9 @@ class DB:
         self.query(query, True)
 
     def evals(self, gen: int):
-        query = f"""
-            select
-                gt.id,
-                gt.policy_target, 
-                gt.value_target, 
-                gt.policy_prior,
-                gt.policy_mcts,
-                gt.nn_value,
-                gt.nn_value_error,
-                gt.mcts_value,
-                gt.mcts_value_error,
-                gt.prior_error,
-                gt.mcts_error
-            from
-                generations gens
-                join ground_truth_evals gt
-                    on gt.generation_id = gens.id
-            where
-                gens.generation_num = {gen}
-        """
 
-        res = self.query(query)
-        json_indices = [1, 3, 4]
-
-        res = [
-            [
-                json.loads(x) if i in json_indices else x 
-                for i, x in enumerate(row)
-            ]
-            for row in res
-        ]
-
-        # create dataframe
-        df = pd.DataFrame(res, columns=[
-                "id",
-                "policy_target",
-                "value_target",
-                "policy_prior",
-                "policy_mcts",
-                "nn_value",
-                "nn_value_error",
-                "mcts_value",
-                "mcts_value_error",
-                "prior_error",
-                "mcts_error"
-            ])
-        return df
-
-
+        with open(f"./evals/{gen}.json", "r") as f:
+            return json.load(f)['evals']
 
 
     def newest_generation(self) -> int:

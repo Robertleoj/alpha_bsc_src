@@ -1,6 +1,7 @@
 #include "./simulation.h"
 #include "../utils/utils.h"
 #include "../global.h"
+#include <atomic>
 #include <unistd.h>
 #include "structs.h"
 #include "mutual.h"
@@ -49,13 +50,15 @@ double get_ce_loss(std::vector<double> vec1, std::vector<double> vec2) {
 }
 
 
-void write_evaluation_to_db(
+void push_evaluation(
     ThreadData* thread_data,
     GroundTruthRequest* gt,
-    std::vector<double>& policy_prior,
+    std::vector<double> policy_prior,
     double nn_value,
-    std::vector<double>& policy_mcts,
-    double mcts_value
+    std::vector<double> policy_mcts,
+    double mcts_value,
+    EvalData* eval_data,
+    std::atomic_int * games_done
 ) {
 
     // calculate errors
@@ -65,8 +68,10 @@ void write_evaluation_to_db(
     double nn_value_error = std::pow(nn_value - gt->value, 2);
     double mcts_value_error = std::pow(mcts_value - gt->value, 2);
 
-    // print some info
-    std::cout << '.' << std::flush;
+    int a;
+    if ( (a = (*games_done)++) % 100 == 0 ) {
+        std::cout << a << std::endl;
+    }
     // printf("Eval: %s\n", gt->moves.c_str());
 
     // create eval entry
@@ -85,9 +90,9 @@ void write_evaluation_to_db(
         mcts_value_error
     };
 
-    // write to db
     thread_data->db_mutex.lock();
-    thread_data->db->insert_evaluation(&eval_entry);
+    eval_data->eval_entries.push_back(eval_entry);
+    // thread_data->db->insert_evaluation(&eval_entry);
     thread_data->db_mutex.unlock();
 }
 
@@ -139,7 +144,8 @@ void init_eval_games(ThreadEvalData* data, ThreadData* thread_data, EvalData* ev
  */
 void thread_eval(
     ThreadData* thread_data,
-    EvalData* eval_data
+    EvalData* eval_data,
+    std::atomic_int * games_done
 ) {
     if (DEBUG) {
         std::cout << "Started eval thread" << std::endl;
@@ -200,13 +206,15 @@ void thread_eval(
 
                 double mcts_value = ed.agent->tree->root->value_approx;
 
-                write_evaluation_to_db(
+                push_evaluation(
                     thread_data,
                     &ed.gt_request,
                     pol_prior_vec,
                     nn_value,
                     pol_mcts_vec,
-                    mcts_value
+                    mcts_value,
+                    eval_data,
+                    games_done
                 );
 
                 // restart game
@@ -260,10 +268,11 @@ void start_eval_threads(
     ThreadData* thread_data,
     EvalData* eval_data,
     std::vector<std::thread>& threads,
-    int num_threads
+    int num_threads,
+    std::atomic_int &games_done
 ) {
     for (int i = 0; i < num_threads; i++) {
-        threads.push_back(std::thread(thread_eval, thread_data, eval_data));
+        threads.push_back(std::thread(thread_eval, thread_data, eval_data, &games_done));
     }
 }
 
@@ -284,6 +293,7 @@ void sim::eval_targets(std::string eval_targets_filename, int generation_num) {
     std::vector<std::thread> dl_threads;
     std::vector<std::thread> nn_threads;
     std::vector<std::thread> return_threads;
+    std::atomic_int games_done(0);
 
     BatchData batch_data;
 
@@ -299,8 +309,11 @@ void sim::eval_targets(std::string eval_targets_filename, int generation_num) {
         std::cout << "Starting eval threads" << std::endl;
     }
 
-    start_eval_threads(thread_data, &eval_data, threads, num_threads);
+    start_eval_threads(thread_data, &eval_data, threads, num_threads, games_done);
 
     join_threads({ &dl_threads, &nn_threads, &return_threads, &threads });
+
+    std::cout << "inserting Evaluations" << std::endl;
+    thread_data->db->insert_evaluations(eval_data.eval_entries);
 
 }

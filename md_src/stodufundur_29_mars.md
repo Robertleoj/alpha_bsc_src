@@ -50,7 +50,30 @@
     - Move training data to BSON
     - No Azure cloud, just local machine
 
-- Risk analysis `>:(`
+- Risk analysis
+
+    - Bug in the code preventing our results from being valid
+        - Fix the bug and rerun experiments 
+        - ~ 2 days.
+
+    - What if the servers go down?
+        - We can always run on our local machines
+        - They are as powerful as the servers.
+        - Close to no lost time.
+
+    - Loss of data.
+        - Run experiments again - takes 2 days
+        - Unlikely to happen
+          - We have backups on Github and multiple local machines
+        - ~ 2 days
+
+    - What if all our results are not ready in time?
+        - There is nothing to do about that, really.
+        - We can show off our current results.
+            - results for endgame playouts already seem significant.
+            - imporovements in Connect4.
+
 
 - Working hour analysis `>:(`
+    - done
 

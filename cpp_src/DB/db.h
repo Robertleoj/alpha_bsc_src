@@ -46,7 +46,7 @@ namespace db {
         void get_game_id();
 
         void insert_training_samples(std::vector<TrainingSample> *);
-        void insert_evaluation(EvalEntry *);
+        void insert_evaluations(std::vector<EvalEntry> &);
         ~DB();
 
     private:

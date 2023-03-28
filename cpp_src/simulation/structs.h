@@ -68,6 +68,7 @@ struct GroundTruthRequest {
 struct EvalData {
     std::queue<GroundTruthRequest> board_queue;
     std::mutex board_queue_mutex;
+    std::vector<db::EvalEntry> eval_entries;
 };
 
 struct ThreadEvalData {
