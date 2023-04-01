@@ -1,1 +1,2 @@
 from nn_definitions.connect4_nn import Connect4NN
+from nn_definitions.breakthrough_nn import BreakthroughNN
