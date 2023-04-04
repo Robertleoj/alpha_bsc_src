@@ -8,11 +8,11 @@ import shutil
 
 @dataclass
 class Data:
-    states: torch.Tensor
-    policies: torch.Tensor
-    outcomes: torch.Tensor
+    state: torch.Tensor
+    policy: torch.Tensor
+    outcome: torch.Tensor
     moves_left: torch.Tensor
-    weights: torch.Tensor
+    weight: torch.Tensor
 
 def cmd_exists(cmd):
     return shutil.which(cmd) is not None

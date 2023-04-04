@@ -8,7 +8,7 @@
 #include "./global.h"
 #include "./utils/utils.h"
 
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 int main(int argc, char *argv[])
 {

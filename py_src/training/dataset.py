@@ -1,3 +1,6 @@
+import bz2
+import io
+import lzma
 from torch.utils.data import IterableDataset
 from torch.utils.data import DataLoader
 import torch
@@ -7,66 +10,34 @@ import random
 from config import config
 import utils
 
-from prefetch import load_generations
-from utils import Data
-
-
-class EndgameSampling:
-    def __init__(self, data:Data, generation) -> None:
-        # hyperparams
-        print("Initializing endgame sampling")
-        self.p_max = config['endgame_training']['p_max']
-        self.p_min = config['endgame_training']['p_min']
-        self.shift = config['endgame_training']['shift']
-        self.gen_uniform = config['endgame_training']['generation_uniform']
-
-        self.num_samples = len(data.states)
-        self.data = data
-        self.weights = None
-        self.population = list(range(self.num_samples))
-        self.generation = generation
-        self.generate_weights()
-        self.idx_q = []
-
-        print("Done initializing endgame sampling")
-        
-    def sample(self):
-        if len(self.idx_q) == 0:
-            self.refresh_indices()
-
-        idx = self.idx_q.pop()
-
-        return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx], self.data.weights[idx]
-
-    def refresh_indices(self):
-        mult_sample = torch.multinomial(self.weights, config['endgame_sampling_q_size'], replacement=True)
-        self.idx_q = mult_sample.tolist()
-    
-    def generate_weights(self):
-        self.weights = self.sjonn_dist(self.data.moves_left)
-
-    def sjonn_dist(self, moves_left: torch.Tensor):
-        """Returns a distribution that is more likely to sample games that are closer to the end"""
-        p = self.p_max - (self.p_max - self.p_min) * self.generation / self.gen_uniform
-        p = max(p, self.p_min)
-        return 1/(moves_left *p + self.shift)
-
+from pathlib import Path
 
 class UniformSampler:
-    def __init__(self, data:Data):
-        self.data = data
-        self.num_samples = data.states.shape[0]
+    def __init__(self, generations:int):
+        self.file_paths = []
+
+        for generation in generations:
+            for file in (Path('./cached_data')/f"{generation}/").glob('**/*.pt'):
+                self.file_paths.append(file)
+
+        self.num_samples = len(self.file_paths)
 
     def sample(self):
         idx = random.randint(0, self.num_samples - 1)
-        return self.data.states[idx], self.data.policies[idx], self.data.outcomes[idx], self.data.weights[idx]
+        buffer = io.BytesIO()
+        with bz2.open(self.file_paths[idx], 'rb') as f:
+            buffer.write(f.read())
+        buffer.seek(0)
+        data = torch.load(buffer)
+        # data = torch.load(self.file_paths[idx])
+
+        return data.state, data.policy, data.outcome, data.weight
 
 
-def get_sampler(data:Data, generation: int):
+
+def get_sampler(generations):
     if config['sample_method'] == 'uniform':
-        return UniformSampler(data)
-    elif config['sample_method'] == 'endgame':
-        return EndgameSampling(data, generation)
+        return UniformSampler(generations)
 
 
 class DS(IterableDataset):
@@ -79,9 +50,11 @@ class DS(IterableDataset):
 
         print(f"Training generations: {','.join(map(str, training_generations))}")
 
-        data: Data = load_generations(training_generations)
+        db = DB()
+        for gen in training_generations:
+            db.prefetch_generation(gen)
 
-        self.sampler = get_sampler(data, generation)
+        self.sampler = get_sampler(training_generations)
 
     def __iter__(self):
         while True:
