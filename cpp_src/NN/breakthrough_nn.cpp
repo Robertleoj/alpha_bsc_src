@@ -1,8 +1,8 @@
 #include <string>
-#include "./connect4_nn.h"
+#include "./breakthrough_nn.h"
 #include "../base/types.h"
+#include "../utils/utils.h"
 #include <fstream>
-#include <c10/cuda/CUDACachingAllocator.h>
 #include <cuda_runtime.h>
 
 
@@ -14,10 +14,13 @@ namespace nn{
      * 
      * @param model_path 
      */
-    Connect4NN::Connect4NN(std::string model_path): NN(model_path){}
+    BreakthroughNN::BreakthroughNN(std::string model_path): NN(model_path){}
 
-    at::Tensor Connect4NN::pol_softmax(at::Tensor pol_tensor){
-        return pol_tensor.softmax(1);
+    at::Tensor BreakthroughNN::pol_softmax(at::Tensor pol_tensor){
+        return pol_tensor
+                .reshape({-1, 64 * 64})
+                .softmax(1)
+                .reshape({-1, 64, 64});
     }
 
     /**
@@ -27,22 +30,25 @@ namespace nn{
      * @param val_tensor 
      * @return std::unique_ptr<NNOut> 
      */
-    std::unique_ptr<NNOut> Connect4NN::make_nnout_from_tensors(at::Tensor pol_tensor, at::Tensor val_tensor){
+    std::unique_ptr<NNOut> BreakthroughNN::make_nnout_from_tensors(at::Tensor pol_tensor, at::Tensor val_tensor){
 
-        move_dist p;
+        float * flat = pol_tensor.flatten().contiguous().data_ptr<float>();
 
-        game::move_id all_moves[7] = {
-            1, 2, 3, 4, 5, 6, 7
-        };
+        
+        nn::move_dist p;
+        p.reserve(64 * 64);
 
-        // 7 columns in connect4
+        // std::array<std::pair<game::move_id, double>, 64 * 64> init_list;
 
-        for(int i = 0; i < 7; i++){
-            p[all_moves[i]] = pol_tensor[i].item().toDouble();
+        for(int i = 0; i < 64 * 64; i++){
+            p.emplace(((i / 64) << 6) | (i % 64), (double) flat[i]);
+            // init_list[i] = std::make_pair(((i / 64) << 6) | (i % 64), (double) flat[i]);
         }
 
+        // p.insert(init_list.begin(), init_list.end());
+
         return std::unique_ptr<NNOut>(new NNOut{
-            p,
+            std::move(p),
             val_tensor.item().toDouble()
         });
     }
@@ -53,16 +59,15 @@ namespace nn{
      * @param board 
      * @return at::Tensor 
      */
-    at::Tensor Connect4NN::state_to_tensor(Board board){
+    at::Tensor BreakthroughNN::state_to_tensor(Board board){
         
-        int rows = 6;
-        int cols = 7;
-        
+        int bsize = 8;
         // Create a float tensor of zeros
         auto torchopt = torch::TensorOptions()
             .dtype(torch::kFloat32);
+
         auto out = torch::zeros(
-            {2, rows, cols}, torchopt
+            {2, bsize, bsize}, torchopt
         );
 
         // convert the board to a tensor
@@ -79,9 +84,9 @@ namespace nn{
         }
        
         // iterate over the board and set the values
-        for(int i = 0; i < rows * cols; i ++){
-            int row = i / cols;
-            int col = i % cols;
+        for(int i = 0; i < bsize * bsize; i ++){
+            int row = i / bsize;
+            int col = i % bsize;
             
             if((x_board & 1) != 0){
                 out[0][row][col] = 1;
@@ -104,16 +109,17 @@ namespace nn{
      * @param prob_map 
      * @return at::Tensor 
      */
-    at::Tensor Connect4NN::move_map_to_policy_tensor(
+    at::Tensor BreakthroughNN::move_map_to_policy_tensor(
         move_dist prob_map
     ) {
-        at::Tensor policy = torch::zeros({7});
+        at::Tensor policy = torch::zeros({64, 64});
 
         for(auto &p : prob_map){
-            // mvoe id is col + 1
-            int idx = p.first - 1;
+            int from = p.first >> 6;
+            int to = p.first & 0b111111;
+
             double prob = p.second;
-            policy[idx] = prob;
+            policy[from][to] = prob;
         }
 
         // check that the policy tensor sums to 1

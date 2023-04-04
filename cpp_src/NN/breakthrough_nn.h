@@ -6,12 +6,10 @@
 
 
 namespace nn {
-    class Connect4NN: public NN{
-        
-
+    class BreakthroughNN: public NN{
 
     public:
-        Connect4NN(std::string model_path);
+        BreakthroughNN(std::string model_path);
 
         at::Tensor pol_softmax(at::Tensor) override;
         at::Tensor state_to_tensor(Board board) override;

@@ -5,8 +5,10 @@
 #include <torch/all.h>
 #include "./simulation/simulation.h"
 #include "./config/config.h"
+#include "./global.h"
 #include "./utils/utils.h"
 
+const bool DEBUG = false;
 
 int main(int argc, char *argv[])
 {
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
     // initialize config
     config::initialize();
 
-    sim::self_play("connect4");
+    sim::self_play(game_name);
 
     return 0;
 }

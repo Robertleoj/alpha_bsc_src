@@ -5,6 +5,7 @@
 #include <thread>
 #include <string>
 #include "../NN/connect4_nn.h"
+#include "../NN/breakthrough_nn.h"
 #include "../games/game.h"
 #include "../games/connect4.h"
 #include "../games/breakthrough.h"

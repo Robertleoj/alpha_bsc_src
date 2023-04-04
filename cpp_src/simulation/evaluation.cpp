@@ -195,7 +195,7 @@ void thread_eval(
                 }
 
                 auto visit_counts = ed.agent->root_visit_counts();
-                auto pol_mcts = utils::softmax_map(visit_counts);
+                auto pol_mcts = utils::softmax_map<game::move_id, int>(visit_counts);
                 std::vector<double> pol_mcts_vec = get_policy_vector(pol_mcts);
 
 

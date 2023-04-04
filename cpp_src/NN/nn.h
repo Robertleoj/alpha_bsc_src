@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <torch/torch.h>
+#include <torch/script.h>
 #include <vector>
 #include <string>
 
@@ -14,7 +15,7 @@ namespace nn {
 
 
     
-    typedef std::map<game::move_id, double> move_dist;
+    typedef std::unordered_map<game::move_id, double> move_dist;
 
     struct NNOut {
         move_dist p;
@@ -23,19 +24,21 @@ namespace nn {
 
     class NN {
     public:
-        virtual std::unique_ptr<NNOut> eval_state(Board board) = 0;
 
-        virtual std::vector<std::unique_ptr<NNOut>> eval_states(std::vector<Board> * boards) = 0;
+        NN(std::string model_path);
+        c10::ivalue::TupleElements run_batch(at::Tensor);
+        std::vector<std::unique_ptr<NNOut>> eval_batch(at::Tensor);
+        std::unique_ptr<NNOut> eval_state(Board board);
+        at::Tensor prepare_batch(std::vector<at::Tensor>&);
+        std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(at::Tensor, at::Tensor);
 
-        virtual std::vector<std::unique_ptr<NNOut>> eval_tensors(std::vector<at::Tensor>&) = 0;
-        virtual std::vector<std::unique_ptr<NNOut>> eval_batch(at::Tensor) = 0;
-
+        virtual at::Tensor pol_softmax(at::Tensor) = 0;
         virtual at::Tensor state_to_tensor(Board board) = 0;
-        virtual c10::ivalue::TupleElements run_batch(at::Tensor) = 0;
-        virtual std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(at::Tensor, at::Tensor) = 0;
-        virtual at::Tensor prepare_batch(std::vector<at::Tensor>&) = 0;
 
         virtual at::Tensor move_map_to_policy_tensor(move_dist) = 0;
         virtual std::unique_ptr<NNOut> make_nnout_from_tensors(at::Tensor policy, at::Tensor value) = 0;
+
+    protected:
+        torch::jit::script::Module net;
     };
 }

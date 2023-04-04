@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 
 namespace utils {
@@ -17,7 +18,8 @@ namespace utils {
 
 
     // multinomial sample from map<T, double>
-    template <typename T> T sample_multinomial(const std::map<T, double>& probs) {
+    template <typename T, typename Pmap> 
+    T sample_multinomial(const Pmap& probs) {
 
         std::vector<double> p;
         for (auto& kv : probs) {
@@ -30,15 +32,15 @@ namespace utils {
     }
 
     // normalize map<T, K> 
-    template <typename T, typename K>
-    std::map<T, double> softmax_map(std::map<T, K>& probs) {
+    template <typename T, typename K, typename Pmap>
+    std::unordered_map<T, double> softmax_map(Pmap& probs) {
         
         double sum = 0;
         for (auto& kv : probs) {
             sum += kv.second;
         }
 
-        auto new_map = std::map<T, double>();
+        auto new_map = std::unordered_map<T, double>();
 
         for (auto& kv : probs) {
             new_map[kv.first] = ((double)kv.second) / sum;
@@ -48,8 +50,8 @@ namespace utils {
     }
 
     // multinomial argmax from map<T, double>
-    template <typename T, typename K> 
-    T argmax_map(const std::map<T, K>& probs) {
+    template <typename T, typename K, typename Pmap> 
+    T argmax_map(const Pmap& probs) {
 
         [[maybe_unused]] T best_elem;
         K best_prob = -1;

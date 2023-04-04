@@ -42,6 +42,7 @@ private:
     bool use_dirichlet_noise = true;
     bool delete_on_move;
     MCNode * node_to_eval = nullptr;
+    double puct_c;
 
     //functions
     std::tuple<MCNode *, double, bool> selection();

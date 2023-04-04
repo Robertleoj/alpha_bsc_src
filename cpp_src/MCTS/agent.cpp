@@ -15,6 +15,7 @@ Agent::Agent(
     delete_on_move(delete_on_move) 
 {  
     this->tree = new MCTree();
+    this->puct_c = config::hp["PUCT_c"].get<double>();
 }
 
 Agent::~Agent(){
@@ -60,7 +61,7 @@ void Agent::update_tree(
 double Agent::PUCT(MCNode * node, game::move_id move){
 
     double P = node->p_map[move];
-    double c = config::hp["PUCT_c"].get<double>(); 
+    double c = this->puct_c;
     double N = node->plays;
 
     double V = 0;
@@ -187,8 +188,6 @@ game::move_id Agent::select_puct_move(MCNode * node){
     double max_uct = -100000;
 
     auto &legal_moves = node->legal_moves;
-
-    auto &children = node->children;
 
     game::move_id best_move;
 

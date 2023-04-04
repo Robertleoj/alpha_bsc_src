@@ -6,8 +6,8 @@ create table generations (
 );
 
 -- When fixing the db comment the following 2 lines out.
--- insert into generations (generation_num)
--- values (0);
+insert into generations (generation_num)
+values (0);
 
 create table losses(
     id integer primary key asc,

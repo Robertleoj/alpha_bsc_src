@@ -1,4 +1,5 @@
 #include "./mutual.h"
+#include "../utils/utils.h"
 
 void join_threads(std::vector<std::vector<std::thread>*> threads) {
     for (auto t : threads) {
@@ -19,6 +20,9 @@ nn::NN* get_neural_net(std::string game, db::DB* db) {
 
     if (game == "connect4") {
         return new nn::Connect4NN(model_path);
+    }
+    else if (game == "breakthrough") {
+        return new nn::BreakthroughNN(model_path);
     }
     else {
         throw std::runtime_error("no neural net exists for this game");
@@ -82,7 +86,11 @@ void dl_thread_work(std::queue<Batch>* batch_queue, ThreadData* thread_data, std
         at::Tensor batch = thread_data->neural_net->prepare_batch(tensors);
 
         batch_queue_mutex->lock();
-        batch_queue->push(Batch{ states, batch, std::make_pair(at::Tensor(), at::Tensor()) });
+        batch_queue->push(Batch{ 
+            std::move(states), 
+            std::move(batch), 
+            std::make_pair(at::Tensor(), at::Tensor()) 
+        });
         // std::cout << "pushed batch to queue" << std::endl;
         batch_queue_mutex->unlock();
         batch_queue_cv->notify_one();
@@ -153,7 +161,6 @@ void nn_thread_work(
 
 void eval_batch(Batch* batch, ThreadData* thread_data) {
 
-
     auto result = thread_data->neural_net->net_out_to_nnout(
         batch->result.first,
         batch->result.second
@@ -167,6 +174,7 @@ void eval_batch(Batch* batch, ThreadData* thread_data) {
         batch->requests[i]->result = std::move(result[i]);
         batch->requests[i]->completed = true;
     }
+
 }
 
 void return_thread_work(ThreadData* thread_data, std::queue<Batch>* batch_res_queue, std::mutex* batch_res_queue_mutex, std::condition_variable* batch_res_queue_cv) {
