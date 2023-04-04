@@ -93,7 +93,11 @@ namespace nn {
     }
 
 
-    std::vector<std::unique_ptr<NNOut>> NN::net_out_to_nnout(at::Tensor pol_tensors, at::Tensor val_tensors){
+    std::vector<std::unique_ptr<NNOut>> NN::net_out_to_nnout(
+        at::Tensor pol_tensors, 
+        at::Tensor val_tensors,
+        std::vector<std::vector<game::move_id> *> legal_moves
+    ){
         // Get the policy and value tensors
         // auto pol_tensors = net_out.at(0).toTensor();
         pol_tensors = this->pol_softmax(pol_tensors).cpu();
@@ -103,37 +107,49 @@ namespace nn {
 
         // Create the output
 
-        std::vector<std::pair<at::Tensor, at::Tensor>> inp;
+        // std::vector<std::tuple<
+        //     at::Tensor, 
+        //     at::Tensor, 
+        //     std::vector<game::move_id> *
+        // >> inp;
 
-        for(int i = 0; i < pol_tensors.size(0); i++){
-            inp.push_back(std::make_pair(pol_tensors[i], val_tensors[i]));
-        }
-
-        auto pool = utils::ThreadPool<
-            std::pair<at::Tensor, at::Tensor>,
-            std::unique_ptr<nn::NNOut>
-        >(10);       
-
-        // auto t = utils::Timer(); t.start();
-        auto ret = pool.map(
-            inp,
-            [this](std::pair<at::Tensor, at::Tensor> inp){
-                return std::move(this->make_nnout_from_tensors(inp.first, inp.second));
-            }
-        );
-        // t.stop();t.print();
-
-        // auto t = utils::Timer(); t.start();
-        // std::vector<std::unique_ptr<NNOut>> ret;
-
-        // for(int i= 0; i < pol_tensors.size(0); i++){
-        //     ret.push_back(this->make_nnout_from_tensors(
-        //         pol_tensors[i], val_tensors[i]
+        // for(int i = 0; i < pol_tensors.size(0); i++){
+        //     inp.push_back(std::make_tuple(
+        //         pol_tensors[i], 
+        //         val_tensors[i],
+        //         legal_moves[i]
         //     ));
         // }
+
+        // auto pool = utils::ThreadPool<
+        //     std::tuple<at::Tensor, at::Tensor, std::vector<game::move_id> *>,
+        //     std::unique_ptr<nn::NNOut>
+        // >(10);       
+
+        // // auto t = utils::Timer(); t.start();
+        // auto ret = pool.map(
+        //     inp,
+        //     [this](std::tuple<at::Tensor, at::Tensor, std::vector<game::move_id> *> inp){
+        //         return std::move(this->make_nnout_from_tensors(
+        //             std::get<0>(inp), 
+        //             std::get<1>(inp),
+        //             std::get<2>(inp)
+        //         ));
+        //     }
+        // );
         // t.stop();t.print();
 
-        return std::move(ret);
+        // auto t = utils::Timer(); t.start();
+        std::vector<std::unique_ptr<NNOut>> ret;
+
+        for(int i= 0; i < pol_tensors.size(0); i++){
+            ret.push_back(this->make_nnout_from_tensors(
+                pol_tensors[i], val_tensors[i], legal_moves[i]
+            ));
+        }
+        // t.stop();t.print();
+
+        return ret;
     }
 
 

@@ -74,6 +74,12 @@ void MCNode::add_noise(std::vector<double> noise){
  */
 void MCNode::make_prior(nn::move_dist * nn_prior) {
     
+    // in case we don't need to normalize
+    if(nn_prior->size() == this->legal_moves.size()){
+        this->p_map = nn::move_dist(*nn_prior);
+        return;
+    }
+
     this->p_map = nn::move_dist();
 
     double prob_sum = 0;

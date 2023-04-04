@@ -340,6 +340,10 @@ std::pair<bool, Board> Agent::step(std::unique_ptr<nn::NNOut> evaluation){
     return std::make_pair(false,this->game->get_board());
 }
 
+std::vector<game::move_id> * Agent::node_legal_moves(){
+    return &this->node_to_eval->legal_moves;
+}
+
 std::pair<bool, Board> Agent::init_mcts(int max_playouts){
     this->max_playouts = max_playouts;
     this->num_playouts = 0;

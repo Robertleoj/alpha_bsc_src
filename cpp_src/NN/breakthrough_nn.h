@@ -19,6 +19,12 @@ namespace nn {
             at::Tensor policy_tensor,
             at::Tensor value_tensor
         ) override;
+
+        std::unique_ptr<NNOut> make_nnout_from_tensors(
+            at::Tensor policy_tensor,
+            at::Tensor value_tensor,
+            std::vector<game::move_id> *
+        ) override;
     };
 }
 

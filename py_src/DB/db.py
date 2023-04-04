@@ -4,6 +4,7 @@ import io
 import os
 import json
 import numpy as np
+import gc
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import pandas as pd
@@ -16,7 +17,7 @@ def read_tensors(arg):
 
     return (
         np.array(tensor_from_blob(state)),
-        np.array(tensor_from_blob(policy)),
+        np.array(tensor_from_blob(policy).reshape(-1)),
         np.array(outcome),
         np.array(moves_left),
         np.array(weights)
@@ -164,6 +165,9 @@ class DB:
 
         with Pool(cpu_count()) as p:
             result = list(tqdm(p.imap_unordered(read_tensors, tuples, chunksize=16), total=len(tuples), desc="Making tensors"))
+
+        del tuples
+        gc.collect()
         
         result = tuple(
             map(np.stack, zip(*result))

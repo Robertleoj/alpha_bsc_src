@@ -92,6 +92,7 @@ class Model:
             optimizer.zero_grad()
             
             nn_pol, nn_val = self.nn(states)
+            nn_pol = nn_pol.reshape(nn_pol.shape[0], -1)
             nn_pol = torch.log_softmax(nn_pol, 1)
 
             loss = loss_fn(nn_val, nn_pol, outcomes, policies, weights)

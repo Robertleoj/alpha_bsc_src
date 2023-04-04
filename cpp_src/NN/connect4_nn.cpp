@@ -46,7 +46,15 @@ namespace nn{
             val_tensor.item().toDouble()
         });
     }
-    
+
+    std::unique_ptr<NNOut> Connect4NN::make_nnout_from_tensors(
+        at::Tensor policy_tensor,
+        at::Tensor value_tensor,
+        std::vector<game::move_id> * legal_moves
+    ) {
+        return make_nnout_from_tensors(policy_tensor, value_tensor);
+    }
+
     /**
      * @brief Convert a state to a tensor
      * 

@@ -11,12 +11,14 @@ struct EvalRequest {
     bool completed;
     at::Tensor state;
     std::unique_ptr<nn::NNOut> result;
+    std::vector<game::move_id> * legal_moves;
 };
 
 struct Batch {
     std::vector<EvalRequest*> requests;
     at::Tensor batch_tensor;
     std::pair<at::Tensor, at::Tensor> result;
+    std::vector<std::vector<game::move_id> *> legal_moves;
 };
 
 struct BatchData {

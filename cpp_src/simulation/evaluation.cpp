@@ -131,8 +131,9 @@ void init_eval_games(ThreadEvalData* data, ThreadData* thread_data, EvalData* ev
         ed.dead_game = false;
 
         auto [done, board] = ed.agent->init_mcts(config::hp["eval_search_depth"].get<int>());
+        auto legal_moves = ed.agent->node_legal_moves();
 
-        queue_request(thread_data, board, &ed.request);
+        queue_request(thread_data, board, legal_moves, &ed.request);
     }
 }
 
@@ -252,7 +253,8 @@ void thread_eval(
                     std::tie(done, board) = ed.agent->init_mcts(config::hp["eval_search_depth"].get<int>());
                 }
             }
-            queue_request(thread_data, board, &ed.request);
+            auto legal_moves = ed.agent->node_legal_moves();
+            queue_request(thread_data, board, legal_moves, &ed.request);
         }
         if (all_dead) {
             break;

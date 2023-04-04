@@ -35,6 +35,7 @@ public:
     double PUCT(MCNode *node, game::move_id move);
     std::pair<bool, Board> step(std::unique_ptr<nn::NNOut>);
     std::pair<bool, Board> init_mcts(int max_playouts);
+    std::vector<game::move_id> * node_legal_moves();
 
 private:
     //variables

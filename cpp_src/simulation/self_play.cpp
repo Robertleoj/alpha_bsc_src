@@ -142,11 +142,12 @@ void thread_play(
         dead_game[i] = false;
 
         auto [done, board] = agents[i]->init_mcts(get_playouts(0));
+        auto legal_moves = agents[i]->node_legal_moves();
         if(DEBUG){
-            std::cout << "starting game" << std::endl;
+            // std::cout << "starting game" << std::endl;
         }
 
-        queue_request(thread_data, board, &requests[i]);
+        queue_request(thread_data, board, legal_moves, &requests[i]);
     }
 
     while (true) {
@@ -164,7 +165,7 @@ void thread_play(
             // get answer
 
             if(DEBUG){
-                std::cout << "got answer" << std::endl;
+                // std::cout << "got answer" << std::endl;
             }
 
             std::unique_ptr<nn::NNOut> answer = std::move(requests[i].result);
@@ -200,7 +201,10 @@ void thread_play(
                 agents[i]->update_tree(best_move);
 
                 num_moves[i]++;
-                // std::cout << "Made move " << num_moves[i] << std::endl;
+
+                if(DEBUG){
+                    std::cout << "Made move " << num_moves[i] << std::endl;
+                }
 
                 bool game_completed = games[i]->is_terminal();
 
@@ -254,8 +258,8 @@ void thread_play(
                 }
                 std::tie(done, board) = agents[i]->init_mcts(playouts);
             }
-
-            queue_request(thread_data, board, &requests[i]);
+            
+            queue_request(thread_data, board, agents[i]->node_legal_moves(), &requests[i]);
 
         cnt:;
         }

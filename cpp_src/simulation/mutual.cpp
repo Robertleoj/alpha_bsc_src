@@ -79,8 +79,10 @@ void dl_thread_work(std::queue<Batch>* batch_queue, ThreadData* thread_data, std
         pop_batch(thread_data, bs, &states);
 
         std::vector<at::Tensor> tensors;
+        std::vector<std::vector<game::move_id> *> legal_moves;
         for (auto& s : states) {
             tensors.push_back(s->state);
+            legal_moves.push_back(s->legal_moves);
         }
 
         at::Tensor batch = thread_data->neural_net->prepare_batch(tensors);
@@ -89,7 +91,8 @@ void dl_thread_work(std::queue<Batch>* batch_queue, ThreadData* thread_data, std
         batch_queue->push(Batch{ 
             std::move(states), 
             std::move(batch), 
-            std::make_pair(at::Tensor(), at::Tensor()) 
+            std::make_pair(at::Tensor(), at::Tensor()),
+            std::move(legal_moves)
         });
         // std::cout << "pushed batch to queue" << std::endl;
         batch_queue_mutex->unlock();
@@ -163,7 +166,8 @@ void eval_batch(Batch* batch, ThreadData* thread_data) {
 
     auto result = thread_data->neural_net->net_out_to_nnout(
         batch->result.first,
-        batch->result.second
+        batch->result.second,
+        batch->legal_moves
     );
 
     if (result.size() != batch->requests.size()) {
@@ -252,10 +256,16 @@ game::IGame* get_game_instance(std::string game) {
     }
 }
 
-void queue_request(ThreadData* thread_data, Board& board, EvalRequest* request) {
+void queue_request(
+    ThreadData* thread_data, 
+    Board& board, 
+    std::vector<game::move_id> *legal_moves, 
+    EvalRequest* request
+) {
     request->completed = false;
     request->result = nullptr;
     request->state = thread_data->neural_net->state_to_tensor(board);
+    request->legal_moves = legal_moves;
 
     thread_data->q_mutex.lock();
     thread_data->eval_q.push(request);

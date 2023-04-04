@@ -4,6 +4,7 @@
 #include "../utils/utils.h"
 #include <fstream>
 #include <cuda_runtime.h>
+#include <set>
 
 
 
@@ -32,26 +33,69 @@ namespace nn{
      */
     std::unique_ptr<NNOut> BreakthroughNN::make_nnout_from_tensors(at::Tensor pol_tensor, at::Tensor val_tensor){
 
-        float * flat = pol_tensor.flatten().contiguous().data_ptr<float>();
+        throw std::runtime_error("Need to know legal moves in breakthrough");
+
+        // float * flat = pol_tensor.flatten().contiguous().data_ptr<float>();
 
         
-        nn::move_dist p;
-        p.reserve(64 * 64);
+        // nn::move_dist p;
+        // p.reserve(64 * 64);
 
         // std::array<std::pair<game::move_id, double>, 64 * 64> init_list;
 
-        for(int i = 0; i < 64 * 64; i++){
-            p.emplace(((i / 64) << 6) | (i % 64), (double) flat[i]);
+        // for(int i = 0; i < 64 * 64; i++){
+            // p.emplace(((i / 64) << 6) | (i % 64), (double) flat[i]);
             // init_list[i] = std::make_pair(((i / 64) << 6) | (i % 64), (double) flat[i]);
-        }
+        // }
 
         // p.insert(init_list.begin(), init_list.end());
+
+        // return std::unique_ptr<NNOut>(new NNOut{
+        //     std::move(p),
+        //     val_tensor.item().toDouble()
+        // });
+    }
+
+
+    /**
+     * @brief Create a NNOut from the policy and value tensors
+     * 
+     * @param pol_tensor 
+     * @param val_tensor 
+     * @return std::unique_ptr<NNOut> 
+     */
+    std::unique_ptr<NNOut> BreakthroughNN::make_nnout_from_tensors(
+        at::Tensor pol_tensor, 
+        at::Tensor val_tensor, 
+        std::vector<game::move_id> * legal_moves
+    ){
+        
+        // std::set<game::move_id> legal_set(legal_moves->begin(), legal_moves->end());
+        
+        nn::move_dist p;
+
+        auto move_id_to_idx = [](game::move_id id){
+            return std::make_pair(id & 0b111111, ((id >> 6) & 0b111111));
+        };
+
+        double sm = 0;
+        for(auto &id : *legal_moves){
+            auto [from, to] = move_id_to_idx(id);
+            double val = pol_tensor[from][to].item().toDouble();
+            p.emplace(id, val);
+            sm += val;
+        }
+
+        for(auto &id : *legal_moves){
+            p[id] /= sm;
+        }
 
         return std::unique_ptr<NNOut>(new NNOut{
             std::move(p),
             val_tensor.item().toDouble()
         });
     }
+    
     
     /**
      * @brief Convert a state to a tensor
@@ -115,8 +159,8 @@ namespace nn{
         at::Tensor policy = torch::zeros({64, 64});
 
         for(auto &p : prob_map){
-            int from = p.first >> 6;
-            int to = p.first & 0b111111;
+            int from = p.first & 0b111111;
+            int to = (p.first >> 6) & 0b111111;
 
             double prob = p.second;
             policy[from][to] = prob;
