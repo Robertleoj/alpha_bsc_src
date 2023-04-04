@@ -71,6 +71,8 @@ set(FILES
     utils/dirichlet.h
     utils/dirichlet.cpp
     utils/colors.h
+    utils/timer.h
+    utils/thread_pool.h
     games/move.h
     games/game.h
     games/breakthrough.h
@@ -87,6 +89,9 @@ set(FILES
     NN/connect4_nn.h
     NN/connect4_nn.cpp
     NN/nn.h
+    NN/nn.cpp
+    NN/breakthrough_nn.h
+    NN/breakthrough_nn.cpp
     DB/db.h
     DB/db.cpp
     simulation/simulation.h
@@ -103,20 +108,35 @@ set(FILES
     global.h
 )
 
+add_library(common_sources OBJECT
+    ${FILES}
+)
+
 add_executable(self_play
     self_play.cpp
-    ${FILES}
+)
+
+target_link_libraries(self_play
+    PRIVATE common_sources
 )
 
 
 add_executable(play_agent
     play_agent.cpp
-    ${FILES}
 )
+
+target_link_libraries(play_agent
+    PRIVATE common_sources
+)
+
 
 add_executable(eval_agent
     eval_agent.cpp
-    ${FILES}
 )
+
+target_link_libraries(eval_agent
+    PRIVATE common_sources
+)
+
 
 
