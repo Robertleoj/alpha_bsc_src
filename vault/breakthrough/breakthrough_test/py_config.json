@@ -1,5 +1,5 @@
 {
-    "buffer_generations":40,
+    "buffer_generations":1,
     "batch_size":2048,
     "value_loss_ratio":1.0,
     "weight_decay":1e-4,
