@@ -6,6 +6,8 @@ import io
 import os
 import json
 import numpy as np
+import uuid
+import random
 import gc
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -14,6 +16,9 @@ from glob import glob
 import bson 
 from utils import sevenzip_cmd, Data
 from pathlib import Path
+
+# need to fit (dl_threads) * (chunk_size) * (chunk_sampled) into memory
+CHUNK_SIZE = 512
 
 def read_tensors(arg):
     state, policy, outcome, moves_left, weights = arg
@@ -179,7 +184,7 @@ class DB:
                 weight=row[4]
             )
 
-            state_path = Path(f"./cached_data/{generation}/{chunk_name}/{i}.pt")
+            state_path = Path(f"./cached_data/tmp/{generation}/{chunk_name}/{i}.pt")
             state_path.parent.mkdir(parents=True, exist_ok=True)
             buffer = io.BytesIO()
             torch.save(row, buffer)
@@ -194,7 +199,7 @@ class DB:
 
         if os.path.exists(f"./cached_data/{generation}"):
             return
-        
+
         self.uncompress_generation(generation)
        
         game_files = glob(f"./training_data/{generation}/*.bson")
@@ -213,14 +218,58 @@ class DB:
             
 
         print(f"Fetched {total_positions} positions")
-        
-        # result = tuple(
-        #     map(np.stack, zip(*result))
-        # )
 
         self.compress_generation(generation)
+
+        # make chunky data
+        self.make_chunked(generation)
+
+        self.delete_unchunked(generation)
+        
       
         # return tuple(map(torch.tensor, result))
+
+    def delete_unchunked(self, generation):
+        
+        os.system(f'rm -r ./cached_data/tmp/{generation}')
+
+    def make_chunked(self, generation):
+        file_names = glob(f"./cached_data/tmp/{generation}/*/*.pt")
+        random.shuffle(file_names)
+        
+        chunks = [file_names[i:i + CHUNK_SIZE] for i in range(0, len(file_names), CHUNK_SIZE)]
+        
+        args = [(chunk, generation) for chunk in chunks]
+
+        with Pool(cpu_count()) as p:
+            list(tqdm(p.imap_unordered(self.make_chunk, args), total=len(chunks), desc="Making chunks"))
+
+
+    def make_chunk(self, args):
+
+        files, generation = args
+
+        if len(files) == 0:
+            return
+
+        # uuid chunk name
+        chunk_name = uuid.uuid4().hex
+        chunk_path = Path(f"./cached_data/{generation}/{chunk_name}.pt")
+        chunk_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if chunk_path.exists():
+            return
+
+        chunk = []
+        for file in files:
+            with bz2.open(file, "rb") as f2:
+                chunk.append(torch.load(f2))
+
+        # buffer = io.BytesIO()
+        # torch.save(chunk, buffer)                   
+        with bz2.open(chunk_path, "wb") as f:
+            torch.save(chunk, f)
+            # f.write(buffer.getvalue())
 
 
     def generation_nums(self) -> list[int]:

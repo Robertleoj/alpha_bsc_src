@@ -24,6 +24,13 @@ if [ $# -eq 2 ]; then
     GAME_NAME=$2
 fi
 
+# check if directory exists
+if [ ! -d "./vault/$GAME_NAME/$RUN_NAME" ]; then
+    echo "Run $RUN_NAME for $GAME_NAME does not exist."
+    exit 1
+fi
+
+
 # delete the run
 echo "Deleting run $RUN_NAME..."
 rm -rf "./vault/$GAME_NAME/$RUN_NAME"

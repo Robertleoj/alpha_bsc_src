@@ -4,32 +4,44 @@ import lzma
 from torch.utils.data import IterableDataset
 from torch.utils.data import DataLoader
 import torch
-
 from DB.db import DB
 import random
 from config import config
 import utils
-
+from utils import Data
 from pathlib import Path
+
+CHUNK_SAMPLES = 20
 
 class UniformSampler:
     def __init__(self, generations:int):
-        self.file_paths = []
+        self.chunk_paths = []
 
         for generation in generations:
-            for file in (Path('./cached_data')/f"{generation}/").glob('**/*.pt'):
-                self.file_paths.append(file)
+            for file in (Path('./cached_data')/f"{generation}/").glob('*.pt'):
+                self.chunk_paths.append(file)
 
-        self.num_samples = len(self.file_paths)
+        self.num_chunks = len(self.chunk_paths)
+        self.buffer:list[Data] = []
+
+    def load_chunks(self):
+
+        for _ in range(CHUNK_SAMPLES):
+            idx = random.randint(0, self.num_chunks - 1)
+
+            with bz2.open(self.chunk_paths[idx], 'rb') as f:
+                chunk = torch.load(f)
+
+            self.buffer.extend(chunk)
+
+        random.shuffle(self.buffer)
 
     def sample(self):
-        idx = random.randint(0, self.num_samples - 1)
-        buffer = io.BytesIO()
-        with bz2.open(self.file_paths[idx], 'rb') as f:
-            buffer.write(f.read())
-        buffer.seek(0)
-        data = torch.load(buffer)
-        # data = torch.load(self.file_paths[idx])
+
+        if len(self.buffer) == 0:
+            self.load_chunks()
+
+        data = self.buffer.pop()
 
         return data.state, data.policy, data.outcome, data.weight
 
