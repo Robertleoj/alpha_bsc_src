@@ -53,7 +53,6 @@ link_directories(./.libs/gsl/lib)
 link_libraries(
     ${TORCH_LIBRARIES}
     gsl 
-    uuid
     gslcblas
     dl
 )
@@ -73,6 +72,8 @@ set(FILES
     utils/colors.h
     utils/timer.h
     utils/thread_pool.h
+    utils/uuid.h
+    utils/uuid.cpp
     games/move.h
     games/game.h
     games/breakthrough.h

@@ -4,7 +4,6 @@
 #include <istream>
 #include "../config/config.h"
 #include <sys/stat.h>
-#include <uuid/uuid.h>
 
 std::vector<uint8_t> tensor_to_binary(at::Tensor t){
     std::stringstream ss;
@@ -199,13 +198,9 @@ namespace db {
         mkdir(dir_name.c_str(), 0777);
 
         // Create uuid
-        uuid_t uuid;
-        uuid_generate(uuid);
+        std::string uuid_str = utils::make_uuid();
 
-        char uuid_str[37];
-        uuid_unparse(uuid, uuid_str);
-
-        std::string fname = utils::string_format("./training_data/%d/%s.bson", this->curr_generation, uuid_str);
+        std::string fname = utils::string_format("./training_data/%d/%s.bson", this->curr_generation, uuid_str.c_str());
 
         auto v = json::to_bson(j_top);
 
