@@ -10,6 +10,7 @@
 #include "./thread_queue.h"
 #include "./timer.h"
 #include "./thread_pool.h"
+#include "./uuid.h"
 
 
 namespace utils {
