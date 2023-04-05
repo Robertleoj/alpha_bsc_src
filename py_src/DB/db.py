@@ -16,9 +16,9 @@ from glob import glob
 import bson 
 from utils import sevenzip_cmd, Data
 from pathlib import Path
+from config import config
 
 # need to fit (dl_threads) * (chunk_size) * (chunk_sampled) into memory
-CHUNK_SIZE = 512
 
 def read_tensors(arg):
     state, policy, outcome, moves_left, weights = arg
@@ -237,7 +237,8 @@ class DB:
         file_names = glob(f"./cached_data/tmp/{generation}/*/*.pt")
         random.shuffle(file_names)
         
-        chunks = [file_names[i:i + CHUNK_SIZE] for i in range(0, len(file_names), CHUNK_SIZE)]
+        chunk_size = config['cache_chunk_size']
+        chunks = [file_names[i:i + chunk_size] for i in range(0, len(file_names), chunk_size)]
         
         args = [(chunk, generation) for chunk in chunks]
 

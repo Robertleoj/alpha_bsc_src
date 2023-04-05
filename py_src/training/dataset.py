@@ -11,8 +11,6 @@ import utils
 from utils import Data
 from pathlib import Path
 
-CHUNK_SAMPLES = 20
-
 class UniformSampler:
     def __init__(self, generations:int):
         self.chunk_paths = []
@@ -26,7 +24,7 @@ class UniformSampler:
 
     def load_chunks(self):
 
-        for _ in range(CHUNK_SAMPLES):
+        for _ in range(config['cache_sample_chunks']):
             idx = random.randint(0, self.num_chunks - 1)
 
             with bz2.open(self.chunk_paths[idx], 'rb') as f:
