@@ -4,7 +4,7 @@
     "batch_size": 1024,
     "search_depth": 800,
 
-    "self_play_num_games" : 5000,
+    "self_play_num_games" : 10000,
     "games_per_thread" : 200,
     "self_play_num_threads": 25,
     "num_dl_threads": 4,
@@ -13,7 +13,7 @@
 
     "dirichlet_lambda": 0.25,
     "dirichlet_alpha": 0.3,
-    "depth_until_pi_argmax": 4,
+    "depth_until_pi_argmax": 6,
 
     "use_endgame_playouts": false,
     "endgame_playout_shift": 10.5,
