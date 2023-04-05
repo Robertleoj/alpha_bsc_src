@@ -1,10 +1,12 @@
 #include "endgame_playouts.h"
 #include "structs.h"
 #include <string>
+#include "../global.h"
 #include <unistd.h>
 #include "simulation.h"
 #include "../NN/connect4_nn.h"
 #include "mutual.h"
+#include "../utils/utils.h"
 
 db::TrainingSample get_training_sample(
     nn::move_dist normalized_visit_counts,
@@ -66,10 +68,10 @@ game::move_id select_move(nn::move_dist visit_count_dist, int num_moves) {
     int argmax_depth = config::hp["depth_until_pi_argmax"].get<int>();
 
     if (num_moves < argmax_depth) {
-        return utils::sample_multinomial(visit_count_dist);
+        return utils::sample_multinomial<game::move_id>(visit_count_dist);
     }
     else {
-        return utils::argmax_map(visit_count_dist);
+        return utils::argmax_map<game::move_id, double>(visit_count_dist);
     }
 }
 
@@ -140,8 +142,12 @@ void thread_play(
         dead_game[i] = false;
 
         auto [done, board] = agents[i]->init_mcts(get_playouts(0));
+        auto legal_moves = agents[i]->node_legal_moves();
+        if(DEBUG){
+            // std::cout << "starting game" << std::endl;
+        }
 
-        queue_request(thread_data, board, &requests[i]);
+        queue_request(thread_data, board, legal_moves, &requests[i]);
     }
 
     while (true) {
@@ -157,13 +163,19 @@ void thread_play(
                 continue;
             }
             // get answer
+
+            if(DEBUG){
+                // std::cout << "got answer" << std::endl;
+            }
+
             std::unique_ptr<nn::NNOut> answer = std::move(requests[i].result);
+
             auto [done, board] = agents[i]->step(std::move(answer));
 
             while (done) {
                 // agent is ready to move
                 auto visit_counts = agents[i]->root_visit_counts();
-                auto normalized_visit_counts = utils::softmax_map(visit_counts);
+                auto normalized_visit_counts = utils::softmax_map<game::move_id, int>(visit_counts);
 
                 double weight = get_weight(num_moves[i]);
 
@@ -189,7 +201,10 @@ void thread_play(
                 agents[i]->update_tree(best_move);
 
                 num_moves[i]++;
-                // std::cout << "Made move " << num_moves[i] << std::endl;
+
+                if(DEBUG){
+                    std::cout << "Made move " << num_moves[i] << std::endl;
+                }
 
                 bool game_completed = games[i]->is_terminal();
 
@@ -243,8 +258,8 @@ void thread_play(
                 }
                 std::tie(done, board) = agents[i]->init_mcts(playouts);
             }
-
-            queue_request(thread_data, board, &requests[i]);
+            
+            queue_request(thread_data, board, agents[i]->node_legal_moves(), &requests[i]);
 
         cnt:;
         }

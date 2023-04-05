@@ -37,7 +37,7 @@ cd ./py_src
 
 source .venv/bin/activate
 
-python3 init_conn4_net.py ../$RUN_DIR/models/
+python3 init_nn.py ../$RUN_DIR/models/ $GAME_NAME
 
 echo "Run $RUN_NAME has been creatd."
 echo "REMEMBER TO EDIT THE CONFIG"

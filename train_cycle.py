@@ -11,6 +11,7 @@ if len(argv) <= 1:
 run_name = Path(argv[1])
 game_name = 'connect4'
 
+
 num_cycles = 10
 if len(argv) >= 3:
     num_cycles = int(argv[2])
@@ -24,10 +25,13 @@ if not run_dir.exists():
     print("Run directory does not exist")
     exit(1)
 
+use_eval = game_name == 'connect4'
 
 def self_play():
     os.chdir('./cpp_src')
-    exit_code = os.system(f'./self_play {run_name} {game_name}')
+    cmd = f'./self_play {run_name} {game_name}'
+    print(f"Running: {cmd}")
+    exit_code = os.system(cmd)
 
     if(exit_code != 0):
         exit(0)
@@ -36,12 +40,16 @@ def self_play():
 
 def train():
     os.chdir('./py_src')
-    exit_code = os.system(f'python3 train.py {run_name} {game_name}')
+    cmd = f'python3 train.py {run_name} {game_name}'
+    print(f"Running: {cmd}")
+    exit_code = os.system(cmd)
     if(exit_code != 0):
         exit(0)
     os.chdir('..')
 
 def evaluate():
+    if not use_eval:
+        return
     os.chdir('./cpp_src')
     exit_code = os.system(f'./eval_agent {run_name}')
     if(exit_code != 0):
@@ -54,5 +62,6 @@ for i in range(num_cycles):
     evaluate()
     self_play()
     train()
+
 evaluate()
     

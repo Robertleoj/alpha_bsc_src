@@ -8,6 +8,8 @@
 #include "./dirichlet.h"
 #include "./strings.h"
 #include "./thread_queue.h"
+#include "./timer.h"
+#include "./thread_pool.h"
 
 
 namespace utils {
@@ -28,17 +30,17 @@ namespace utils {
         return duration_cast<std::chrono::milliseconds>(time_end-time_start).count();
     }
 
-    class Timer {
-    public:
-        void start() { stop_ = start_ = std::chrono::high_resolution_clock::now(); }
-        void stop() { stop_ = std::chrono::high_resolution_clock::now(); }
-        [[nodiscard]] uint64_t duration_ms() const {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(stop_ - start_).count();
-        }
-    private:
-        std::chrono::high_resolution_clock::time_point start_;
-        std::chrono::high_resolution_clock::time_point stop_;
-    };
+    // class Timer {
+    // public:
+    //     void start() { stop_ = start_ = std::chrono::high_resolution_clock::now(); }
+    //     void stop() { stop_ = std::chrono::high_resolution_clock::now(); }
+    //     [[nodiscard]] uint64_t duration_ms() const {
+    //         return std::chrono::duration_cast<std::chrono::milliseconds>(stop_ - start_).count();
+    //     }
+    // private:
+    //     std::chrono::high_resolution_clock::time_point start_;
+    //     std::chrono::high_resolution_clock::time_point stop_;
+    // };
 
     template <typename T, typename Func>
     int arg_max(const std::vector<T>& vec, Func f) {

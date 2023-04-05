@@ -1,4 +1,5 @@
 #include "./mutual.h"
+#include "../utils/utils.h"
 
 void join_threads(std::vector<std::vector<std::thread>*> threads) {
     for (auto t : threads) {
@@ -19,6 +20,9 @@ nn::NN* get_neural_net(std::string game, db::DB* db) {
 
     if (game == "connect4") {
         return new nn::Connect4NN(model_path);
+    }
+    else if (game == "breakthrough") {
+        return new nn::BreakthroughNN(model_path);
     }
     else {
         throw std::runtime_error("no neural net exists for this game");
@@ -75,14 +79,21 @@ void dl_thread_work(std::queue<Batch>* batch_queue, ThreadData* thread_data, std
         pop_batch(thread_data, bs, &states);
 
         std::vector<at::Tensor> tensors;
+        std::vector<std::vector<game::move_id> *> legal_moves;
         for (auto& s : states) {
             tensors.push_back(s->state);
+            legal_moves.push_back(s->legal_moves);
         }
 
         at::Tensor batch = thread_data->neural_net->prepare_batch(tensors);
 
         batch_queue_mutex->lock();
-        batch_queue->push(Batch{ states, batch, std::make_pair(at::Tensor(), at::Tensor()) });
+        batch_queue->push(Batch{ 
+            std::move(states), 
+            std::move(batch), 
+            std::make_pair(at::Tensor(), at::Tensor()),
+            std::move(legal_moves)
+        });
         // std::cout << "pushed batch to queue" << std::endl;
         batch_queue_mutex->unlock();
         batch_queue_cv->notify_one();
@@ -153,10 +164,10 @@ void nn_thread_work(
 
 void eval_batch(Batch* batch, ThreadData* thread_data) {
 
-
     auto result = thread_data->neural_net->net_out_to_nnout(
         batch->result.first,
-        batch->result.second
+        batch->result.second,
+        batch->legal_moves
     );
 
     if (result.size() != batch->requests.size()) {
@@ -167,6 +178,7 @@ void eval_batch(Batch* batch, ThreadData* thread_data) {
         batch->requests[i]->result = std::move(result[i]);
         batch->requests[i]->completed = true;
     }
+
 }
 
 void return_thread_work(ThreadData* thread_data, std::queue<Batch>* batch_res_queue, std::mutex* batch_res_queue_mutex, std::condition_variable* batch_res_queue_cv) {
@@ -244,10 +256,16 @@ game::IGame* get_game_instance(std::string game) {
     }
 }
 
-void queue_request(ThreadData* thread_data, Board& board, EvalRequest* request) {
+void queue_request(
+    ThreadData* thread_data, 
+    Board& board, 
+    std::vector<game::move_id> *legal_moves, 
+    EvalRequest* request
+) {
     request->completed = false;
     request->result = nullptr;
     request->state = thread_data->neural_net->state_to_tensor(board);
+    request->legal_moves = legal_moves;
 
     thread_data->q_mutex.lock();
     thread_data->eval_q.push(request);

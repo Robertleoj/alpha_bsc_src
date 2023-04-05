@@ -11,7 +11,9 @@
 #include "./games/connect4.h"
 #include "./base/types.h"
 #include "./utils/utils.h"
+#include "./global.h"
 
+const bool DEBUG = false;
 
 
 std::string model_path(std::string model_name){

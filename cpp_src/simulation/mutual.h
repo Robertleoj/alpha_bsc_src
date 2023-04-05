@@ -5,6 +5,7 @@
 #include <thread>
 #include <string>
 #include "../NN/connect4_nn.h"
+#include "../NN/breakthrough_nn.h"
 #include "../games/game.h"
 #include "../games/connect4.h"
 #include "../games/breakthrough.h"
@@ -48,4 +49,9 @@ void start_batching_threads(
 
 game::IGame* get_game_instance(std::string game);
 
-void queue_request(ThreadData* thread_data, Board& board, EvalRequest* request);
+void queue_request(
+    ThreadData* thread_data, 
+    Board& board, 
+    std::vector<game::move_id> * legal_moves,
+    EvalRequest* request
+);

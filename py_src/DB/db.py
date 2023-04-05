@@ -1,25 +1,42 @@
+import bz2
+import lzma
 import torch
 import sqlite3
 import io
 import os
 import json
 import numpy as np
+import uuid
+import random
+import gc
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import pandas as pd
 from glob import glob
 import bson 
-from utils import sevenzip_cmd
+from utils import sevenzip_cmd, Data
+from pathlib import Path
+
+# need to fit (dl_threads) * (chunk_size) * (chunk_sampled) into memory
+CHUNK_SIZE = 512
 
 def read_tensors(arg):
     state, policy, outcome, moves_left, weights = arg
 
+    # return (
+    #     np.array(tensor_from_blob(state)),
+    #     np.array(tensor_from_blob(policy).reshape(-1)),
+    #     np.array(outcome),
+    #     np.array(moves_left),
+    #     np.array(weights)
+    # )
+
     return (
-        np.array(tensor_from_blob(state)),
-        np.array(tensor_from_blob(policy)),
-        np.array(outcome),
-        np.array(moves_left),
-        np.array(weights)
+        tensor_from_blob(state),
+        tensor_from_blob(policy).reshape(-1),
+        outcome,
+        moves_left,
+        weights
     )
 
 def tensor_from_blob(blob) -> torch.Tensor:
@@ -135,43 +152,124 @@ class DB:
             if ret_code != 0:
                 raise Exception("Could not extract data")
 
+    def save_file_tensors(self, arg):
+        file, generation = arg
+        chunk_name = Path(file).stem
+
+
+        with open(file, "rb") as f:
+            try:
+                data = bson.loads(f.read())['samples']
+            except:
+                raise Exception(f"Could not read file\n{file}")
+
+        # save all the data
+        for i, row in enumerate(data):
+
+            row =(
+                row["state"],
+                row["policy"],
+                row["outcome"],
+                row["moves_left"],
+                row["weight"] if "weight" in row else 1
+            )
+
+            row = read_tensors(row)
+
+            row = Data(
+                state=row[0],
+                policy=row[1],
+                outcome=row[2],
+                moves_left=row[3],
+                weight=row[4]
+            )
+
+            state_path = Path(f"./cached_data/tmp/{generation}/{chunk_name}/{i}.pt")
+            state_path.parent.mkdir(parents=True, exist_ok=True)
+            buffer = io.BytesIO()
+            torch.save(row, buffer)
+            with bz2.open(state_path, "wb") as f:
+                f.write(buffer.getvalue())
+
+
+        return len(data)
+
+
     def prefetch_generation(self, generation:int):
-        
+
+        if os.path.exists(f"./cached_data/{generation}"):
+            return
+
         self.uncompress_generation(generation)
        
         game_files = glob(f"./training_data/{generation}/*.bson")
         print(f"Found {len(game_files)} files")
 
-        tuples = []
+        # tuples = []
 
-        for file in game_files:
-            with open(file, "rb") as f:
-                try:
-                    data = bson.loads(f.read())['samples']
-                except:
-                    raise Exception(f"Could not read file\n{file}")
+        total_positions = 0
+        # with Pool(cpu_count()) as p:
+        #     result = list(tqdm(p.imap_unordered(read_tensors, tuples, chunksize=16), total=len(tuples), desc="Making tensors"))
 
-            for row in data:
-                tuples.append((
-                    row["state"],
-                    row["policy"],
-                    row["outcome"],
-                    row["moves_left"],
-                    row["weight"] if "weight" in row else 1
-                ))
+        tasks = [(file, generation) for file in game_files]
+            
+        with Pool(cpu_count()//2) as p:
+            total_positions = sum(tqdm(p.imap_unordered(self.save_file_tensors, tasks, chunksize=16), total=len(game_files), desc="Making tensors"))
+            
 
-        print(f"Fetched {len(tuples)} positions")
-
-        with Pool(cpu_count()) as p:
-            result = list(tqdm(p.imap_unordered(read_tensors, tuples, chunksize=16), total=len(tuples), desc="Making tensors"))
-        
-        result = tuple(
-            map(np.stack, zip(*result))
-        )
+        print(f"Fetched {total_positions} positions")
 
         self.compress_generation(generation)
+
+        # make chunky data
+        self.make_chunked(generation)
+
+        self.delete_unchunked(generation)
+        
       
-        return tuple(map(torch.tensor, result))
+        # return tuple(map(torch.tensor, result))
+
+    def delete_unchunked(self, generation):
+        
+        os.system(f'rm -r ./cached_data/tmp/{generation}')
+
+    def make_chunked(self, generation):
+        file_names = glob(f"./cached_data/tmp/{generation}/*/*.pt")
+        random.shuffle(file_names)
+        
+        chunks = [file_names[i:i + CHUNK_SIZE] for i in range(0, len(file_names), CHUNK_SIZE)]
+        
+        args = [(chunk, generation) for chunk in chunks]
+
+        with Pool(cpu_count()) as p:
+            list(tqdm(p.imap_unordered(self.make_chunk, args), total=len(chunks), desc="Making chunks"))
+
+
+    def make_chunk(self, args):
+
+        files, generation = args
+
+        if len(files) == 0:
+            return
+
+        # uuid chunk name
+        chunk_name = uuid.uuid4().hex
+        chunk_path = Path(f"./cached_data/{generation}/{chunk_name}.pt")
+        chunk_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if chunk_path.exists():
+            return
+
+        chunk = []
+        for file in files:
+            with bz2.open(file, "rb") as f2:
+                chunk.append(torch.load(f2))
+
+        # buffer = io.BytesIO()
+        # torch.save(chunk, buffer)                   
+        with bz2.open(chunk_path, "wb") as f:
+            torch.save(chunk, f)
+            # f.write(buffer.getvalue())
 
 
     def generation_nums(self) -> list[int]:

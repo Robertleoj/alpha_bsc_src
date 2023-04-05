@@ -1,0 +1,28 @@
+{
+    "buffer_generations":40,
+    "batch_size":2048,
+    "value_loss_ratio":1.0,
+    "weight_decay":1e-4,
+    "learning_rate": 1e-4,
+    "num_iterations": 2500,
+    "sample_method": "uniform",
+
+    "dynamic_window":{
+        "on": false,
+        "min": 1,
+        "max":20,
+        "increase_every":3
+    },
+    
+    "endgame_training":{
+        "p_max": 1.0,
+        "p_min": 0.0,
+        "shift": 4.0,
+        "generation_uniform": 100.0
+    },
+    
+    "dl_prefetch_factor": 10,
+    "dl_num_workers" : 16,
+    "log_loss_interval":100,
+    "endgame_sampling_q_size": 100000
+}

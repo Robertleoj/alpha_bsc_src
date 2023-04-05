@@ -14,7 +14,9 @@ namespace mm {
     struct Move {
     public:
         Move() = default;
-        explicit Move(game::move_id mid) : id(mid) {}
+        explicit Move(game::move_id mid) : id(mid) {
+
+        }
 
         Move(
             Square from, 
@@ -39,7 +41,7 @@ namespace mm {
         }
 
         [[nodiscard]] explicit operator game::move_id() const { 
-            return (m.from << 6) | m.to;
+            return   m.from | (m.to << 6) | (m.capture << 12)  ;
         }
 
         bool operator==(const Move& rhs) const {

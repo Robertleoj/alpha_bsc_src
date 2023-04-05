@@ -14,179 +14,10 @@ namespace nn{
      * 
      * @param model_path 
      */
-    Connect4NN::Connect4NN(std::string model_path){
-        std::cout << "loading model from " << model_path << std::endl;
-        this->net = torch::jit::load(model_path);
-        this->net.to(at::kCUDA);
-        this->net.eval();
-    }
+    Connect4NN::Connect4NN(std::string model_path): NN(model_path){}
 
-
-    /**
-     * @brief Evaluate a list of tensors representing states
-     * 
-     * @param tensors The list of tensors
-     * @return std::vector<std::unique_ptr<NNOut>> The list of NNOuts
-     */
-    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_tensors(
-        std::vector<at::Tensor> & tensors
-    ) {
-        // Create the input tensor
-        auto inp_tensor = torch::stack(tensors, 0);
-
-        if(!inp_tensor.is_cuda()){
-            inp_tensor = inp_tensor.cuda();
-        }
-
-        // Create the input value for the network
-        std::vector<torch::jit::IValue> inp({inp_tensor});
-
-        // Get the output from the network
-        auto net_out = this->net.forward(inp).toTuple()->elements();
-
-        // Get the policy and value tensors
-        auto pol_tensors = net_out.at(0).toTensor();
-        pol_tensors = pol_tensors.softmax(1).cpu();
-
-        auto val_tensors = net_out.at(1).toTensor();
-        val_tensors = val_tensors.cpu();
-
-        // Create the output
-        std::vector<std::unique_ptr<NNOut>> out;
-        for(int i = 0; i < tensors.size(); i++){
-            auto nnout = this->make_nnout_from_tensors(
-                pol_tensors[i], val_tensors[i]
-            );
-            out.push_back(std::move(nnout));
-        }
-        
-        return out;
-    }
-
-    c10::ivalue::TupleElements Connect4NN::run_batch(at::Tensor inp_tensor){
-
-        if(!inp_tensor.is_cuda()){
-            inp_tensor = inp_tensor.cuda();
-        }
-
-        // Create the input value for the network
-        std::vector<torch::jit::IValue> inp({inp_tensor});
-
-        // Get the output from the network
-        auto net_out = this->net.forward(inp).toTuple()->elements();
-
-        // cudaFree(inp_tensor.data_ptr());
-
-        return net_out;
-    }
-
-    std::vector<std::unique_ptr<NNOut>> Connect4NN::net_out_to_nnout(at::Tensor pol_tensors, at::Tensor val_tensors){
-        // Get the policy and value tensors
-        // auto pol_tensors = net_out.at(0).toTensor();
-        pol_tensors = pol_tensors.softmax(1).cpu();
-
-        // auto val_tensors = net_out.at(1).toTensor();
-        val_tensors = val_tensors.cpu();
-
-        // Create the output
-        std::vector<std::unique_ptr<NNOut>> out;
-        for(int i = 0; i < pol_tensors.size(0); i++){
-            auto nnout = this->make_nnout_from_tensors(
-                pol_tensors[i], val_tensors[i]
-            );
-            out.push_back(std::move(nnout));
-        }
-        
-        return out;
-    }
-
-
-
-    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_batch(at::Tensor inp_tensor){
-
-
-        // Create the input value for the network
-        std::vector<torch::jit::IValue> inp({inp_tensor});
-
-        // Get the output from the network
-        auto net_out = this->net.forward(inp).toTuple()->elements();
-
-        // Get the policy and value tensors
-        auto pol_tensors = net_out.at(0).toTensor();
-        pol_tensors = pol_tensors.softmax(1).cpu();
-
-        auto val_tensors = net_out.at(1).toTensor();
-        val_tensors = val_tensors.cpu();
-
-        // Create the output
-        std::vector<std::unique_ptr<NNOut>> out;
-        for(int i = 0; i < inp_tensor.size(0); i++){
-            auto nnout = this->make_nnout_from_tensors(
-                pol_tensors[i], val_tensors[i]
-            );
-            out.push_back(std::move(nnout));
-        }
-        
-        return out;
-    }
-
-
-
-
-    at::Tensor Connect4NN::prepare_batch(std::vector<at::Tensor>& tensors){
-        auto inp_tensor = torch::stack(tensors, 0);
-
-        // if(!inp_tensor.is_cuda()){
-        //     inp_tensor = inp_tensor.cuda();
-        // }
-        return inp_tensor;
-    }
-
-
-    /**
-     * @brief Evaluate a list of states
-     * 
-     * @param boards 
-     * @return std::vector<std::unique_ptr<NNOut>> 
-     */
-    std::vector<std::unique_ptr<NNOut>> Connect4NN::eval_states(std::vector<Board> * boards){
-
-        // Convert the states to tensors
-        std::vector<at::Tensor> btensors;
-        for(auto &b: *boards){
-            btensors.push_back(this->state_to_tensor(b));
-        }
-
-        // Evaluate the tensors
-        return this->eval_tensors(btensors);
-    };
-
-
-    /**
-     * @brief Evaluate a single state
-     * 
-     * @param board 
-     * @return std::unique_ptr<NNOut> 
-     */
-    std::unique_ptr<NNOut> Connect4NN::eval_state(Board board) {
-        
-        // Convert the state to a tensor
-        auto btensor = this->state_to_tensor(board).unsqueeze(0).cuda();
-        
-        // Create the input value for the network
-        std::vector<torch::jit::IValue> inp({btensor});
-        
-        // Get the output from the network
-        auto net_out = this->net.forward(inp).toTuple()->elements();
-
-        // Get the policy and value tensors
-        auto pol_tensor = net_out.at(0).toTensor().cpu().squeeze(0);
-        pol_tensor = torch::softmax(pol_tensor, 0);
-
-        auto val_tensor = net_out.at(1).toTensor().cpu().squeeze(0);
-
-        // Create the output
-        return std::move(this->make_nnout_from_tensors(pol_tensor, val_tensor));
+    at::Tensor Connect4NN::pol_softmax(at::Tensor pol_tensor){
+        return pol_tensor.softmax(1);
     }
 
     /**
@@ -198,7 +29,7 @@ namespace nn{
      */
     std::unique_ptr<NNOut> Connect4NN::make_nnout_from_tensors(at::Tensor pol_tensor, at::Tensor val_tensor){
 
-        std::map<game::move_id, double> p;
+        move_dist p;
 
         game::move_id all_moves[7] = {
             1, 2, 3, 4, 5, 6, 7
@@ -215,7 +46,15 @@ namespace nn{
             val_tensor.item().toDouble()
         });
     }
-    
+
+    std::unique_ptr<NNOut> Connect4NN::make_nnout_from_tensors(
+        at::Tensor policy_tensor,
+        at::Tensor value_tensor,
+        std::vector<game::move_id> * legal_moves
+    ) {
+        return make_nnout_from_tensors(policy_tensor, value_tensor);
+    }
+
     /**
      * @brief Convert a state to a tensor
      * 
@@ -274,7 +113,7 @@ namespace nn{
      * @return at::Tensor 
      */
     at::Tensor Connect4NN::move_map_to_policy_tensor(
-        std::map<game::move_id, double> prob_map
+        move_dist prob_map
     ) {
         at::Tensor policy = torch::zeros({7});
 

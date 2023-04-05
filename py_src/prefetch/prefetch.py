@@ -10,73 +10,74 @@ init(autoreset=True)
 CACHED_DATA_PATH = Path("./cached_data")
 CACHED_DATA_PATH.mkdir(parents=True, exist_ok=True)
 
-def prefetch_generation(generation:int):
+# def prefetch_generation(generation:int):
 
-    db = DB()
-    states, policies, outcomes, moves_left, weights = db.prefetch_generation(generation)
+#     db = DB()
+#     states, policies, outcomes, moves_left, weights = db.prefetch_generation(generation)
 
-    print(f"Prefeched {states.shape[0]} samples for generation {Fore.GREEN}{generation}{Fore.RESET}.")
+#     print(f"Prefeched {states.shape[0]} samples for generation {Fore.GREEN}{generation}{Fore.RESET}.")
 
-    # Ensure that folders exist
+#     # Ensure that folders exist
 
-    torch.save(
-        Data(
-            states=states, 
-            policies=policies, 
-            outcomes=outcomes,
-            moves_left=moves_left,
-            weights=weights
-        ), 
-        CACHED_DATA_PATH/f"{generation}.pt"
-    )
+#     torch.save(
+#         Data(
+#             states=states, 
+#             policies=policies, 
+#             outcomes=outcomes,
+#             moves_left=moves_left,
+#             weights=weights
+#         ), 
+#         CACHED_DATA_PATH/f"{generation}.pt"
+#     )
 
 
 def generation_exists(generation:int):
-    return (CACHED_DATA_PATH/f"{generation}.pt").exists()
+    return (CACHED_DATA_PATH/f"{generation}").exists()
 
 
-def load_generation(generation:int):
+# def load_generation(generation:int):
     
-    if not generation_exists(generation):
-        prefetch_generation(generation)
+#     if not generation_exists(generation):
+
+#         prefetch_generation(generation)
 
 
-    data = torch.load(CACHED_DATA_PATH/f"{generation}.pt")
-    ok = False
-    try:
-        data.weights
-        ok = True
-    except:
-        pass
+#     data = torch.load(CACHED_DATA_PATH/f"{generation}.pt")
+#     ok = False
+#     try:
+#         data.weights
+#         ok = True
+#     except:
+#         pass
 
-    if ok:
-        return data
-    else:
-        new_data = Data(data.states, data.policies, data.outcomes, data.moves_left, torch.ones(data.states.shape[0]))
-        torch.save(new_data, CACHED_DATA_PATH/f"{generation}.pt")
-        return new_data
+#     if ok:
+#         return data
+#     else:
+#         new_data = Data(data.states, data.policies, data.outcomes, data.moves_left, torch.ones(data.states.shape[0]))
+#         torch.save(new_data, CACHED_DATA_PATH/f"{generation}.pt")
+#         return new_data
 
 
-def load_generations(generations:list):
-    """Loads multiple generations of data
+# def load_generations(generations:list):
+#     """Loads multiple generations of data
 
-    Args:
-        generations (list): _description_
+#     Args:
+#         generations (list): _description_
 
-    Returns:
-        tuple(Tensor*): Return states, policies, outcomes, games_left
-    """
+#     Returns:
+#         tuple(Tensor*): Return states, policies, outcomes, games_left
+#     """
 
-    generation_data = []
+#     generation_data = []
 
-    for generation in generations:
-        generation_data.append(load_generation(generation))
+#     for generation in generations:
+#         generation_data.append(load_generation(generation))
 
-    states = torch.concat([x.states for x in generation_data], 0)
-    policies = torch.concat([x.policies for x in generation_data], 0)
-    outcomes = torch.concat([x.outcomes for x in generation_data], 0)
-    moves_left = torch.concat([x.moves_left for x in generation_data], 0)
-    weights = torch.concat([x.weights for x in generation_data], 0)
+#     states = torch.concat([x.states for x in generation_data], 0)
+#     policies = torch.concat([x.policies for x in generation_data], 0)
+#     outcomes = torch.concat([x.outcomes for x in generation_data], 0)
+#     moves_left = torch.concat([x.moves_left for x in generation_data], 0)
+#     weights = torch.concat([x.weights for x in generation_data], 0)
 
-    return Data(states, policies, outcomes, moves_left, weights)
+#     return Data(states, policies, outcomes, moves_left, weights)
     
