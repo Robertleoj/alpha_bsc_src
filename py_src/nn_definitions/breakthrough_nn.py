@@ -47,11 +47,10 @@ class BreakthroughNN(nn.Module):
     def __init__(self, bsize=BSIZE):
         super().__init__()
 
-        
         middle_out_channels = 64
 
         self.middle = Middle([
-            2, 16, 32, 64, 128, 128, 128, 64, 
+            2, 128, 128, 128, 128, 128, 128, 128, 
             middle_out_channels
         ])
 

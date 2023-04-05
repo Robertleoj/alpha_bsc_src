@@ -24,4 +24,4 @@ vault/*/*/db.db
 vault/*/*/*.csv
 vault/*/*/training_data/
 vault/*/*.7z
-vault/*/test*
+vault/*/*test*
