@@ -1,13 +1,17 @@
 #include "./nn.h"
 #include "../utils/utils.h"
+#include <torch/csrc/jit/python/update_graph_executor_opt.h>
 
 
 namespace nn {
     NN::NN(std::string model_path){
         std::cout << "loading model from " << model_path << std::endl;
         this->net = torch::jit::load(model_path);
+        torch::jit::setGraphExecutorOptimize(true);
+        // this->net.setGraphExecutorOptimize();
         this->net.to(at::kCUDA);
         this->net.eval();
+        
     }
 
     c10::ivalue::TupleElements NN::run_batch(at::Tensor inp_tensor){
