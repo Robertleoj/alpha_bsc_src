@@ -8,9 +8,11 @@ namespace nn {
         std::cout << "loading model from " << model_path << std::endl;
         this->net = torch::jit::load(model_path);
         torch::jit::setGraphExecutorOptimize(true);
+
+        this->net.eval();
+        this->net = torch::jit::optimize_for_inference(this->net);
         // this->net.setGraphExecutorOptimize();
         this->net.to(at::kCUDA);
-        this->net.eval();
         
     }
 

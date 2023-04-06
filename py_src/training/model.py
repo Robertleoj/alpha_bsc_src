@@ -53,12 +53,12 @@ class Model:
 
     def save_nn(self):
         new_gen_path_train = self.model_path / f"{self.generation}.pt"
-        new_gen_path_infr = self.model_path / f"{self.generation}.pi"
+        # new_gen_path_infr = self.model_path / f"{self.generation}.pi"
         model = self.nn.eval()
         serialized = torch.jit.script(model)
         serialized.save(new_gen_path_train)
-        optimized = torch.jit.optimize_for_inference(serialized)
-        optimized.save(new_gen_path_infr)
+        # optimized = torch.jit.optimize_for_inference(serialized)
+        # optimized.save(new_gen_path_infr)
 
     def add_db_gen(self):
         self.db.add_generation(self.generation)

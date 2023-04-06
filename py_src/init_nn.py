@@ -23,13 +23,11 @@ if len(argv) > 2:
 if game == 'connect4':
     mdl = Connect4NN()
 
-    out_trash = mdl(torch.randn(1, 2, 6, 7))
     summary(mdl, (2, 6, 7))
     
 elif game == 'breakthrough':
     mdl = BreakthroughNN()
     
-    out_trash = mdl(torch.randn(1, 2, 8, 8))
     summary(mdl, (2, 8, 8))
 
 else:
@@ -41,6 +39,4 @@ else:
 print("Initialized model")
 
 serialized = torch.jit.script(mdl)
-optimized = torch.jit.optimize_for_inference(serialized)
 serialized.save(path / "0.pt")
-optimized.save(path / "0.pi")

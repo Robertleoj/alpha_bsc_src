@@ -15,16 +15,16 @@ void join_threads(std::vector<std::vector<std::thread>*> threads) {
 nn::NN* get_neural_net(std::string game, db::DB* db) {
 
     std::string model_path = utils::string_format(
-        "./models/%d.pi",
+        "./models/%d.pt",
         db->curr_generation
     );
 
-    if(!std::filesystem::exists(model_path)) {
-        model_path = utils::string_format(
-            "./models/%d.pt",
-            db->curr_generation
-        );
-    }
+    // if(!std::filesystem::exists(model_path)) {
+    //     model_path = utils::string_format(
+    //         "./models/%d.pt",
+    //         db->curr_generation
+    //     );
+    // }
 
     std::cout << "making neural net" << std::endl;
 
