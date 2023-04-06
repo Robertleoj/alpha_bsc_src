@@ -13,6 +13,7 @@ namespace nn {
         this->net = torch::jit::optimize_for_inference(this->net);
         // this->net.setGraphExecutorOptimize();
         this->net.to(at::kCUDA);
+        std::cout << "Loaded model" << std::endl;
         
     }
 
