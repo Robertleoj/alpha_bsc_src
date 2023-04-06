@@ -98,6 +98,8 @@ class Model:
             nn_pol = nn_pol.reshape(nn_pol.shape[0], -1)
             nn_pol = torch.log_softmax(nn_pol, 1)
 
+            policies = policies.reshape(policies.shape[0], -1)
+
             loss = loss_fn(nn_val, nn_pol, outcomes, policies, weights)
             loss.backward()
             optimizer.step()
@@ -120,5 +122,7 @@ class Model:
 
             if iteration > num_iterations:
                 break
+        
+        tqdm_dl.close()
 
 

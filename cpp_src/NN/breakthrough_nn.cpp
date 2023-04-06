@@ -7,6 +7,24 @@
 #include <set>
 
 
+std::tuple<int, int, int> move_id_to_pol_idx(game::move_id id, pp::Player player){
+    int from = id & 0b111111;
+    int to = (id >> 6) & 0b111111;
+
+    if(player == pp::Second){
+        from = 63 - from;
+        to = 63 - to;
+    }
+
+    int from_x = from % 8;
+    int from_y = from / 8;
+
+    int to_x = to % 8;
+
+    int ch = 1 + (to_x - from_x);
+
+    return std::make_tuple(ch, from_x, from_y);
+}
 
 namespace nn{
     
@@ -19,9 +37,9 @@ namespace nn{
 
     at::Tensor BreakthroughNN::pol_softmax(at::Tensor pol_tensor){
         return pol_tensor
-                .reshape({-1, 64 * 64})
+                .reshape({-1, 3 * 8 * 8})
                 .softmax(1)
-                .reshape({-1, 64, 64});
+                .reshape({-1,3, 8, 8});
     }
     /**
 
@@ -55,24 +73,12 @@ namespace nn{
     ){
         
         
-        nn::move_dist p;
-
-        auto move_id_to_idx = [player](game::move_id id){
-            
-            int from = id & 0b111111;
-            int to = ((id >> 6) & 0b111111);
-            if(player == pp::Second){
-                from = 63 - from;
-                to = 63 - to;
-            }
-
-            return std::make_pair(from, to);
-        };
+        move_dist p;
 
         double sm = 0;
         for(auto &id : *legal_moves){
-            auto [from, to] = move_id_to_idx(id);
-            double val = pol_tensor[from][to].item().toDouble();
+            auto [ch, from_x, from_y] = move_id_to_pol_idx(id, player);
+            double val = pol_tensor[ch][from_x][from_y].item().toDouble();
             p.emplace(id, val);
             sm += val;
         }
@@ -113,15 +119,15 @@ namespace nn{
        
         // iterate over the board and set the values
         for(int i = 0; i < bsize * bsize; i ++){
-            int row = i / bsize;
-            int col = i % bsize;
+            int y = i / bsize;
+            int x = i % bsize;
             
             if((x_board & 1) != 0){
-                out[0][row][col] = 1;
+                out[0][x][y] = 1;
             }
 
             if((o_board & 1) != 0){
-                out[1][row][col] = 1;
+                out[1][x][y] = 1;
             }
             
             x_board = x_board >> 1;
@@ -131,8 +137,8 @@ namespace nn{
         if(board.to_move == pp::Second){
             // flip the board if black
             out = out.flip(0);  // flip channels
-            out = out.flip(1);  // flip rows
-            out = out.flip(2);  // flip cols
+            out = out.flip(1);  // flip x
+            out = out.flip(2);  // flip y
         }
         
         return out;
@@ -148,20 +154,15 @@ namespace nn{
         move_dist prob_map,
         pp::Player player
     ) {
-        at::Tensor policy = torch::zeros({64, 64});
+
+        auto torchopt = torch::TensorOptions()
+            .dtype(torch::kFloat32);
+
+        at::Tensor policy = torch::zeros({3, 8, 8}, torchopt);
 
         for(auto &p : prob_map){
-            int from = p.first & 0b111111;
-            int to = (p.first >> 6) & 0b111111;
-
-            // flip board if black
-            if(player == pp::Second){
-                from = 63 - from;
-                to = 63 - to;
-            }
-
-            double prob = p.second;
-            policy[from][to] = prob;
+            auto [ch, from_x, from_y] = move_id_to_pol_idx(p.first, player);
+            policy[ch][from_x][from_y] = p.second;
         }
 
         // check that the policy tensor sums to 1

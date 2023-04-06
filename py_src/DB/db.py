@@ -33,7 +33,7 @@ def read_tensors(arg):
 
     return (
         tensor_from_blob(state),
-        tensor_from_blob(policy).reshape(-1),
+        tensor_from_blob(policy),
         outcome,
         moves_left,
         weights
