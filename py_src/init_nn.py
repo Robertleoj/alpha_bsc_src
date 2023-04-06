@@ -29,5 +29,8 @@ else:
 
 print("Initialized model")
 
+mdl = mdl.eval()
 serialized = torch.jit.script(mdl)
 serialized.save(path / "0.pt")
+optimized = torch.jit.optimize_for_inference(serialized)
+optimized.save(path / "0.pi")
