@@ -96,7 +96,8 @@ namespace nn {
     std::vector<std::unique_ptr<NNOut>> NN::net_out_to_nnout(
         at::Tensor pol_tensors, 
         at::Tensor val_tensors,
-        std::vector<std::vector<game::move_id> *> legal_moves
+        std::vector<std::vector<game::move_id> *> legal_moves,
+        std::vector<pp::Player> *to_move
     ){
         // Get the policy and value tensors
         // auto pol_tensors = net_out.at(0).toTensor();
@@ -144,7 +145,7 @@ namespace nn {
 
         for(int i= 0; i < pol_tensors.size(0); i++){
             ret.push_back(this->make_nnout_from_tensors(
-                pol_tensors[i], val_tensors[i], legal_moves[i]
+                pol_tensors[i], val_tensors[i], legal_moves[i], (*to_move)[i]
             ));
         }
         // t.stop();t.print();

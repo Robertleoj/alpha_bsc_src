@@ -50,7 +50,8 @@ namespace nn{
     std::unique_ptr<NNOut> Connect4NN::make_nnout_from_tensors(
         at::Tensor policy_tensor,
         at::Tensor value_tensor,
-        std::vector<game::move_id> * legal_moves
+        std::vector<game::move_id> * legal_moves,
+        pp::Player to_move
     ) {
         return make_nnout_from_tensors(policy_tensor, value_tensor);
     }
@@ -113,7 +114,8 @@ namespace nn{
      * @return at::Tensor 
      */
     at::Tensor Connect4NN::move_map_to_policy_tensor(
-        move_dist prob_map
+        move_dist prob_map,
+        pp::Player to_move
     ) {
         at::Tensor policy = torch::zeros({7});
 

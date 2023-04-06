@@ -2,10 +2,10 @@
     "PUCT_c" : 4,
 
     "batch_size": 1024,
-    "search_depth": 800,
+    "search_depth": 10,
 
-    "self_play_num_games" : 10000,
-    "games_per_thread" : 400,
+    "self_play_num_games" : 100,
+    "games_per_thread" : 40,
     "self_play_num_threads": 25,
     "num_dl_threads": 4,
     "num_nn_threads": 2,

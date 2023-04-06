@@ -15,7 +15,11 @@ db::TrainingSample get_training_sample(
     nn::NN* neural_net,
     double weight
 ) {
-    auto policy_tensor = neural_net->move_map_to_policy_tensor(normalized_visit_counts);
+    auto policy_tensor = neural_net->move_map_to_policy_tensor(
+        normalized_visit_counts,
+        board.to_move
+    );
+
     auto state_tensor = neural_net->state_to_tensor(board);
 
     db::TrainingSample ts = {
@@ -36,7 +40,10 @@ void endgame_update_training_sample(
     nn::move_dist move_map,
     nn::NN * neural_net
 ){
-    auto policy_tensor = neural_net->move_map_to_policy_tensor(move_map);
+    auto policy_tensor = neural_net->move_map_to_policy_tensor(
+        move_map,
+        sample->player
+    );
     sample->target_policy = policy_tensor;
     sample->weight = 1;
 }

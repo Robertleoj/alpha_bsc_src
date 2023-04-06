@@ -12,6 +12,7 @@ struct EvalRequest {
     at::Tensor state;
     std::unique_ptr<nn::NNOut> result;
     std::vector<game::move_id> * legal_moves;
+    pp::Player to_move;
 };
 
 struct Batch {
@@ -19,7 +20,9 @@ struct Batch {
     at::Tensor batch_tensor;
     std::pair<at::Tensor, at::Tensor> result;
     std::vector<std::vector<game::move_id> *> legal_moves;
+    std::vector<pp::Player> to_move;
 };
+
 
 struct BatchData {
     std::queue<Batch> batch_queue;

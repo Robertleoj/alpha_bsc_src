@@ -79,7 +79,6 @@ set(FILES
     games/breakthrough.h
     games/breakthrough.cpp
     games/connect4.h
-    games/connect4.cpp
     base/board.h
     MCTS/agent.cpp
     MCTS/agent.h
@@ -139,5 +138,11 @@ target_link_libraries(eval_agent
     PRIVATE common_sources
 )
 
+add_executable(test
+    test.cpp
+)
 
+target_link_libraries(test
+    PRIVATE common_sources
+)
 

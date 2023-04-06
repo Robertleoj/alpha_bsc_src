@@ -44,7 +44,6 @@ class UniformSampler:
         return data.state, data.policy, data.outcome, data.weight
 
 
-
 def get_sampler(generations):
     if config['sample_method'] == 'uniform':
         return UniformSampler(generations)
