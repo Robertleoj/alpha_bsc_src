@@ -2,10 +2,11 @@ from nn_definitions import Connect4NN, BreakthroughNN
 import torch
 from pathlib import Path
 from sys import argv
+from torchsummary import summary
 
 
 if len(argv) < 2:
-    print("Usage: python3 init_conn4_net.py <path_to_save_model>")
+    print("Usage: python3 init_conn4_net.py <path_to_save_model> [<game_name>]")
     exit(1)
 
 path = Path(argv[1])
@@ -21,16 +22,25 @@ if len(argv) > 2:
 
 if game == 'connect4':
     mdl = Connect4NN()
+
+    out_trash = mdl(torch.randn(1, 2, 6, 7))
+    summary(mdl, (2, 6, 7))
+    
 elif game == 'breakthrough':
     mdl = BreakthroughNN()
+    
+    out_trash = mdl(torch.randn(1, 2, 8, 8))
+    summary(mdl, (2, 8, 8))
+
 else:
     print("Game not supported")
     exit(1)
 
+# mdl.eval()
+
 print("Initialized model")
 
-mdl = mdl.eval()
 serialized = torch.jit.script(mdl)
-serialized.save(path / "0.pt")
 optimized = torch.jit.optimize_for_inference(serialized)
+serialized.save(path / "0.pt")
 optimized.save(path / "0.pi")

@@ -19,9 +19,9 @@
     "endgame_playout_shift": 11.0,
     "endgame_playout_slope": 8.4,
     "endgame_playout_uniform_const": -4.0,
-    "endgame_playout_uniform_generation": 300.0,
+    "endgame_playout_uniform_generation": 200.0,
     "endgame_playout_b": 0.595,
-    "endgame_playout_power": 2.0,
+    "endgame_playout_power": 1.0,
     "endgame_min_playouts": 50,
 
     "opening_softmax_temp": 1
