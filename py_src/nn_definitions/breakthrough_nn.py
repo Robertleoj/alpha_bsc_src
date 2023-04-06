@@ -8,8 +8,6 @@ board is an 2x8x8, where the first channel is the player's pieces, and the secon
 """
 
 
-BSIZE = 8
-
 class BreakthroughValueHead(nn.Module):
     def __init__(self, inp_channels) -> None:
         super().__init__()
@@ -30,7 +28,9 @@ class BreakthroughValueHead(nn.Module):
 class BreakthroughPolicyHead(nn.Module):
     def __init__(self, inp_channels) -> None:
         super().__init__()
+
         ch = 128
+
         self.out = nn.Sequential(
             ChannelChange(inp_channels, ch) if inp_channels != ch else nn.Identity(),
             ResNetBlock(ch),
@@ -45,7 +45,7 @@ class BreakthroughPolicyHead(nn.Module):
 
 
 class BreakthroughNN(nn.Module):
-    def __init__(self, bsize=BSIZE):
+    def __init__(self):
         super().__init__()
 
         middle_out_channels = 64

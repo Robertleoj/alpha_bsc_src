@@ -20,7 +20,6 @@ std::tuple<int, int, int> move_id_to_pol_idx(game::move_id id, pp::Player player
     int from_y = from / 8;
 
     int to_x = to % 8;
-    int to_y = to / 8;
 
     int ch = 1 + (to_x - from_x);
 
@@ -74,7 +73,7 @@ namespace nn{
     ){
         
         
-        nn::move_dist p;
+        move_dist p;
 
         double sm = 0;
         for(auto &id : *legal_moves){
@@ -120,15 +119,15 @@ namespace nn{
        
         // iterate over the board and set the values
         for(int i = 0; i < bsize * bsize; i ++){
-            int row = i / bsize;
-            int col = i % bsize;
+            int y = i / bsize;
+            int x = i % bsize;
             
             if((x_board & 1) != 0){
-                out[0][row][col] = 1;
+                out[0][x][y] = 1;
             }
 
             if((o_board & 1) != 0){
-                out[1][row][col] = 1;
+                out[1][x][y] = 1;
             }
             
             x_board = x_board >> 1;
@@ -138,8 +137,8 @@ namespace nn{
         if(board.to_move == pp::Second){
             // flip the board if black
             out = out.flip(0);  // flip channels
-            out = out.flip(1);  // flip rows
-            out = out.flip(2);  // flip cols
+            out = out.flip(1);  // flip x
+            out = out.flip(2);  // flip y
         }
         
         return out;
@@ -155,14 +154,15 @@ namespace nn{
         move_dist prob_map,
         pp::Player player
     ) {
-        at::Tensor policy = torch::zeros({3, 8, 8});
+
+        auto torchopt = torch::TensorOptions()
+            .dtype(torch::kFloat32);
+
+        at::Tensor policy = torch::zeros({3, 8, 8}, torchopt);
 
         for(auto &p : prob_map){
             auto [ch, from_x, from_y] = move_id_to_pol_idx(p.first, player);
-
-            // flip board if black
-            double prob = p.second;
-            policy[ch][from_x][from_y] = prob;
+            policy[ch][from_x][from_y] = p.second;
         }
 
         // check that the policy tensor sums to 1
