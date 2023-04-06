@@ -1,5 +1,8 @@
 #include "./mutual.h"
 #include "../utils/utils.h"
+#include <c10/cuda/CUDACachingAllocator.h>
+#include <cuda_runtime_api.h>
+#include <filesystem>
 
 void join_threads(std::vector<std::vector<std::thread>*> threads) {
     for (auto t : threads) {
@@ -12,9 +15,16 @@ void join_threads(std::vector<std::vector<std::thread>*> threads) {
 nn::NN* get_neural_net(std::string game, db::DB* db) {
 
     std::string model_path = utils::string_format(
-        "./models/%d.pt",
+        "./models/%d.pi",
         db->curr_generation
     );
+
+    if(!std::filesystem::exists(model_path)) {
+        model_path = utils::string_format(
+            "./models/%d.pt",
+            db->curr_generation
+        );
+    }
 
     std::cout << "making neural net" << std::endl;
 
@@ -156,6 +166,8 @@ void nn_thread_work(
 
         t1.reset();
         t2.reset();
+        // c10::cuda::CUDACachingAllocator::emptyCache();
+        // cudaDeviceReset();
 
         batch_result_queue_mutex->lock();
         batch_result_queue->push(batch);
