@@ -5,8 +5,8 @@
     "search_depth": 800,
 
     "self_play_num_games" : 10000,
-    "games_per_thread" : 200,
-    "self_play_num_threads": 50,
+    "games_per_thread" : 500,
+    "self_play_num_threads": 20,
     "num_dl_threads": 4,
     "num_nn_threads": 2,
     "num_return_threads": 4,
