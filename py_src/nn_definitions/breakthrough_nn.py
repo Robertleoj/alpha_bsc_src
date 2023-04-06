@@ -28,19 +28,20 @@ class BreakthroughValueHead(nn.Module):
         return self.out(x)
 
 class BreakthroughPolicyHead(nn.Module):
-    def __init__(self, inp_channels, bsize) -> None:
+    def __init__(self, inp_channels) -> None:
         super().__init__()
-        self.bsize = bsize
+        ch = 128
         self.out = nn.Sequential(
-            ChannelChange(inp_channels, bsize ** 2) if inp_channels != 64 else nn.Identity(),
-            ResNetBlock(64),
-            ResNetBlock(64),
-            ResNetBlock(64),
+            ChannelChange(inp_channels, ch) if inp_channels != ch else nn.Identity(),
+            ResNetBlock(ch),
+            ResNetBlock(ch),
+            ResNetBlock(ch),
+            ChannelChange(ch, 3)
         )
         
     def forward(self, x):
         x = self.out(x)
-        return x.reshape(-1, int(self.bsize ** 2), int(self.bsize ** 2))
+        return x
 
 
 class BreakthroughNN(nn.Module):
@@ -54,7 +55,7 @@ class BreakthroughNN(nn.Module):
             middle_out_channels
         ])
 
-        self.policy_head = BreakthroughPolicyHead(middle_out_channels, bsize)
+        self.policy_head = BreakthroughPolicyHead(middle_out_channels)
         self.value_head = BreakthroughValueHead(middle_out_channels)
 
     def forward(self, x):
