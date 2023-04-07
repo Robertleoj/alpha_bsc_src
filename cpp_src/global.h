@@ -1,3 +1,3 @@
 #pragma once
 
-extern const bool DEBUG;
+extern bool DEBUG;

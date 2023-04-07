@@ -13,7 +13,7 @@
 #include "./utils/utils.h"
 #include "./global.h"
 
-const bool DEBUG = false;
+bool DEBUG = false;
 
 
 std::string model_path(std::string model_name){

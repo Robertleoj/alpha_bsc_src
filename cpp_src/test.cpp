@@ -4,7 +4,7 @@
 #include "./base/types.h"
 
 
-const bool DEBUG = true;
+bool DEBUG = true;
 
 template <typename T>
 T get_rand(std::vector<T> vec){

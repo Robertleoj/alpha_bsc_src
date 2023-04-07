@@ -8,7 +8,7 @@
 #include "./global.h"
 #include "./utils/utils.h"
 
-const bool DEBUG = false;
+bool DEBUG = false;
 
 int main(int argc, char *argv[])
 {
@@ -29,8 +29,12 @@ int main(int argc, char *argv[])
     std::string game_name = "connect4";
 
     // get game name
-    if(argc == 3) {
+    if(argc >= 3) {
         game_name = argv[2];
+    }
+
+    if (argc == 4) {
+        DEBUG = true;
     }
 
     std::string run_path = "../vault/" + game_name + '/' + run_name;
