@@ -46,6 +46,7 @@ set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${LIBTORCH}")
 
 find_package(Torch REQUIRED)
 
+
 include_directories(".libs/gsl/include") #path to include folder
 
 link_directories(./.libs/gsl/lib)
@@ -145,4 +146,33 @@ add_executable(test
 target_link_libraries(test
     PRIVATE common_sources
 )
+
+if(NOT USERNAME STREQUAL "gimli")
+
+
+    # add_library(pybinds_sources OBJECT
+    #     ${FILES}
+    # )
+
+    execute_process(
+        COMMAND "python3" -c "import pybind11; print(pybind11.get_cmake_dir())"
+        OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_CMAKE_DIR})
+
+    find_package(pybind11 REQUIRED)
+
+    pybind11_add_module(player 
+        pybinds.cpp
+        ${FILES}
+    )
+
+    # target_link_libraries(player PRIVATE common_sources)
+
+    target_compile_options(player PRIVATE -fPIC)
+
+endif()
+
 

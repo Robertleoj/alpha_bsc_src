@@ -83,21 +83,35 @@ namespace mm {
         return os;
     }
 
-    inline std::istream& operator>>(
-        std::istream& is, 
-        Move& move
-    ) {
-        Square from, to;
-        char c ='\0';
+    // inline std::istream& operator>>(
+    //     std::istream& is, 
+    //     Move& move
+    // ) {
+    //     Square from, to;
+    //     char c ='\0';
 
-        is >> from >> c >> to;
+    //     is >> from >> c >> to;
 
-        switch ( c ) {
-            case '-' :  move = Move(from, to); break;
-            case 'x' :  move = Move(from, to, true); break;
-            default:    is.setstate(std::ios_base::failbit); break;
-        }
-        return is;
+    //     switch ( c ) {
+    //         case '-' :  move = Move(from, to); break;
+    //         case 'x' :  move = Move(from, to, true); break;
+    //         default:    is.setstate(std::ios_base::failbit); break;
+    //     }
+    //     return is;
+    // }
+
+    inline game::move_id from_str(const std::string& str) {
+
+        char from_file, from_rank, mid, to_file, to_rank;
+        std::stringstream ss(str);
+        ss >> from_file >> from_rank >> mid >> to_file >> to_rank;
+
+        int from = (from_file - 'a') + (from_rank - '1') * 8;
+        int to = (to_file - 'a') + (to_rank - '1') * 8;
+        int cap = (mid == 'x') ? 1 : 0;
+
+        return from | (to << 6) | (cap << 12);
+
     }
 
     inline std::string str(const Move& move) {

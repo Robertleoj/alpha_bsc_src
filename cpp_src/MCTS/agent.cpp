@@ -297,7 +297,10 @@ void Agent::search(int playout_cap, eval_f eval_func){
 
     auto [done, board] = this->init_mcts(playout_cap);
     while(!done){
-        auto evaluation = eval_func(board);
+        auto evaluation = eval_func(
+            board, 
+            &this->node_to_eval->legal_moves
+        );
         std::tie(done, board) = this->step(std::move(evaluation));
     }
 }

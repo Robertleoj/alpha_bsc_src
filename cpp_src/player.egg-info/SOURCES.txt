@@ -1,0 +1,5 @@
+setup.py
+player.egg-info/PKG-INFO
+player.egg-info/SOURCES.txt
+player.egg-info/dependency_links.txt
+player.egg-info/top_level.txt

@@ -1,10 +1,3 @@
-//
-// Created by Yngvi Björnsson on 7.5.2022.
-//
-// TO DO:
-//  - Not symmetrical move-generation order for White and Black (builtin find and clear)
-
-
 #pragma once
 #include <ostream>
 #include <string>

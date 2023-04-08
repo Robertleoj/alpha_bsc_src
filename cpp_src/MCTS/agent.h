@@ -6,7 +6,9 @@
 #include "../NN/nn.h"
 #include <map>
 
-typedef std::function<std::unique_ptr<nn::NNOut>(Board)> eval_f;
+typedef std::function<std::unique_ptr<nn::NNOut>(
+    Board, std::vector<game::move_id> *
+)> eval_f;
 
 class Agent {
 public:

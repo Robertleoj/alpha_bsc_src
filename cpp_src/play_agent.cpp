@@ -63,8 +63,13 @@ void play_user(std::string model_name){
 
     game::IGame* game = new games::Connect4();
 
-    auto efunc = [neural_net](Board b){
-        return std::move(neural_net->eval_state(b));
+    auto efunc = [neural_net](
+        Board b,
+        std::vector<game::move_id> * legal_moves
+    ){
+        return std::move(neural_net->eval_state(
+            b, legal_moves
+        ));
     };
 
     Agent agent(game);
@@ -131,12 +136,20 @@ void play_self(std::string m1, std::string m2){
 
     game::IGame* game = new games::Connect4();
 
-    auto efunc1 = [neural_net](Board b){
-        return std::move(neural_net->eval_state(b));
+    auto efunc1 = [neural_net](
+        Board b,
+        std::vector<game::move_id> * legal_moves
+    ){
+        return std::move(neural_net->eval_state(
+            b, legal_moves
+        ));
     };
 
-    auto efunc2 = [neural_net2](Board b){
-        return std::move(neural_net2->eval_state(b));
+    auto efunc2 = [neural_net2](
+        Board b,
+        std::vector<game::move_id> * legal_moves
+    ){
+        return std::move(neural_net2->eval_state(b, legal_moves));
     };
 
     Agent agent1(game, false);

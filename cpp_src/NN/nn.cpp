@@ -10,10 +10,10 @@ namespace nn {
         torch::jit::setGraphExecutorOptimize(true);
 
         this->net.eval();
-        this->net.to(at::kCUDA);
-        this->net = torch::jit::optimize_for_inference(this->net);
+	// this->net = torch::jit::optimize_for_inference(this->net);
         // this->net.setGraphExecutorOptimize();
         std::cout << "Loaded model" << std::endl;
+        this->net.to(at::kCUDA);
         
     }
 
@@ -69,7 +69,10 @@ namespace nn {
      * @param board 
      * @return std::unique_ptr<NNOut> 
      */
-    std::unique_ptr<NNOut> NN::eval_state(Board board) {
+    std::unique_ptr<NNOut> NN::eval_state(
+        Board board,
+        std::vector<game::move_id> *legal_moves
+    ) {
         
         // Convert the state to a tensor
         auto btensor = this->state_to_tensor(board).unsqueeze(0).cuda();
@@ -87,7 +90,12 @@ namespace nn {
         auto val_tensor = net_out.at(1).toTensor().cpu().squeeze(0);
 
         // Create the output
-        return std::move(this->make_nnout_from_tensors(pol_tensor, val_tensor));
+        return std::move(this->make_nnout_from_tensors(
+            pol_tensor, 
+            val_tensor,
+            legal_moves,
+            board.to_move
+        ));
     }
 
     at::Tensor NN::prepare_batch(std::vector<at::Tensor>& tensors){

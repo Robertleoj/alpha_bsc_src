@@ -28,7 +28,10 @@ namespace nn {
         NN(std::string model_path);
         c10::ivalue::TupleElements run_batch(at::Tensor);
         std::vector<std::unique_ptr<NNOut>> eval_batch(at::Tensor);
-        std::unique_ptr<NNOut> eval_state(Board board);
+        std::unique_ptr<NNOut> eval_state(
+            Board board,
+            std::vector<game::move_id> * legal_moves
+        );
         at::Tensor prepare_batch(std::vector<at::Tensor>&);
         std::vector<std::unique_ptr<NNOut>> net_out_to_nnout(
             at::Tensor, 
