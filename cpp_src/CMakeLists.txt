@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(AlphaBSc)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-Wall -O3 -Wextra -pthread -pipe -march=native")# -DNDEBUG")
+set(CMAKE_CXX_FLAGS "-Wall -Ofast -O3 -Wextra -pthread -pipe -march=native")# -DNDEBUG")
 # set(CMAKE_CXX_FLAGS " -O3") #-DNDEBUG
 
 set(USERNAME $ENV{USER})
@@ -87,6 +87,12 @@ set(FILES
     MCTS/mc_node.h
     MCTS/mc_tree.cpp
     MCTS/mc_tree.h
+    vanilla_MCTS/v_agent.h
+    vanilla_MCTS/v_agent.cpp
+    vanilla_MCTS/v_mc_node.h
+    vanilla_MCTS/v_mc_node.cpp
+    vanilla_MCTS/v_mc_tree.h
+    vanilla_MCTS/v_mc_tree.cpp
     NN/connect4_nn.h
     NN/connect4_nn.cpp
     NN/nn.h

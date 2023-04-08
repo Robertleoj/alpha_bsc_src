@@ -31,11 +31,11 @@ class Board:
             return self.alternate_history[self.alternate_idx]
         return self.history[self.grid_idx]
 
-    def add_move(self):
+    def add_move(self, always_alternate=False):
         if self.alternate_idx is not None:
             self.alternate_history.append(self.alternate_history[-1].copy())
             self.alternate_idx += 1
-        elif self.grid_idx < len(self.history) - 1:
+        elif self.grid_idx < len(self.history) - 1 or always_alternate:
             self.alternate_history = [self.grid.copy()]
             self.alternate_idx = 0
             print("adding to alternate history")
@@ -49,12 +49,12 @@ class Board:
     def white_material(self):
         return np.sum(self.grid == PW)
 
-    def move(self, f, t):
+    def move(self, f, t, always_alternate = False):
 
         if not self.is_legal(f, t):
             print(f"Illegal move, at {self.grid_idx}, from {f} to {t}")
 
-        self.add_move()
+        self.add_move(always_alternate)
         # self.history.append(self.grid.copy())
         # self.grid_idx += 1
 
@@ -162,6 +162,12 @@ class Board:
 
     def in_alternate(self):
         return self.alternate_idx is not None
+
+    def on_last_real_move(self):
+        return (
+            not self.in_alternate() 
+            and self.grid_idx == len(self.history) - 1
+        )
 
     def reset(self):
         self.__init__()
@@ -434,7 +440,7 @@ class Game:
         self.draw_to_move()
         self.draw_material()
 
-    def handle_mouseup(self, pos):
+    def handle_mouseup(self, pos, always_alternate=False):
 
         self.mousedown = False
 
@@ -450,7 +456,7 @@ class Game:
 
         move = None
         if self.board.is_legal(self.holding_piece, (x, y)):
-            move = self.board.move(self.holding_piece, (x, y))
+            move = self.board.move(self.holding_piece, (x, y), always_alternate)
             
 
         self.holding_piece = None
@@ -589,7 +595,7 @@ class Game:
                         ai.update(move)
                         self.draw()
                         pygame.display.update()
-                        ai_move = ai.get_and_make_move(800)
+                        ai_move = ai.get_and_make_move()
                         print("AI move: ", ai_move)
 
                         move_f, move_t = self.get_coords(ai_move)
@@ -608,7 +614,58 @@ class Game:
             pygame.display.update()
             clock.tick(60)
 
+    def play_aiai(self, ai1, ai2):
+        clock = self.get_clock()
+        self.draw()
+        pygame.display.update()
+        players = [ai1, ai2]
+        player_idx = 0
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.handle_mousedown(event.pos)
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    move = self.handle_mouseup(event.pos, always_alternate=True)
+                if event.type == pygame.KEYDOWN:
+                    # right arrow to see next move
+                    if event.key == pygame.K_RIGHT:
+                        
+                        if self.board.on_last_real_move():            
+                            print(f"AI {player_idx} moving...")
+                            ai_move = players[player_idx].get_and_make_move()
+                            print(f"AI {player_idx} move: ", ai_move)
+                            move_f, move_t = self.get_coords(ai_move)
+                            self.board.move(move_f, move_t)
+                            player_idx = (player_idx + 1) % 2
+                            players[player_idx].update(ai_move)
+                        else:
+                            self.board.redo()
 
+                    if event.key == pygame.K_LEFT:
+                        self.board.undo()
+
+            self.draw()
+            pygame.display.update()
+            clock.tick(60)
+
+
+def get_agent(args:list[str]):
+    if args.pop() == 'ai':
+        run_name = args.pop()
+        gen = int(args.pop())
+        pwd = os.getcwd()
+        os.chdir(f"../vault/breakthrough/{run_name}")
+        playouts = int(args.pop())
+        agent = player.GamePlayer(gen, playouts)
+        os.chdir(pwd)
+        return agent
+    else:
+        playouts = int(args.pop())
+        return player.VanillaPlayer(playouts)
+        
 
 if __name__ == "__main__":
 
@@ -619,7 +676,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigint_handler)
 
 
-    print(argv)
     if len(argv) == 2 and argv[1] == 'str':
         print("Game string mode")
         game_str = input()
@@ -637,13 +693,22 @@ if __name__ == "__main__":
             play_black = True
 
 
-        game = Game()
+        game = Game(800)
 
         os.chdir(f"../vault/breakthrough/{run_name}")
         ai = player.GamePlayer(gen)
 
         game.play_ai(ai, play_black)
 
+    elif len(argv) >= 2 and argv[1] == 'aiai':
+        args = list(reversed(argv[2:]))
+        
+        agent1 = get_agent(args)
+        agent2 = get_agent(args)
+
+        game = Game()
+
+        game.play_aiai(agent1, agent2)
 
     else:
         game = Game()

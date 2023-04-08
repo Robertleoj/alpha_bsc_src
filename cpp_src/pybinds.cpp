@@ -10,6 +10,7 @@
 #include "./games/breakthrough.h"
 #include "./games/move.h"
 #include "./config/config.h"
+#include "./vanilla_MCTS/v_agent.h"
 
 
 bool DEBUG = false;
@@ -22,8 +23,9 @@ std::string model_path(int gen){
 
 class GamePlayer {
 public: 
-    GamePlayer(int gen) {
+    GamePlayer(int gen, int playouts) {
         config::initialize();
+        this->playouts = playouts;
         this->game = new games::Breakthrough();
         std::string mdl_path = model_path(gen);
         this->neural_net = new nn::BreakthroughNN(mdl_path);
@@ -41,10 +43,10 @@ public:
         );
     }
 
-    std::string get_and_make_move(int playout_cap) {
+    std::string get_and_make_move() {
 
         this->agent->search(
-            playout_cap, 
+            this->playouts, 
             this->efunc
         );
          
@@ -71,7 +73,6 @@ public:
 
     void update(std::string move){
         game::move_id move_id = mm::from_str(move);
-        std::cout << "converted back: " << game->move_as_str(move_id) << std::endl;
         game->make(move_id);
         agent->update_tree(move_id);
     }
@@ -82,13 +83,51 @@ private:
     nn::NN * neural_net;
     game::IGame * game;
     eval_f efunc;
+    int playouts;
 };
+
+class VanillaPlayer {
+public:
+    VanillaPlayer(int playouts){
+        this->game = new games::Breakthrough();
+        this->playouts = playouts;
+        this->agent = new VAgent(
+            this->game
+        );
+    }
+
+    std::string get_and_make_move(){
+        game::move_id move = this->agent->get_move(this->playouts);
+        this->game->make(move);
+        this->agent->update_tree(move);
+
+        std::string move_str = game->move_as_str(move);
+        return move_str;
+    }
+
+    void update(std::string move){
+        game::move_id move_id = mm::from_str(move);
+        game->make(move_id);
+        agent->update_tree(move_id);
+    }
+
+private:
+    VAgent * agent;
+    game::IGame * game;
+    int playouts;
+};
+
 
 PYBIND11_MODULE(player, m){
     m.doc() = "Play with agent";
 
     py::class_<GamePlayer>(m, "GamePlayer")
-        .def(py::init<int>())
+        .def(py::init<int, int>())
         .def("get_and_make_move", &GamePlayer::get_and_make_move)
         .def("update", &GamePlayer::update);
+
+    py::class_<VanillaPlayer>(m, "VanillaPlayer")
+        .def(py::init<int>())
+        .def("get_and_make_move", &VanillaPlayer::get_and_make_move)
+        .def("update", &VanillaPlayer::update);
 }
