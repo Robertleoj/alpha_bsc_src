@@ -23,6 +23,7 @@ class Board:
         self.grid[:, :2] = PB
         self.grid[:, -2:] = PW
         self.over = False
+        self.winner = None
 
     @property
     def grid(self):
@@ -30,6 +31,9 @@ class Board:
         if self.alternate_idx is not None:
             return self.alternate_history[self.alternate_idx]
         return self.history[self.grid_idx]
+
+    def game_over(self):
+        return self.over
 
     def add_move(self, always_alternate=False):
         if self.alternate_idx is not None:
@@ -72,11 +76,14 @@ class Board:
 
         self.grid[x2][y2] = curr
 
-        if y2 == 0 and curr == PW:
-            self.over = True
+        # if y2 == 0 and curr == PW:
+        #     self.over = True
+        #     self.winner = PW
 
-        if y2 == 7 and curr == PB:
-            self.over = True
+        # if y2 == 7 and curr == PB:
+        #     self.over = True
+        #     self.winner = PB
+        self.check_win()
 
         self.turn *= -1
 
@@ -88,6 +95,29 @@ class Board:
         letter = chr(ord('a') + x)
         n = 8 - y
         return letter + str(n)
+
+    def check_win(self):
+        if self.black_material() == 0:
+            print("No black material")
+            self.over = True
+            self.winner = PW
+
+        if self.white_material() == 0:
+            print("No white material")
+            self.over = True
+            self.winner = PB
+
+
+        if (self.grid[:,0] == PW).any():
+            print("White backrank")
+            self.over = True
+            self.winner = PW
+
+        if (self.grid[:,-1] == PB).any():
+            print("Black backrank") 
+            self.over = True
+            self.winner = PB
+
 
 
     def undo(self):
@@ -104,6 +134,9 @@ class Board:
             self.grid_idx -= 1
             self.turn *= -1
 
+        self.over = False
+        self.winner = None
+
     def redo(self):
         if self.alternate_idx is not None:
             return
@@ -111,6 +144,8 @@ class Board:
         if self.grid_idx < len(self.history) - 1:
             self.grid_idx += 1
             self.turn *= -1
+
+        self.check_win()
 
     def beginning(self):
         self.alternate_history = None
@@ -210,6 +245,7 @@ class Game:
 
         self.wpawn = self.get_pawn("white")
         self.bpawn = self.get_pawn("black")
+        self.crown = self.get_crown()
 
         pygame.display.set_caption("Breakthrough")
 
@@ -218,6 +254,12 @@ class Game:
         pawn = pygame.image.load(img_path)
         pawn = pygame.transform.scale(pawn, (self.cell_width, self.cell_width))
         return pawn
+
+    def get_crown(self):
+        img_path = f"assets/SuperCrown.png"
+        crown = pygame.image.load(img_path)
+        crown = pygame.transform.scale(crown, (self.cell_width, self.cell_width))
+        return crown
 
 
     def draw_coordinates(self):
@@ -374,6 +416,8 @@ class Game:
 
 
     def draw_to_move(self):
+        if self.board.game_over(): 
+            return
         # draw who's turn it is
         if self.board.turn == PW:
             text = pygame.font.SysFont("comicsans", 40).render(
@@ -423,8 +467,19 @@ class Game:
             ),
         )
 
-
-
+    def draw_crown(self):
+        # if the game is over, draw a crown on the right side of the board, on the winning side
+        if self.board.game_over():
+            if self.board.winner == PB:
+                self.screen.blit(
+                    self.crown,
+                    (self.board_start + self.board_width + 10, self.board_start),
+                )
+            else:
+                self.screen.blit(
+                    self.crown,
+                    (self.board_start + self.board_width + 10, self.board_start + self.board_height - self.cell_width),
+                )
 
     def draw(self):
 
@@ -439,8 +494,12 @@ class Game:
         self.draw_pieces()
         self.draw_to_move()
         self.draw_material()
+        self.draw_crown()
 
     def handle_mouseup(self, pos, always_alternate=False):
+        
+        if self.board.game_over():
+            return
 
         self.mousedown = False
 
@@ -464,6 +523,9 @@ class Game:
         return move
 
     def handle_mousedown(self, pos):
+        
+        if self.board.game_over():
+            return
 
         self.mousedown = True
 
@@ -590,17 +652,21 @@ class Game:
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     move = self.handle_mouseup(event.pos)
 
-                    print("Human move: ", move)
-                    if not self.board.in_alternate() and move is not None:
-                        ai.update(move)
-                        self.draw()
-                        pygame.display.update()
-                        ai_move = ai.get_and_make_move()
-                        print("AI move: ", ai_move)
 
-                        move_f, move_t = self.get_coords(ai_move)
 
-                        self.board.move(move_f, move_t)
+                    if move is not None and not self.board.game_over():
+                        print("Human move: ", move)
+                        if not self.board.in_alternate():
+                            ai.update(move)
+                            self.draw()
+                            pygame.display.update()
+                            print(f"AI moving...")
+                            ai_move = ai.get_and_make_move()
+                            print("AI move: ", ai_move)
+
+                            move_f, move_t = self.get_coords(ai_move)
+
+                            self.board.move(move_f, move_t)
 
                 if event.type == pygame.KEYDOWN:
                     # right arrow to see next move
@@ -625,15 +691,17 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
+
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     self.handle_mousedown(event.pos)
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     move = self.handle_mouseup(event.pos, always_alternate=True)
+
                 if event.type == pygame.KEYDOWN:
                     # right arrow to see next move
                     if event.key == pygame.K_RIGHT:
                         
-                        if self.board.on_last_real_move():            
+                        if self.board.on_last_real_move() and not self.board.game_over():            
                             print(f"AI {player_idx} moving...")
                             ai_move = players[player_idx].get_and_make_move()
                             print(f"AI {player_idx} move: ", ai_move)
@@ -683,21 +751,14 @@ if __name__ == "__main__":
         game = Game()
         game.play(game_str)
     elif len(argv) >= 2 and argv[1] == 'ai':
-        run_name = argv[2]
+        
 
-        gen = int(argv[3])
+        play_black = argv[2] == 'black'
 
-        play_black = False
-        if len(argv) == 5:
-            print("Playing as black")
-            play_black = True
+        args = list(reversed(argv[3:]))
+        ai = get_agent(args)
 
-
-        game = Game(800)
-
-        os.chdir(f"../vault/breakthrough/{run_name}")
-        ai = player.GamePlayer(gen)
-
+        game = Game()
         game.play_ai(ai, play_black)
 
     elif len(argv) >= 2 and argv[1] == 'aiai':

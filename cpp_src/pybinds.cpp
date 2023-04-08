@@ -21,6 +21,12 @@ std::string model_path(int gen){
     return utils::string_format("./models/%d.pt", gen);
 }
 
+template <typename K, typename V>
+void print_map_sorted(std::unordered_map<K, V> mp){
+
+
+}
+
 class GamePlayer {
 public: 
     GamePlayer(int gen, int playouts) {
@@ -51,6 +57,28 @@ public:
         );
          
         auto visit_counts = this->agent->root_visit_counts();
+        auto prior = this->agent->tree->root->p_map;
+        
+        // for(auto &p : prior) {
+        //     std::cout << p.first << " " << p.second << std::endl;
+        // }
+
+
+        // create a set with a lambda function to sort the values
+        auto value_comparator = [](const auto& a, const auto& b) { return a.second < b.second; };
+
+        std::set<std::pair<game::move_id, double>, decltype(value_comparator)> stuff(prior.begin(), prior.end(), value_comparator);
+
+        // print the map in sorted order of values
+        std::cout << "Prior:" << std::endl;
+        for (const auto& pair : stuff) {
+            std::cout << this->game->move_as_str(pair.first) << ": " << pair.second << std::endl;
+        }
+
+
+        double val = this->agent->tree->root->value_approx;
+        std::cout << "Value: " << val << std::endl;
+
 
         game::move_id best_move;
         int best_visit_count = -1;
