@@ -11,6 +11,10 @@
 RUNPATH=/home/gimli/AlphaBSc/alpha_bsc_src
 
 cd $RUNPATH
+cd cpp_src
+cmake .
+make -j12
+cd ..
 
 source ./py_src/.venv/bin/activate
 
