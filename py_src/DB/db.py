@@ -213,7 +213,7 @@ class DB:
 
         tasks = [(file, generation) for file in game_files]
             
-        with Pool(cpu_count()//2) as p:
+        with Pool(cpu_count()) as p:
             total_positions = sum(tqdm(p.imap_unordered(self.save_file_tensors, tasks, chunksize=16), total=len(game_files), desc="Making tensors"))
             
 

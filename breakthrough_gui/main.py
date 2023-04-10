@@ -634,7 +634,7 @@ class Game:
         pygame.display.update()
 
         if play_black:
-            ai_move = ai.get_and_make_move(800)
+            ai_move = ai.get_and_make_move()
             print("AI move: ", ai_move)
             move_f, move_t = self.get_coords(ai_move)
             self.board.move(move_f, move_t)
