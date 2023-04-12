@@ -554,7 +554,8 @@ class Game:
                     self.handle_mousedown(event.pos)
 
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    self.handle_mouseup(event.pos)
+                    move = self.handle_mouseup(event.pos)
+                    print(move)
 
 
                 # reset board on 'r'
@@ -613,8 +614,7 @@ class Game:
                     self.handle_mousedown(event.pos)
 
                 if event.type == pygame.MOUSEBUTTONUP:
-                    move = self.handle_mouseup(event.pos)
-                    print(move)
+                    self.handle_mouseup(event.pos)
 
                 if event.type == pygame.KEYDOWN:
                     # right arrow to see next move
