@@ -613,7 +613,8 @@ class Game:
                     self.handle_mousedown(event.pos)
 
                 if event.type == pygame.MOUSEBUTTONUP:
-                    self.handle_mouseup(event.pos)
+                    move = self.handle_mouseup(event.pos)
+                    print(move)
 
                 if event.type == pygame.KEYDOWN:
                     # right arrow to see next move
@@ -719,6 +720,38 @@ class Game:
             pygame.display.update()
             clock.tick(60)
 
+    def play_aiai2(self, ai1, ai2):
+        clock = self.get_clock()
+        self.draw()
+        pygame.display.update()
+        players = [ai1, ai2]
+        player_idx = 0
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.handle_mousedown(event.pos)
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    move = self.handle_mouseup(event.pos, always_alternate=True)
+
+                    # right arrow to see next move
+                
+            if self.board.on_last_real_move() and not self.board.game_over():            
+                print(f"AI {player_idx} moving...")
+                ai_move = players[player_idx].get_and_make_move()
+                print(f"AI {player_idx} move: ", ai_move)
+                move_f, move_t = self.get_coords(ai_move)
+                self.board.move(move_f, move_t)
+                player_idx = (player_idx + 1) % 2
+                players[player_idx].update(ai_move)
+
+            self.draw()
+            pygame.display.update()
+            clock.tick(60)
+
 
 def get_agent(args:list[str]):
     if args.pop() == 'ai':
@@ -770,6 +803,16 @@ if __name__ == "__main__":
         game = Game()
 
         game.play_aiai(agent1, agent2)
+
+    elif len(argv) >= 2 and argv[1] == 'aiai2':
+        args = list(reversed(argv[2:]))
+        
+        agent1 = get_agent(args)
+        agent2 = get_agent(args)
+
+        game = Game()
+
+        game.play_aiai2(agent1, agent2)
 
     else:
         game = Game()
