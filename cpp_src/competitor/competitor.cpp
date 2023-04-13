@@ -22,10 +22,12 @@ Competitor::Competitor(
     std::filesystem::current_path(run_path);
     config::initialize();
 
+    this->results = std::vector(num_agents, 0.0);
+    this->dead = std::vector(num_agents, false);
+
     for(int i = 0; i < num_agents; i++) {
         this->games.push_back(game_name == "connect4" ? (game::IGame *)(new games::Connect4()) : (game::IGame *)(new games::Breakthrough()));
         this->agents.push_back(new Agent(this->games[i],false));
-        this->dead.push_back(false);
     }
 
     std::filesystem::path nn_path = std::filesystem::current_path() / "models" / utils::string_format("%d.pt", generation);
@@ -110,6 +112,7 @@ std::vector<std::string> Competitor::make_and_get_moves() {
 
                         delete this->agents[i];
                         delete this->games[i];
+                        this->num_dead++;
                         this->dead[i] = true;
                     } else {
                         this->agents[i]->update_tree(best_move);
@@ -124,7 +127,7 @@ std::vector<std::string> Competitor::make_and_get_moves() {
             }
         }
 
-        if(moves_left > 0) {
+        if(states.size() > 0) {
             at::Tensor batch = this->neural_net->prepare_batch(states);
             auto batch_result = this->neural_net->run_batch(batch);
 

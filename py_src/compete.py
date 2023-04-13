@@ -1,31 +1,91 @@
 import player
 from sys import argv
+import json
 
+from tqdm import tqdm
 
+def play_openings(p1, p2, openings):
+
+    for opening in tqdm(zip(*openings), desc="Playing openings"):
+        p1.update(opening)
+        p2.update(opening)
+
+def get_openings():
+    with open("../db/openings.json", 'r') as f:
+        return json.load(f)
+
+def compete(p1, p2, openings):
+    play_openings(p1, p2, openings)
+    games = [[] for _ in range(len(openings))]
+
+    current_player = 0
+    players = [p1, p2]
+    tq = tqdm(desc="Competing")
+    while True:
+        moves = players[current_player].make_and_get_moves()
+
+        # print(f"Agent {current_player} moves: ")
+        # print(moves)
+
+        if all([move == '' for move in moves]):
+            return games
+
+        for i, move in enumerate(moves):
+            if move == '':
+                continue
+            games[i].append(move)
+        
+        players[1 - current_player].update(moves)
+        current_player = 1 - current_player
+        tq.update(1)
 
 def main():
 
-    if(len(argv) < 7):
+    if(len(argv) != 7):
         print("Usage: ")
-        print("python3 compete.py <game_name> <playouts> <num_agents> <run_name_1> <gen_1> <run_name_2> <gen_2>")
+        print("python3 compete.py <game_name> <playouts> <run_name_1> <gen_1> <run_name_2> <gen_2>")
 
     game_name = argv[1]
     playouts = int(argv[2])
-    num_agents = int(argv[3])
-    run_name_1 = argv[4]
-    gen_1 = int(argv[5])
-    run_name_2 = argv[6]
-    gen_2 = int(argv[7])
+    run_name_1 = argv[3]
+    gen_1 = int(argv[4])
+    run_name_2 = argv[5]
+    gen_2 = int(argv[6])
+
+    openings = get_openings()
+
+    print(f"Playing {len(openings)} openings on both sides")
+
+    num_agents = len(openings)
 
     p1 = player.Competitor(run_name_1, game_name, gen_1, num_agents, playouts)
     p2 = player.Competitor(run_name_2, game_name, gen_2, num_agents, playouts)
 
-    moves1 = p1.make_and_get_moves()
-    print(moves1)
-    p2.update(moves1)
-    moves2 = p2.make_and_get_moves()
-    print(moves2)
+    games1 = compete(p1, p2, openings)
+
+    p1_results = p1.get_results()
+    p2_results = p2.get_results()
+
+    print("Player 1: ", sum(p1_results)/len(p1_results))
+    print("Player 2: ", sum(p2_results)/len(p2_results))
+
+    print("Switching sides...")
+
+    p1 = player.Competitor(run_name_1, game_name, gen_1, num_agents, playouts)
+    p2 = player.Competitor(run_name_2, game_name, gen_2, num_agents, playouts)
+
+    games2 = compete(p2, p1, openings)
     
+    p1_results += p1.get_results()
+    p2_results += p2.get_results()
+
+    print("Player 1: ", p1_results)
+    print("Player 2: ", p2_results)
+    print("Player 1: ", sum(p1_results)/len(p1_results), len(p1_results))
+    print("Player 2: ", sum(p2_results)/len(p2_results), len(p2_results))
+
+
+
 
 if __name__ == "__main__":
     main()
