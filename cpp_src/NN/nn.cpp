@@ -10,10 +10,10 @@ namespace nn {
         torch::jit::setGraphExecutorOptimize(true);
 
         this->net.eval();
-	this->net = torch::jit::optimize_for_inference(this->net);
+        this->net.to(at::kCUDA);
+        this->net = torch::jit::optimize_for_inference(this->net);
         // this->net.setGraphExecutorOptimize();
         std::cout << "Loaded model" << std::endl;
-        this->net.to(at::kCUDA);
     }
 
     c10::ivalue::TupleElements NN::run_batch(at::Tensor inp_tensor){

@@ -1,6 +1,7 @@
 import player
 from sys import argv
 import json
+from utils import CompetitionResult, CompetitionResultPlayer
 
 from tqdm import tqdm
 
@@ -38,6 +39,54 @@ def compete(p1, p2, openings):
         players[1 - current_player].update(moves)
         current_player = 1 - current_player
         tq.update(1)
+
+def compete_result(game_name, playouts, run_name_1, gen_1, run_name_2, gen_2):
+    openings = get_openings()
+
+    print(f"Playing {len(openings)} openings on both sides")
+
+    num_agents = len(openings)
+
+    p1 = player.Competitor(run_name_1, game_name, gen_1, num_agents, playouts)
+    p2 = player.Competitor(run_name_2, game_name, gen_2, num_agents, playouts)
+
+    games1 = compete(p1, p2, openings)
+
+    p1_white_results = p1.get_results()
+    p2_black_results = p2.get_results()
+
+    # p1_results = p1.get_results()
+    # p2_results = p2.get_results()
+
+    # print("Player 1: ", sum(p1_results)/len(p1_results))
+    # print("Player 2: ", sum(p2_results)/len(p2_results))
+
+    print("Switching sides...")
+
+    p1 = player.Competitor(run_name_1, game_name, gen_1, num_agents, playouts)
+    p2 = player.Competitor(run_name_2, game_name, gen_2, num_agents, playouts)
+
+    games2 = compete(p2, p1, openings)
+    
+    p1_black_results = p1.get_results()
+    p2_white_results = p2.get_results()
+
+    mean = lambda x: sum(x)/len(x)
+
+    print(f"Player 1: white={mean(p1_white_results)}, black={mean(p1_black_results)}")
+    print(f"Player 2: white={mean(p2_white_results)}, black={mean(p2_black_results)}")
+
+    p1_results = p1_white_results + p1_black_results
+    p2_results = p2_white_results + p2_black_results
+
+    print("Player 1: ", mean(p1_results))
+    print("Player 2: ", mean(p2_results))
+
+    return CompetitionResult(
+        CompetitionResultPlayer(p1_white_results, p1_black_results),
+        CompetitionResultPlayer(p2_white_results, p2_black_results)
+    )
+
 
 def main():
 
@@ -83,8 +132,6 @@ def main():
     print("Player 2: ", p2_results)
     print("Player 1: ", sum(p1_results)/len(p1_results), len(p1_results))
     print("Player 2: ", sum(p2_results)/len(p2_results), len(p2_results))
-
-
 
 
 if __name__ == "__main__":

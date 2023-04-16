@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import sys
 import os
 import shutil
+from pathlib import Path
 
 @dataclass
 class Data:
@@ -13,6 +14,16 @@ class Data:
     outcome: torch.Tensor
     moves_left: torch.Tensor
     weight: torch.Tensor
+
+@dataclass
+class CompetitionResultPlayer:
+    white: list[float]
+    black: list[float]
+
+@dataclass 
+class CompetitionResult:
+    p1: CompetitionResultPlayer
+    p2: CompetitionResultPlayer
 
 def cmd_exists(cmd):
     return shutil.which(cmd) is not None
@@ -54,10 +65,14 @@ def dynamic_window_gen(generation: int):
         
 def set_run(run_name, game):
 
-    if not os.path.exists(f"../vault/{game}/{run_name}"):
+    run_path = Path(f"../vault/{game}/{run_name}")
+    print(f"Setting run to {run_name} for game {game}, path {run_path}")
+
+    if not run_path.exists():
         print("Run does not exist! Exiting")
         exit(1)
 
-    os.chdir(f"../vault/{game}/{run_name}")
+
+    os.chdir(run_path)
     config.initialize("py_config.json")
 
