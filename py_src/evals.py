@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import set_run
+import torch
 from prefetch import load_generation
 import sys
 import json
