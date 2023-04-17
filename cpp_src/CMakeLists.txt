@@ -113,6 +113,8 @@ set(FILES
     sqlite/sqlite3.h
     sqlite/sqlite3.c
     global.h
+    competitor/competitor.h
+    competitor/competitor.cpp
 )
 
 add_library(common_sources OBJECT

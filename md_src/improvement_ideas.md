@@ -2,21 +2,15 @@
 
 # Self-play
 
+## Playout cap randomization
 ## Dynamic training window
+
 ## States later in the game - new
 
-
-## Synthetic data
+# Maybe
 ## Increasing MCTS playouts through training
+
+# No
+## Synthetic data
 ## EMA
 
-## Playout cap randomization
-
-## Decreasing temperature of softmax in $\pi$ when self-playing
-
-## Monte-Carlo Graph Search
-
-
-## Population based training
-
-## Forced playouts and target pruning

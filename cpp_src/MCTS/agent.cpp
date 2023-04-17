@@ -378,3 +378,20 @@ std::pair<bool, Board> Agent::init_mcts(int max_playouts){
 std::map<game::move_id, int> Agent::root_visit_counts(){
     return this->tree->root->visit_count_map();
 }
+
+game::move_id Agent::best_move() {
+
+    auto visit_counts = this->root_visit_counts();
+
+    game::move_id best_move;
+    int best_visit_count = -1;
+
+    for(auto &p : visit_counts) {
+        if(p.second > best_visit_count){
+            best_move = p.first;
+            best_visit_count = p.second;
+        }
+    }
+
+    return best_move;
+}

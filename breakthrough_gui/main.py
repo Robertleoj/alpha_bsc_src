@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import pygame
 from sys import argv
@@ -34,6 +35,15 @@ class Board:
 
     def game_over(self):
         return self.over
+
+    def legal_moves(self):
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j] == self.turn:
+                    for k in range(8):
+                        for l in range(8):
+                            if self.is_legal((i, j), (k, l)):
+                                yield (i, j), (k, l)
 
     def add_move(self, always_alternate=False):
         if self.alternate_idx is not None:
@@ -554,7 +564,8 @@ class Game:
                     self.handle_mousedown(event.pos)
 
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    self.handle_mouseup(event.pos)
+                    move = self.handle_mouseup(event.pos)
+                    print(move)
 
 
                 # reset board on 'r'
@@ -719,6 +730,64 @@ class Game:
             pygame.display.update()
             clock.tick(60)
 
+    def play_aiai2(self, ai1, ai2):
+        clock = self.get_clock()
+        self.draw()
+        pygame.display.update()
+        players = [ai1, ai2]
+        player_idx = 0
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.handle_mousedown(event.pos)
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    move = self.handle_mouseup(event.pos, always_alternate=True)
+
+                    # right arrow to see next move
+                
+            if self.board.on_last_real_move() and not self.board.game_over():            
+                print(f"AI {player_idx} moving...")
+                ai_move = players[player_idx].get_and_make_move()
+                print(f"AI {player_idx} move: ", ai_move)
+                move_f, move_t = self.get_coords(ai_move)
+                self.board.move(move_f, move_t)
+                player_idx = (player_idx + 1) % 2
+                players[player_idx].update(ai_move)
+
+            self.draw()
+            pygame.display.update()
+            clock.tick(60)
+
+    def make_openings(self, num_moves, num_openings):
+        openings = []
+        self.draw()
+        pygame.display.update()
+        
+        while len(openings) < num_openings:
+            pp = player.VanillaPlayer(100)
+            tmp = []
+
+            for _ in range(num_moves):
+                move = pp.get_and_make_move()
+                tmp.append(move)
+                move_f, move_t = self.get_coords(move)
+                self.board.move(move_f, move_t)
+                self.draw()
+                pygame.display.update()
+
+            if tmp not in openings:
+                openings.append(tmp)
+                print("Num openings: ", len(openings))
+
+            self.board.reset()
+        
+        pygame.quit()
+
+        return openings
 
 def get_agent(args:list[str]):
     if args.pop() == 'ai':
@@ -770,6 +839,29 @@ if __name__ == "__main__":
         game = Game()
 
         game.play_aiai(agent1, agent2)
+
+    elif len(argv) >= 2 and argv[1] == 'aiai2':
+        args = list(reversed(argv[2:]))
+        
+        agent1 = get_agent(args)
+        agent2 = get_agent(args)
+
+        game = Game()
+
+        game.play_aiai2(agent1, agent2)
+
+    elif len(argv) >= 2 and argv[1] == 'make_openings':
+        num_moves = int(argv[2])
+        num_openings = int(argv[3])
+
+        game = Game()
+
+        openings = game.make_openings(num_moves, num_openings)
+        print("Openings: ", len(openings))
+        dat = json.dumps(openings, indent=4)
+
+        print(dat)
+
 
     else:
         game = Game()

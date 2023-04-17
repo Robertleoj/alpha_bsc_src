@@ -1,4 +1,3 @@
-
 #include "./config.h"
 #include <ostream>
 #include <string>

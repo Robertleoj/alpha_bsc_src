@@ -11,6 +11,7 @@
 #include "./games/move.h"
 #include "./config/config.h"
 #include "./vanilla_MCTS/v_agent.h"
+#include "./competitor/competitor.h"
 
 
 bool DEBUG = false;
@@ -21,11 +22,6 @@ std::string model_path(int gen){
     return utils::string_format("./models/%d.pt", gen);
 }
 
-template <typename K, typename V>
-void print_map_sorted(std::unordered_map<K, V> mp){
-
-
-}
 
 class GamePlayer {
 public: 
@@ -158,4 +154,10 @@ PYBIND11_MODULE(player, m){
         .def(py::init<int>())
         .def("get_and_make_move", &VanillaPlayer::get_and_make_move)
         .def("update", &VanillaPlayer::update);
+
+    py::class_<Competitor>(m, "Competitor")
+        .def(py::init<std::string, std::string, int, int, int>())
+        .def("update", &Competitor::update)
+        .def("get_results", &Competitor::get_results)
+        .def("make_and_get_moves", &Competitor::make_and_get_moves);
 }
