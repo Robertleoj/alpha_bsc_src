@@ -1,0 +1,30 @@
+{
+    "PUCT_c" : 4,
+
+    "batch_size": 1024,
+    "search_depth": 800,
+
+    "self_play_num_games" : 10000,
+    "games_per_thread" : 400,
+    "self_play_num_threads": 25,
+    "num_dl_threads": 4,
+    "num_nn_threads": 2,
+    "num_return_threads": 4,
+
+    "dirichlet_lambda": 0.25,
+    "dirichlet_alpha": 0.3,
+    "depth_until_pi_argmax": 6,
+
+    "use_endgame_playouts": true,
+    "endgame_playout_shift": 11.0,
+    "endgame_playout_slope": 8.4,
+    "endgame_playout_uniform_const": -4.0,
+    "endgame_playout_uniform_generation": 200.0,
+    "endgame_playout_b": 0.595,
+    "endgame_playout_power": 1.0,
+    "endgame_min_playouts": 50,
+
+    "opening_softmax_temp": 1
+}
+
+
