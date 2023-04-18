@@ -132,3 +132,57 @@ struct MonotoneIncreasingWeights {
         return this->w;
     }
 };
+
+struct RandomizedCapWeights {
+    double n;
+    double N;
+    double search_depth;
+    double p;
+    bool valid = true;
+
+    RandomizedCapWeights(double generation) {
+
+        if(
+            !config::has_key("use_randomized_cap") 
+            || !config::hp["use_randomized_cap"].get<bool>()
+        ){
+            this->valid = false;
+            return;
+        }
+
+        double low_min = config::hp["randomized_cap_n_min"].get<double>();
+        double low_max = config::hp["randomized_cap_n_max"].get<double>();
+        double high_min = config::hp["randomized_cap_N_min"].get<double>();
+        this->search_depth = config::hp["search_depth"].get<double>();
+        double uniat = config::hp["randomized_cap_uniform_generation"].get<double>();
+
+        this->p = config::hp["randomized_cap_p"].get<double>();
+
+        this->n = low_min + (low_max - low_min) * generation / uniat;
+        // clamp to [low_min, low_max]
+        this->n = std::max(low_min, std::min(low_max, this->n));
+
+        this->N = high_min + (search_depth - high_min) * generation / uniat;
+        // clamp to [high_min, high_max]
+        this->N = std::max(high_min, std::min(search_depth, this->N));
+    }
+
+    double operator()() {
+        if(!this->valid){
+            throw std::runtime_error("not using randomized cap, but trying to access it");
+        }
+        double playouts;
+        double mult = 1;
+        double r = (double) rand() / RAND_MAX;
+
+        if (r < p) {
+            playouts = this->N;
+        } else {
+            playouts = this->n;
+            mult = -1;
+        }
+
+        return mult * (playouts / search_depth);
+    }
+};
+

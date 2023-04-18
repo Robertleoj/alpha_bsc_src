@@ -96,6 +96,8 @@ void thread_play(
     std::vector<db::TrainingSample> samples[num_games];
     std::stringstream moves[num_games];
     int num_moves[num_games];
+    double last_weight[num_games];
+    
     memset(num_moves, 0, sizeof(num_moves));
     bool on_backtrack_move[num_games];
     memset(on_backtrack_move, false, sizeof(on_backtrack_move));
@@ -104,6 +106,7 @@ void thread_play(
 
     EndgamePlayoutWeights endgame_playout_weights(current_gen);
     MonotoneIncreasingWeights inc_mcts_weights(current_gen);
+    RandomizedCapWeights randomized_cap_weights(current_gen);
 
     bool use_endgame_playout = config::hp["use_endgame_playouts"].get<bool>();
     int min_playout = config::hp["endgame_min_playouts"].get<int>();
@@ -115,42 +118,64 @@ void thread_play(
         std::cout << "Using monotone increasing MCTS" << std::endl;
     }
 
-    bool use_inc_mcts = config::hp["use_inc_mcts"].get<bool>();
+    if (!config::has_key("use_randomized_cap")) {
+        config::hp["use_randomized_cap"] = false;
+    } 
+    else if (config::hp["use_randomized_cap"].get<bool>()) {
+        std::cout << "Using randomized cap" << std::endl;
+    }
 
+    bool use_inc_mcts = config::hp["use_inc_mcts"].get<bool>();
+    bool use_randomized_cap = config::hp["use_randomized_cap"].get<bool>();
 
 
     auto get_playouts = [
         search_depth,
-        &endgame_playout_weights,
         use_endgame_playout,
         min_playout,
         use_inc_mcts,
-        &inc_mcts_weights
-    ] (int move) {
+        use_randomized_cap
+    ] (double weight) {
+
         int playouts = search_depth;
+
         if (use_endgame_playout) {
-            double weight = endgame_playout_weights((double)move);
             playouts = (int)((double)search_depth * weight);
             if (playouts < min_playout) {
                 playouts = min_playout;
             }
         }
         else if (use_inc_mcts) {
-            playouts = (int)((double)search_depth * inc_mcts_weights());
+            playouts = (int)((double)search_depth * weight);
         }
+        else if (use_randomized_cap) {
+            playouts = (int)((double)search_depth * abs(weight));
+        } 
 
         return playouts;
     };
 
-    auto get_weight = [&endgame_playout_weights, use_endgame_playout, min_playout, search_depth, use_inc_mcts, &inc_mcts_weights](int move){
+    auto get_weight = [
+        &endgame_playout_weights, 
+        use_endgame_playout, 
+        min_playout, 
+        search_depth, 
+        use_inc_mcts, 
+        &inc_mcts_weights,
+        use_randomized_cap,
+        &randomized_cap_weights
+    ] (int move){
         double weight = 1.0;
         if(use_endgame_playout){
             weight = endgame_playout_weights((double) move);
-	    weight = std::max(weight, ((double) min_playout) / ((double) search_depth ));
+            weight = std::max(weight, ((double) min_playout) / ((double) search_depth ));
         } 
-	else if (use_inc_mcts) {
-	    weight = inc_mcts_weights();
-	}
+        else if (use_inc_mcts) {
+            weight = inc_mcts_weights();
+        }
+        else if (use_randomized_cap) {
+            weight = randomized_cap_weights();
+        }
 
         return weight;
     };
@@ -174,7 +199,10 @@ void thread_play(
         // thread_data->num_active_games++;
         dead_game[i] = false;
 
-        auto [done, board] = agents[i]->init_mcts(get_playouts(0));
+        double w = get_weight(0);
+        last_weight[i] = w;
+        int playouts = get_playouts(w);
+        auto [done, board] = agents[i]->init_mcts(playouts);
         auto legal_moves = agents[i]->node_legal_moves();
         if(DEBUG){
             // std::cout << "starting game" << std::endl;
@@ -210,7 +238,7 @@ void thread_play(
                 auto visit_counts = agents[i]->root_visit_counts();
                 auto normalized_visit_counts = utils::softmax_map<game::move_id, int>(visit_counts);
 
-                double weight = get_weight(num_moves[i]);
+                double weight = last_weight[i];
 
                 if(on_backtrack_move[i]){
                     weight = 1;
@@ -285,7 +313,9 @@ void thread_play(
                     }
                 }
                 
-                int playouts = get_playouts(num_moves[i]);
+                double w = get_weight(num_moves[i]);
+                last_weight[i] = w;
+                int playouts = get_playouts(w);
                 if(on_backtrack_move[i]){
                     playouts = search_depth;
                 }

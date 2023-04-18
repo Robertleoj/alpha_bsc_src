@@ -27,7 +27,15 @@
 
     "use_inc_mcts": false,
     "monotone_min_w": 0.1,
-    "monotone_uniform_generation": 100
+    "monotone_uniform_generation": 100,
+
+    "use_randomized_cap": false,
+    "randomized_cap_n_min": 75,
+    "randomized_cap_n_max": 150,
+    "randomized_cap_N_min": 450,
+    "COMMENT_N_max": "Set search depth to 750 for N max",
+    "randomized_cap_p": 0.25,
+    "randomized_cap_uniform_generation": 100
 }
 
 

@@ -35,9 +35,8 @@ def get_playouts_in_file(file_path):
         if CPP_CONF['use_endgame_playouts']:
             min_weight = CPP_CONF['endgame_min_playouts'] / CPP_CONF['search_depth']
         
-        return sum((max(x.weight, min_weight) for x in chunk))
-
-
+        # abs for randomized cap
+        return sum((max(abs(x.weight), min_weight) for x in chunk))
    
 
 def get_playouts_in_gen(generation: int):
