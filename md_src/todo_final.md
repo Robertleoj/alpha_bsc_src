@@ -12,7 +12,7 @@
     - make the graphs again
 
 ## Get competition results for Connect4
-Test other improvements on connect4???
+- Test other improvements on connect4
 
 
 ## Fix performance graph for Connect4
