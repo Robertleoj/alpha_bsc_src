@@ -3,8 +3,8 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-DEFAULT = "default_high_lr.csv"
-ENDGAME = "endgame_big_window.csv"
+DEFAULT = "default_high_lr_connect4.csv"
+ENDGAME = "endgame_playouts_big_window_connect4.csv"
 
 
 def plot_errors(df, x, val_col, mcts_col, title, fname) -> None:

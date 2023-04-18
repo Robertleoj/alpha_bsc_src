@@ -4,8 +4,8 @@
     "batch_size": 1024,
     "search_depth": 800,
 
-    "self_play_num_games" : 10000,
-    "games_per_thread" : 400,
+    "self_play_num_games" : 5000,
+    "games_per_thread" : 200,
     "self_play_num_threads": 25,
     "num_dl_threads": 4,
     "num_nn_threads": 2,
@@ -24,7 +24,9 @@
     "endgame_playout_power": 1.0,
     "endgame_min_playouts": 50,
 
-    "opening_softmax_temp": 1
+    "use_inc_mcts": false,
+    "monotone_min_w": 0.1,
+    "monotone_uniform_generation": 100
 }
 
 
