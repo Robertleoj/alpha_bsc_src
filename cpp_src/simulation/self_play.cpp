@@ -1,4 +1,3 @@
-#include "endgame_playouts.h"
 #include "structs.h"
 #include <string>
 #include "../global.h"
@@ -104,18 +103,40 @@ void thread_play(
     double current_gen = thread_data->db->curr_generation;
 
     EndgamePlayoutWeights endgame_playout_weights(current_gen);
+    MonotoneIncreasingWeights inc_mcts_weights(current_gen);
+
     bool use_endgame_playout = config::hp["use_endgame_playouts"].get<bool>();
     int min_playout = config::hp["endgame_min_playouts"].get<int>();
+    // Check if use_inc_mcts is set in the json file
+    if (!config::has_key("use_inc_mcts")) {
+        config::hp["use_inc_mcts"] = false;
+    }
+    else if (config::hp["use_inc_mcts"].get<bool>()) {
+        std::cout << "Using monotone increasing MCTS" << std::endl;
+    }
+
+    bool use_inc_mcts = config::hp["use_inc_mcts"].get<bool>();
 
 
-    auto get_playouts = [search_depth, &endgame_playout_weights, use_endgame_playout, min_playout](int move){
+
+    auto get_playouts = [
+        search_depth,
+        &endgame_playout_weights,
+        use_endgame_playout,
+        min_playout,
+        use_inc_mcts,
+        &inc_mcts_weights
+    ] (int move) {
         int playouts = search_depth;
-        if(use_endgame_playout){
-            double weight = endgame_playout_weights((double) move);
-            playouts = (int) ((double ) search_depth * weight);
-            if(playouts < min_playout){
+        if (use_endgame_playout) {
+            double weight = endgame_playout_weights((double)move);
+            playouts = (int)((double)search_depth * weight);
+            if (playouts < min_playout) {
                 playouts = min_playout;
             }
+        }
+        else if (use_inc_mcts) {
+            playouts = (int)((double)search_depth * inc_mcts_weights());
         }
 
         return playouts;

@@ -3,8 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import set_run
-import torch
-from prefetch import load_generation
+from make_num_playouts import make_num_playouts
 import sys
 import json
 from pathlib import Path
@@ -18,11 +17,15 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 if len(sys.argv) < 2:
-    print("Usage: python3 train.py <run_name>")
+    print("Usage: python3 evals.py <run_name>")
 
 game_name = "connect4"
+run_name = sys.argv[1]
 
-set_run(sys.argv[1], game_name)
+playouts_dict = make_num_playouts(game_name, run_name)
+
+set_run(run_name, game_name)
+
 
 db = DB()
 
@@ -43,9 +46,14 @@ evals = {}
 for file in eval_files:
     gen = int(file.stem)
     if gen != 0:
-        gen_playouts[gen] = (
-            load_generation(gen - 1).weights.sum() * max_playouts
-        ).item()
+
+        # db.prefetch_generation(gen - 1)
+
+        gen_playouts[gen] = playouts_dict[gen-1]
+
+        # gen_playouts[gen] = (
+        #     load_generation(gen - 1).weights.sum() * max_playouts
+        # ).item()
     else:
         gen_playouts[gen] = 0
 

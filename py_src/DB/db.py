@@ -152,6 +152,44 @@ class DB:
             if ret_code != 0:
                 raise Exception("Could not extract data")
 
+    def write_position_thread(self, args):
+        i, row, pos_path = args
+        return self.write_position(i, row, pos_path)
+
+    def write_position(self, i:int, row, pos_path):
+
+        row =(
+            row["state"],
+            row["policy"],
+            row["outcome"],
+            row["moves_left"],
+            row["weight"] if "weight" in row else 1
+        )
+
+        row = read_tensors(row)
+
+        row = Data(
+            state=row[0],
+            policy=row[1],
+            outcome=row[2],
+            moves_left=row[3],
+            weight=row[4]
+        )
+
+        state_path = pos_path / f"{i}.pt"
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        buffer = io.BytesIO()
+        torch.save(row, buffer)
+        with bz2.open(state_path, "wb") as f:
+            f.write(buffer.getvalue())
+
+
+
+    def write_positions(self, data, pos_path:Path):
+
+        for i, row in enumerate(data):
+            self.write_position(i, row, pos_path)
+
     def save_file_tensors(self, arg):
         file, generation = arg
         chunk_name = Path(file).stem
@@ -163,35 +201,9 @@ class DB:
             except:
                 raise Exception(f"Could not read file\n{file}")
 
+        self.write_positions(data, Path(f"./cached_data/tmp/{generation}/{chunk_name}"))
+
         # save all the data
-        for i, row in enumerate(data):
-
-            row =(
-                row["state"],
-                row["policy"],
-                row["outcome"],
-                row["moves_left"],
-                row["weight"] if "weight" in row else 1
-            )
-
-            row = read_tensors(row)
-
-            row = Data(
-                state=row[0],
-                policy=row[1],
-                outcome=row[2],
-                moves_left=row[3],
-                weight=row[4]
-            )
-
-            state_path = Path(f"./cached_data/tmp/{generation}/{chunk_name}/{i}.pt")
-            state_path.parent.mkdir(parents=True, exist_ok=True)
-            buffer = io.BytesIO()
-            torch.save(row, buffer)
-            with bz2.open(state_path, "wb") as f:
-                f.write(buffer.getvalue())
-
-
         return len(data)
 
 
@@ -212,16 +224,35 @@ class DB:
         #     result = list(tqdm(p.imap_unordered(read_tensors, tuples, chunksize=16), total=len(tuples), desc="Making tensors"))
 
         tasks = [(file, generation) for file in game_files]
+
+        if len(tasks) == 1:
+            file, _ = tasks[0]
+
+            with open(file, "rb") as f:
+                try:
+                    data = bson.loads(f.read())['samples']
+                except:
+                    raise Exception(f"Could not read file\n{file}")
             
-        with Pool(cpu_count()) as p:
-            total_positions = sum(tqdm(p.imap_unordered(self.save_file_tensors, tasks, chunksize=16), total=len(game_files), desc="Making tensors"))
-            
+            args = [(i, row, Path(f"./cached_data/tmp/{generation}/{Path(file).stem}")) for i, row in enumerate(data)]
+
+            with Pool(cpu_count()) as p:
+                l = tqdm(p.imap_unordered(self.write_position_thread, args, chunksize=16), total=len(args), desc="Making tensors")
+                list(l)
+                
+                total_positions = len(data)
+
+        else:
+            with Pool(cpu_count()) as p:
+                total_positions = sum(tqdm(p.imap_unordered(self.save_file_tensors, tasks, chunksize=16), total=len(game_files), desc="Making tensors"))
+                
 
         print(f"Fetched {total_positions} positions")
 
         self.compress_generation(generation)
 
         # make chunky data
+        # I like 'em big, I like 'em chunky
         self.make_chunked(generation)
 
         self.delete_unchunked(generation)
