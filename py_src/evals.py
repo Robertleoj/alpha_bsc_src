@@ -49,7 +49,7 @@ for file in eval_files:
 
         # db.prefetch_generation(gen - 1)
 
-        gen_playouts[gen] = playouts_dict[gen-1]
+        gen_playouts[gen] = playouts_dict[str(gen-1)]
 
         # gen_playouts[gen] = (
         #     load_generation(gen - 1).weights.sum() * max_playouts
@@ -182,4 +182,5 @@ plot_errors(
     "Policy Error Cross Entropy (Playouts)",
     "pol_err_playouts.png",
 )
-# eval_df.to_csv(fig_path / "evals2.csv")
+
+eval_df.to_csv(fig_path / "evals.csv")
