@@ -21,3 +21,7 @@ nlohmann::json read_cfig(){
 void config::initialize(){
     config::hp = read_cfig();
 }
+
+bool config::has_key(const std::string& key){
+    return config::hp.find(key) != config::hp.end();
+}

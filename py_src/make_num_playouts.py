@@ -28,12 +28,23 @@ def save_playouts(playouts):
 def get_playouts_in_file(file_path):
     with bz2.open(file_path, 'rb') as f:
         chunk = torch.load(f)
-        return sum((x.weight for x in chunk))
+        # min_weights = CPP_CONF['endgame_min_playout']
+
+
+        min_weight = 0
+        if CPP_CONF['use_endgame_playouts']:
+            min_weight = CPP_CONF['endgame_min_playouts'] / CPP_CONF['search_depth']
+        
+        return sum((max(x.weight, min_weight) for x in chunk))
 
 
    
 
 def get_playouts_in_gen(generation: int):
+    db = DB()
+
+    db.prefetch_generation(generation)
+
     path = CACHE_PATH / str(generation)
 
     if not path.exists():
@@ -56,9 +67,13 @@ def update_playouts(playouts):
     # Get all folders in cached_data
     generations = sorted(db.generation_nums())
 
+
     # Get all files in each generation
     for generation in generations:
+
+
         if str(generation) not in playouts:
+
             n = get_playouts_in_gen(generation)
             if n is not None:
                 playouts[generation] = n

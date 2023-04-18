@@ -21,6 +21,7 @@ cpp_src/test
 saved_runs/
 logs/
 vault/*/*/models
+vault/*/*/evals
 vault/*/*/cached_data
 vault/*/*/db.db
 vault/*/*/*.csv

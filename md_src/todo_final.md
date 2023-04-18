@@ -7,14 +7,12 @@
 
 ## Competition results for improvements
 - Make graph with all improvements vs default.
-    - Need to run the bison migration
     - cache the data again
     - evaluate the training data
     - make the graphs again
 
 ## Get competition results for Connect4
 Test other improvements on connect4???
-
 
 
 ## Fix performance graph for Connect4
