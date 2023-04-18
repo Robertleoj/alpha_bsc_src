@@ -15,6 +15,11 @@ class UniformSampler:
     def __init__(self, generations:int):
         self.chunk_paths = []
 
+        self.use_randomized_cap = (
+            config.cpp_conf_has_key('use_randomized_cap') 
+            and config.cpp_conf('use_randomized_cap')
+        )
+
         for generation in generations:
             for file in (Path('./cached_data')/f"{generation}/").glob('*.pt'):
                 self.chunk_paths.append(file)
@@ -36,12 +41,18 @@ class UniformSampler:
 
     def sample(self):
 
-        if len(self.buffer) == 0:
-            self.load_chunks()
+        while True:
+            if len(self.buffer) == 0:
+                self.load_chunks()
 
-        data = self.buffer.pop()
+            data = self.buffer.pop()
+            if data.weight < 0:
+                continue
 
-        return data.state, data.policy, data.outcome, data.weight
+            if data.weight < 1 and self.use_randomized_cap:
+                data.weight = 1.0
+
+            return data.state, data.policy, data.outcome, data.weight
 
 
 def get_sampler(generations):
