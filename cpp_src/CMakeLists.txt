@@ -107,7 +107,6 @@ set(FILES
     simulation/structs.h
     simulation/mutual.h
     simulation/mutual.cpp
-    simulation/endgame_playouts.h
     config/config.h
     config/config.cpp
     sqlite/sqlite3.h
