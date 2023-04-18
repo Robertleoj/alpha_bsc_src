@@ -142,12 +142,16 @@ void thread_play(
         return playouts;
     };
 
-    auto get_weight = [&endgame_playout_weights, use_endgame_playout, min_playout, search_depth](int move){
+    auto get_weight = [&endgame_playout_weights, use_endgame_playout, min_playout, search_depth, use_inc_mcts, &inc_mcts_weights](int move){
         double weight = 1.0;
         if(use_endgame_playout){
             weight = endgame_playout_weights((double) move);
 	    weight = std::max(weight, ((double) min_playout) / ((double) search_depth ));
-        }
+        } 
+	else if (use_inc_mcts) {
+	    weight = inc_mcts_weights();
+	}
+
         return weight;
     };
 
