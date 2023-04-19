@@ -184,10 +184,10 @@ void thread_play(
         use_randomized_cap
     ] (double weight) {
         if(use_randomized_cap){
-            return weight < 0;
+            return weight < 0? -1 : 1;
         }
 
-        return true;
+        return 1;
     };
 
     // start the games
