@@ -36,7 +36,8 @@ public:
     double switch_eval(double eval);
     double PUCT(MCNode *node, game::move_id move);
     std::pair<bool, Board> step(std::unique_ptr<nn::NNOut>);
-    std::pair<bool, Board> init_mcts(int max_playouts);
+    // noise change -1 : no noise, 0: no change, 1: noise
+    std::pair<bool, Board> init_mcts(int max_playouts, int noise_change=0);
     std::vector<game::move_id> * node_legal_moves();
     game::move_id best_move();
 

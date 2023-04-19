@@ -180,6 +180,16 @@ void thread_play(
         return weight;
     };
 
+    auto use_noise = [
+        use_randomized_cap
+    ] (double weight) {
+        if(use_randomized_cap){
+            return weight < 0;
+        }
+
+        return true;
+    };
+
     // start the games
     for (int i = 0; i < num_games; i++) {
         thread_data->start_game_mutex.lock();
@@ -202,7 +212,7 @@ void thread_play(
         double w = get_weight(0);
         last_weight[i] = w;
         int playouts = get_playouts(w);
-        auto [done, board] = agents[i]->init_mcts(playouts);
+        auto [done, board] = agents[i]->init_mcts(playouts, use_noise(w));
         auto legal_moves = agents[i]->node_legal_moves();
         if(DEBUG){
             // std::cout << "starting game" << std::endl;
@@ -319,7 +329,7 @@ void thread_play(
                 if(on_backtrack_move[i]){
                     playouts = search_depth;
                 }
-                std::tie(done, board) = agents[i]->init_mcts(playouts);
+                std::tie(done, board) = agents[i]->init_mcts(playouts, use_noise(w));
             }
             
             queue_request(thread_data, board, agents[i]->node_legal_moves(), &requests[i]);

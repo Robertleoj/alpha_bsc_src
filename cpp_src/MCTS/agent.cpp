@@ -347,7 +347,15 @@ std::vector<game::move_id> * Agent::node_legal_moves(){
     return &this->node_to_eval->legal_moves;
 }
 
-std::pair<bool, Board> Agent::init_mcts(int max_playouts){
+std::pair<bool, Board> Agent::init_mcts(int max_playouts, int noise_change){
+    bool old_use_noise = this->use_dirichlet_noise;
+
+    if(noise_change == -1){
+        this->use_dirichlet_noise = false;
+    }
+    else if (noise_change == 1) {
+        this-> use_dirichlet_noise = true;
+    }
     this->max_playouts = max_playouts;
     this->num_playouts = 0;
 
@@ -365,6 +373,8 @@ std::pair<bool, Board> Agent::init_mcts(int max_playouts){
     }
 
     this->node_to_eval = new_node;
+
+    this->use_dirichlet_noise = old_use_noise;
 
     // return board of node
     return std::make_pair(false, this->game->get_board());
