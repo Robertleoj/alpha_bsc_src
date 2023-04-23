@@ -24,7 +24,17 @@
     "endgame_playout_power": 1.0,
     "endgame_min_playouts": 50,
 
-    "opening_softmax_temp": 1
+    "use_inc_mcts": false,
+    "monotone_min_w": 0.1,
+    "monotone_uniform_generation": 100,
+
+    "use_randomized_cap": false,
+    "randomized_cap_n_min": 100,
+    "randomized_cap_n_max": 200,
+    "randomized_cap_N_min": 600,
+    "COMMENT_N_max": "Set search depth to 1000 for N max",
+    "randomized_cap_p": 0.25,
+    "randomized_cap_uniform_generation": 100
 }
 
 
