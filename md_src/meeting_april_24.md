@@ -3,7 +3,10 @@ We have some freestyle text in the LaTeX. We mainly want to know what to include
 # Questions
 
 - How much should we include in background?
+explain alphazero, and the algorithms we are comparing to.
+Check whether there are any new optimizations for them, check the references.
 - Can we have an appendix? Should we put the weight formulation in there?
+No
 <!-- - Should the 'problems' (section: Challenges in data blabla) be in the background or methods? -->
 - Is measurement of training data quality in methods or results (experiments)?
 
