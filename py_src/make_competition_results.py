@@ -21,6 +21,10 @@ GAME_NAME: str = None
 RUN1_NAME: str = None
 RUN2_NAME: str = None
 
+CONST_PLAY_EVERY = 3
+
+
+NUM_PLAYOUTS = 800
 
 
 def get_run_cum_playouts(game_name, run1, run2):
@@ -59,7 +63,46 @@ def get_results(pth):
     else:
         return pd.read_csv(pth)
 
-def compete_experiments(game_name, run1, run2, mode:str, run2_mult=1.0):
+
+def get_competitions(run1_playouts, run2_playouts, mode, run2_mult=None, const_gen=None):
+    if mode in ('gen', 'playout'):
+        for r1_gen, r1_playouts in enumerate(run1_playouts):
+            if mode == 'gen':
+                lam = lambda x: abs(x[0] - r1_gen)
+            else:
+                lam = lambda x: abs(x[1] * run2_mult - r1_playouts)
+
+            r2_gen, r2_playouts = min(enumerate(run2_playouts), key=lam)
+            
+            yield r1_gen, r1_playouts, r2_gen, r2_playouts
+
+    elif mode == 'const':
+        assert isinstance(const_gen, int)
+        r1_gen = const_gen
+        r1_playouts = run1_playouts[r1_gen]
+
+        r2_matches = list(enumerate(run2_playouts))[::CONST_PLAY_EVERY]
+
+        for r2_gen, r2_playouts in r2_matches:
+            yield r1_gen, r1_playouts, r2_gen, r2_playouts
+
+
+
+
+def compete_experiments(game_name, run1, run2, mode:str, **kwargs):
+    run2_mult = 1.0
+    if 'run2_mult' in kwargs:
+        run2_mult = kwargs['run2_mult']
+        if run2_mult is None:
+            raise ValueError('run2_mult not specified')
+
+
+    if mode == 'const':
+        if 'r1_const_gen' not in kwargs or kwargs['r1_const_gen'] is None:
+            raise ValueError('r1_const_gen not specified')
+
+        r1_const_gen = kwargs['r1_const_gen']
+
 
     mult_modifier = '' if mode == 'gen' else f'_{run2_mult}'
 
@@ -72,26 +115,24 @@ def compete_experiments(game_name, run1, run2, mode:str, run2_mult=1.0):
 
     curr_results = get_results(pth)
 
-    # run1 is default, run2 is endgame
-    for r1_gen, r1_playouts in enumerate(run1_playouts):
-        if mode == 'gen':
-            lam = lambda x: abs(x[0] - r1_gen)
-        else:
-            lam = lambda x: abs(x[1] * run2_mult - r1_playouts)
+    competitions = get_competitions(run1_playouts, run2_playouts, mode, run2_mult, r1_const_gen)
 
-        r2_gen, r2_playouts = min(enumerate(run2_playouts), key=lam)
+    # run1 is default, run2 is endgame
+    for r1_gen, r1_playouts, r2_gen, r2_playouts in competitions:
 
         # check if already computed
         if curr_results.query(f'run1 == "{run1}" and gen1 == {r1_gen} and run2 == "{run2}" and gen2 == {r2_gen}').shape[0] != 0:
             continue
 
         # battle r1_gen and r2_gen
-        res = compete_result(game_name, 800, run1, r1_gen, run2, r2_gen)
+        res = compete_result(game_name, NUM_PLAYOUTS, run1, r1_gen, run2, r2_gen)
         mean_win = lambda x: ((sum(x) / len(x)) + 1) / 2
 
         r1_white_res = mean_win(res.p1.white)
         r1_black_res = mean_win(res.p1.black)
         r1_res = mean_win(res.p1.white + res.p1.black)
+
+
 
         # append row to df
         curr_results = curr_results.append({
@@ -115,20 +156,31 @@ def main():
         run1 = argv[2]
         run2 = argv[3]
         mode = argv[4]
+
+
         if mode == 'playout':
             r2_mult = float(argv[5])
         else:
             r2_mult = None
+
+        if mode == 'const':
+            r1_const_gen = int(argv[5])
+        else:
+            r1_const_gen = None
+
+
         print(f'game_name: {game_name}, run1: {run1}, run2: {run2}')
+
     except IndexError:
-        print("Usage: python make_competition_results.py <game_name> <run1> <run2> [gen/playout] [<r2_mult>]")
+
+        print("Usage: python make_competition_results.py <game_name> <run1> <run2> [gen/playout/const] [<r2_mult>]")
         return
     
     # GAME_PATH = VAULT / game_name
     # RUN1_PATH = GAME_PATH / run1
     # RUN2_PATH = GAME_PATH / run2
 
-    compete_experiments(game_name, run1, run2, mode, r2_mult)
+    compete_experiments(game_name, run1, run2, mode, r2_mult=r2_mult, r1_const_gen=r1_const_gen)
 
     
 if __name__ == '__main__':

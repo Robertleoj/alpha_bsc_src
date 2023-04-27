@@ -27,7 +27,7 @@ Competitor::Competitor(
 
     for(int i = 0; i < num_agents; i++) {
         this->games.push_back(game_name == "connect4" ? (game::IGame *)(new games::Connect4()) : (game::IGame *)(new games::Breakthrough()));
-        this->agents.push_back(new Agent(this->games[i],false));
+        this->agents.push_back(new Agent(this->games[i],false, false));
     }
 
     std::filesystem::path nn_path = std::filesystem::current_path() / "models" / utils::string_format("%d.pt", generation);

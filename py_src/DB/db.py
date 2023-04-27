@@ -209,8 +209,12 @@ class DB:
 
     def prefetch_generation(self, generation:int):
 
+        print(f"Prefetching generation {generation}... ", end="")
         if os.path.exists(f"./cached_data/{generation}"):
+            print("Found cached data")
             return
+        else:
+            print()
 
         self.uncompress_generation(generation)
        

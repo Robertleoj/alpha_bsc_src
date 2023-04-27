@@ -71,16 +71,16 @@ def compete_result(game_name, playouts, run_name_1, gen_1, run_name_2, gen_2):
     p1_black_results = p1.get_results()
     p2_white_results = p2.get_results()
 
-    mean = lambda x: sum(x)/len(x)
+    mean_norm = lambda x: (sum(x)/len(x) + 1) / 2
 
-    print(f"Player 1: white={mean(p1_white_results)}, black={mean(p1_black_results)}")
-    print(f"Player 2: white={mean(p2_white_results)}, black={mean(p2_black_results)}")
+    print(f"Player 1: white={mean_norm(p1_white_results)}, black={mean_norm(p1_black_results)}")
+    print(f"Player 2: white={mean_norm(p2_white_results)}, black={mean_norm(p2_black_results)}")
 
     p1_results = p1_white_results + p1_black_results
     p2_results = p2_white_results + p2_black_results
 
-    print("Player 1: ", mean(p1_results))
-    print("Player 2: ", mean(p2_results))
+    print("Player 1: ", mean_norm(p1_results))
+    print("Player 2: ", mean_norm(p2_results))
 
     return CompetitionResult(
         CompetitionResultPlayer(p1_white_results, p1_black_results),
