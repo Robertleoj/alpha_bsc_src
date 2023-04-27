@@ -13,6 +13,8 @@ Competition graphs missing
 - Both connect4 and breakthrough
 - Competition on other imp
 
+- describe competitions
+
 
 Mention somewhere before methods (introduction) that we will use connect4 as a testbed, then we generalize to breakthrough.
 

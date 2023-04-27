@@ -112,9 +112,17 @@ private:
 
 class VanillaPlayer {
 public:
-    VanillaPlayer(int playouts){
-        this->game = new games::Breakthrough();
+    VanillaPlayer(int playouts, std::string game_name="breakthrough") {
+
+        if(game_name == "breakthrough") {
+            this->game = new games::Breakthrough();
+        } 
+        else if (game_name == "connect4") {
+            this->game = new games::Connect4();
+        }
+
         this->playouts = playouts;
+
         this->agent = new VAgent(
             this->game
         );
@@ -151,7 +159,7 @@ PYBIND11_MODULE(player, m){
         .def("update", &GamePlayer::update);
 
     py::class_<VanillaPlayer>(m, "VanillaPlayer")
-        .def(py::init<int>())
+        .def(py::init<int, std::string>())
         .def("get_and_make_move", &VanillaPlayer::get_and_make_move)
         .def("update", &VanillaPlayer::update);
 
