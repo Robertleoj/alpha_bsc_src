@@ -11,8 +11,8 @@ def play_openings(p1, p2, openings):
         p1.update(opening)
         p2.update(opening)
 
-def get_openings():
-    with open("../db/openings.json", 'r') as f:
+def get_openings(game_name):
+    with open(f"../db/{game_name}_openings.json", 'r') as f:
         return json.load(f)
 
 def compete(p1, p2, openings):
@@ -41,7 +41,7 @@ def compete(p1, p2, openings):
         tq.update(1)
 
 def compete_result(game_name, playouts, run_name_1, gen_1, run_name_2, gen_2):
-    openings = get_openings()
+    openings = get_openings(game_name)
 
     print(f"Playing {len(openings)} openings on both sides")
 

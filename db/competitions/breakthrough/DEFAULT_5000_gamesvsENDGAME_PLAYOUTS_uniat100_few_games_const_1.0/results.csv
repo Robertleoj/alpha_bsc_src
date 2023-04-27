@@ -1,0 +1,4 @@
+run1,gen1,playouts1,run2,gen2,playouts2,r1_white_win_rate,r1_black_win_rate,r1_win_rate
+DEFAULT_5000_games,50,14277050400.0,ENDGAME_PLAYOUTS_uniat100_few_games,0,0,1.0,1.0,1.0
+DEFAULT_5000_games,50,14277050400.0,ENDGAME_PLAYOUTS_uniat100_few_games,3,80961439.52682272,1.0,1.0,1.0
+DEFAULT_5000_games,50,14277050400.0,ENDGAME_PLAYOUTS_uniat100_few_games,6,208311546.90577582,1.0,1.0,1.0
