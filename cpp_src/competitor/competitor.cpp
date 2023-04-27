@@ -48,7 +48,9 @@ void Competitor::update(std::vector<std::string> moves) {
         }
 
         if (!this->dead[i]){
-            game::move_id move_id = mm::from_str(moves[i]);
+
+            game::move_id move_id = this->games[i]->move_from_str(moves[i]);
+
             this->games[i]->make(move_id);
 
             if(this->games[i]->is_terminal()) {

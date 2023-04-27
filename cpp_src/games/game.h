@@ -55,6 +55,10 @@ namespace game {
 
         [[nodiscard]] virtual std::string move_as_str(move_id id) const = 0;
 
+        [[nodiscard]] virtual move_id move_from_str(std::string move) const {
+            return mm::from_str(move);
+        }
+
         virtual bool set(const std::string& pos) = 0;
 
         // Destructor.

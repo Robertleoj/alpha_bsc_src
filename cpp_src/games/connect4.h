@@ -84,6 +84,10 @@ namespace games {
             return true;
         }
 
+        game::move_id move_from_str(std::string move) const override {
+            return std::stoi(move);
+        }
+
         std::vector<game::move_id> moves() override {
 
             std::vector<game::move_id> moves;
@@ -102,7 +106,7 @@ namespace games {
             auto col = mid - 1;
 
             if(col >= 7){
-                throw std::runtime_error("stupid col");
+                throw std::runtime_error("stupid col: " + std::to_string(col));
             }
             
             if(m.height[col] >= NUM_ROWS){

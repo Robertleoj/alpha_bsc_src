@@ -96,7 +96,7 @@ public:
     }
 
     void update(std::string move){
-        game::move_id move_id = mm::from_str(move);
+        game::move_id move_id = this->game->move_from_str(move);
         game->make(move_id);
         agent->update_tree(move_id);
     }
@@ -130,7 +130,7 @@ public:
     }
 
     void update(std::string move){
-        game::move_id move_id = mm::from_str(move);
+        game::move_id move_id = this->game->move_from_str(move);
         game->make(move_id);
         agent->update_tree(move_id);
     }
