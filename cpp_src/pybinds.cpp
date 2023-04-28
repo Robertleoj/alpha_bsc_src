@@ -41,6 +41,7 @@ public:
 
         this->agent = new Agent(
             this->game,
+            false,
             false
         );
     }
