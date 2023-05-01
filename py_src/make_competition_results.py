@@ -104,9 +104,10 @@ def compete_experiments(game_name, run1, run2, mode:str, **kwargs):
         r1_const_gen = kwargs['r1_const_gen']
 
 
-    mult_modifier = '' if mode == 'gen' else f'_{run2_mult}'
+    mult_modifier = '' if mode == 'gen' or mode == 'const' else f'_{run2_mult}'
+    const_gen_modifier = '' if mode != 'const' else f'_{r1_const_gen}'
 
-    pth = Path(f'../db/competitions/{game_name}/{run1}vs{run2}_{mode}{mult_modifier}/results.csv')
+    pth = Path(f'../db/competitions/{game_name}/{run1}vs{run2}_{mode}{mult_modifier}{const_gen_modifier}/results.csv')
     pth.parent.mkdir(parents=True, exist_ok=True)
 
     run1_playouts, run2_playouts = get_run_cum_playouts(game_name, run1, run2)
