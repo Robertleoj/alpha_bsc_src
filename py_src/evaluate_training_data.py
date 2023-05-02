@@ -7,6 +7,7 @@ import pandas as pd
 from glob import glob
 from conn4_solver import solve, evaluate_many
 from DB import DB
+import signal
 import bson
 import numpy as np
 import os
@@ -16,6 +17,7 @@ from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import seaborn as sns
 import random
+import multiprocessing
 
 import warnings
 
@@ -23,6 +25,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+save_thread = None
 
 """
 pandas fields
@@ -120,7 +123,9 @@ def get_positions(generation) -> list[Position]:
 
 
 def eval_td_generation(generation:int) -> pd.DataFrame:
+    print("Getting positions")
     positions = get_positions(generation)
+    print("Got positions")
     # random.shuffle(positions)
     # positions = positions[:GEN_SAMPLES]
 
@@ -128,6 +133,9 @@ def eval_td_generation(generation:int) -> pd.DataFrame:
     print("Doing pandas stuff...")
 
     dict_list = [dataclasses.asdict(p) for p in positions]
+
+
+
     df = pd.DataFrame(
         dict_list,
         # columns=COLUMNS, 
@@ -140,7 +148,9 @@ def eval_td_generation(generation:int) -> pd.DataFrame:
         #     "moves": pd.StringDtype()
         # }
     )
-    df.drop(['moves'], axis=1, inplace=True)
+
+    if 'moves' in df.columns:
+        df.drop(['moves'], axis=1, inplace=True)
 
     df['gt_eval'] = np.nan
     df['gt_eval'] = df['gt_eval'].astype(float)
@@ -157,13 +167,15 @@ def eval_td_generation(generation:int) -> pd.DataFrame:
     #     scores = list(tqdm(p.imap(eval_position, positions, chunksize=16), total=len(positions), desc="Evaluating positions"))
 
     scores = evaluate_many([p.moves for p in positions], BOOK_PATH)
-
+    print("Done with evaluation")
     df['gt_eval'] = scores
+    print("Updated df")
 
     return df
     
 
 def fill_evals(evals: pd.DataFrame) -> pd.DataFrame:
+    global save_thread
     # get generations
     db = DB()
     generations = db.generation_nums()
@@ -173,20 +185,51 @@ def fill_evals(evals: pd.DataFrame) -> pd.DataFrame:
         if evals.query("generation == @gen").empty:
             print("Evaluating generation", gen)
             evals = evals.append(eval_td_generation(gen), ignore_index=True)
-            save_evals(evals)
+            if save_thread is not None:
+                save_thread.join()
+
+            print("Saving evals... ", end="", flush=True)
+            save_thread = multiprocessing.Process(target=save_evals, args=(evals,))
+            save_thread.start()
+            # save_thread = Thread(target=save_evals, args=(evals,))
+            print("Done")
         else:
             print("Generation", gen, "already evaluated, continuing...")
+
+    if save_thread is not None:
+        save_thread.join()
 
     return evals
 
 def save_evals(evals: pd.DataFrame):
     evals.to_csv(FNAME, index=False)
 
+def gen_avg(plot_df, k, move_col):
 
-def make_plots(evals: pd.DataFrame):
+    plot_df['generation_interval'] = (plot_df['generation']) // k * k
+
+    plot_df = plot_df.groupby(['generation_interval', move_col])['eval_error'].mean().reset_index()
+
+    plot_df['generation'] = plot_df['generation_interval'].astype(str) + '-' + (plot_df['generation_interval'] + k - 1).astype(str)
+
+    plot_df = plot_df.drop('generation_interval', axis=1)
+
+    # Reorder the columns
+    plot_df = plot_df[['generation', move_col, 'eval_error']]
+
+    return plot_df
+
+
+
+def make_plots(evals: pd.DataFrame, max_gen=None, gen_every=1):
     fig_path = Path("./figures")
     
     fig_path.mkdir(exist_ok=True)
+    print(evals.columns)
+
+    if max_gen is not None:
+        evals = evals.query("generation <= @max_gen")
+
 
     # x axis num moves left, y axis mean error, colored by generation
     # make new dataframe for the plot
@@ -195,7 +238,12 @@ def make_plots(evals: pd.DataFrame):
     # evals['generation'] = evals['generation']#.round().astype(int)
 
     plot_df = evals.groupby(['generation', 'moves_left'])['eval_error'].mean().reset_index()
+
     plot_df = plot_df[['generation', 'moves_left', 'eval_error']]
+
+    if gen_every > 1:
+        plot_df = gen_avg(plot_df, gen_every, 'moves_left')
+
     
     sns.lineplot(data=plot_df, x="moves_left", y="eval_error", hue="generation")
     plt.title("Moves left MSE")
@@ -211,6 +259,13 @@ def make_plots(evals: pd.DataFrame):
     # x axis num moves played, y axis mean error, colored by generation
     plot_df = evals.groupby(['generation', 'moves_played'])['eval_error'].mean().reset_index()
     plot_df = plot_df[['generation', 'moves_played','eval_error']]
+
+    if gen_every > 1:
+        plot_df = gen_avg(plot_df, gen_every, 'moves_played')
+
+        
+
+
     
     sns.lineplot(data=plot_df, x="moves_played", y="eval_error", hue="generation")
     plt.title("Moves Played MSE")
@@ -224,11 +279,17 @@ def make_plots(evals: pd.DataFrame):
     plt.clf()
 
 
-
+def sigint_handler(sig, frame):
+    global save_thread
+    if save_thread is not None:
+        save_thread.join()
+    sys.exit(0)
 
 def main():
     if len(sys.argv) < 3:
         print("Usage: python3 evaluate_training_data.py <run_name> <plot/eval>")
+
+    signal.signal(signal.SIGINT, sigint_handler)
 
     game_name = "connect4"
 
@@ -242,7 +303,15 @@ def main():
         evals = get_eval_df()
         # mask = evals.isna().any(axis=1)
         # print(evals[mask])
-        make_plots(evals)
+        max_gen = None
+        if len(sys.argv) > 3:
+            max_gen = int(sys.argv[3])
+
+        gen_every = 1
+        if len(sys.argv) > 4:
+            gen_every = int(sys.argv[4])
+
+        make_plots(evals, max_gen, gen_every)
 
     else:
         print("Usage: python3 evaluate_training_data.py <run_name> <plot/eval>")

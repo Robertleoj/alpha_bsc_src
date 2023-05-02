@@ -36,22 +36,15 @@ def plot_competition_results(csv: pd.DataFrame, dir):
 
     plt.xlabel("Playouts")
     plt.ylabel("Win Rate")
-    plt.title("Win Rates vs Playouts")
-    # plt.legend(title='Win Rate Types')
+    title_path = dir / 'title.txt'
+    if title_path.exists():
+        with open(title_path, 'r') as f:
+            title = f.read()
+            plt.title(title)
+    else:
+        plt.title("Win Rates vs Playouts")
     plt.show()
 
-    # csv['r2_win_rate'] = 1 - csv['r1_win_rate']
-
-    
-    # sns.lineplot(x="playouts2", y="r2_win_rate", data=csv)
-
-    # # add title
-    # plt.title(f"Win rate of run {csv['run2'][0]} against run {csv['run1'][0]}")
-
-
-    # # add legend
-    # plt.legend(["Win rate of run 2", "50% win rate", "Playouts of run 1"])
-    
     # save plot
     save_path = dir / "plot.png"
     plt.savefig(save_path)
