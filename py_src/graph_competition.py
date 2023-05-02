@@ -12,16 +12,19 @@ def plot_competition_results(csv: pd.DataFrame, dir):
     # playouts on x axis, 1 - win_rate on y axis
     # Columns: run1,gen1,playouts1,run2,gen2,playouts2,r1_white_win_rate,r1_black_win_rate,r1_win_rate
 
-    csv['r2_win_rate'] = 1 - csv['r1_win_rate']
-    csv['r2_white_win_rate'] = 1 - csv['r1_white_win_rate']
-    csv['r2_black_win_rate'] = 1 - csv['r1_black_win_rate']
+    csv['Total'] = 1 - csv['r1_win_rate']
+    csv['White'] = 1 - csv['r1_black_win_rate']
+    csv['Black'] = 1 - csv['r1_white_win_rate']
 
-    df_melted = pd.melt(csv, id_vars=['playouts2'], value_vars=['r2_white_win_rate', 'r2_black_win_rate', 'r2_win_rate'], var_name='rate_type', value_name='win_rate')
+    df_melted = pd.melt(csv, id_vars=['playouts2'], value_vars=['White', 'Black', 'Total'], var_name='rate_type', value_name='win_rate')
 
 
 
     plt.figure(figsize=(10, 6))
     sns.lineplot(data=df_melted, x='playouts2', y='win_rate', hue='rate_type', style='rate_type', markers=True, dashes=False)
+
+    # name legend
+    plt.legend(title='')
 
     # set y axis to 0-1
     plt.ylim(0, 1)
