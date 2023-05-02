@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-DEFAULT = "default_high_lr_connect4.csv"
+DEFAULT = "default_hlr.csv"
 ENDGAME = "endgame_playouts_big_window_connect4.csv"
 
 

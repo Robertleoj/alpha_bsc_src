@@ -38,7 +38,7 @@ def plot_competition_results(csv: pd.DataFrame, dir):
     plt.ylabel("Win Rate")
     plt.title("Win Rates vs Playouts")
     # plt.legend(title='Win Rate Types')
-    plt.show()
+    # plt.show()
 
     # csv['r2_win_rate'] = 1 - csv['r1_win_rate']
 

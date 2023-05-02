@@ -4,9 +4,9 @@ import pandas as pd
 import seaborn as sns
 
 filenames = {
-    'default': 'default_high_lr.csv',
+    'default': 'default_hlr.csv',
     'endgame': 'endgame_playouts_big_window_connect4.csv',
-    'randomized_cap': 'random_cap.csv',
+    # 'randomized_cap': 'random_cap.csv',
     'dyn_window': 'dyn_window_high_lr.csv',
     'monotone': "monotone.csv"
 }
