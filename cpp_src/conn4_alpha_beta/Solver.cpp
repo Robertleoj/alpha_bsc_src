@@ -17,13 +17,12 @@
  */
 
 #include <cassert>
-#include "Solver.hpp"
-#include "MoveSorter.hpp"
+#include "./Solver.hpp"
+#include "./MoveSorter.hpp"
 
-using namespace GameSolver::Connect4;
+using namespace GameSolver;
 
 namespace GameSolver {
-namespace Connect4 {
 
 /**
  * Reccursively score connect 4 position using negamax variant of alpha-beta algorithm.
@@ -126,7 +125,7 @@ int Solver::solve(const Position &P, bool weak) {
 }
 
 std::vector<int> Solver::analyze(const Position &P, bool weak) {
-  std::vector<int> scores(Position::WIDTH, Solver::INVALID_MOVE);
+  std::vector<int> scores(Position::WIDTH, -1000);
   for (int col = 0; col < Position::WIDTH; col++)
     if (P.canPlay(col)) {
       if(P.isWinningMove(col)) scores[col] = (Position::WIDTH * Position::HEIGHT + 1 - P.nbMoves()) / 2;
@@ -145,5 +144,4 @@ Solver::Solver() : nodeCount{0} {
     columnOrder[i] = Position::WIDTH / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // example for WIDTH=7: columnOrder = {3, 4, 2, 5, 1, 6, 0}
 }
 
-} // namespace Connect4
 } // namespace GameSolver

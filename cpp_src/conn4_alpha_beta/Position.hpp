@@ -16,15 +16,13 @@
  * along with Connect4 Game Solver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef POSITION_HPP
-#define POSITION_HPP
+#pragma once
 
 #include <string>
 #include <cstdint>
 #include <cassert>
 
 namespace GameSolver {
-namespace Connect4 {
 /**
  * A class storing a Connect 4 position.
  * Functions are relative to the current player to play.
@@ -352,6 +350,4 @@ class Position {
   }
 };
 
-} // namespace Connect4
 } // namespace GameSolver
-#endif

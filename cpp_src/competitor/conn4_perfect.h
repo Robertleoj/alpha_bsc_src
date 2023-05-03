@@ -3,6 +3,7 @@
 #include "../games/move.h"
 #include "../games/game.h"
 #include "../games/connect4.h"
+#include "../conn4_alpha_beta/Solver.hpp"
 
 class Connect4PerfectCompetitor {
 public:

@@ -16,16 +16,14 @@
  * along with Connect4 Game Solver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPENING_BOOK_HPP
-#define OPENING_BOOK_HPP
+#pragma once
 
 #include <iostream>
 #include <fstream>
-#include "Position.hpp"
-#include "TranspositionTable.hpp"
+#include "./Position.hpp"
+#include "./TranspositionTable.hpp"
 
 namespace GameSolver {
-namespace Connect4 {
 
 class OpeningBook {
   TableGetter<Position::position_t, uint8_t> *T;
@@ -177,6 +175,4 @@ class OpeningBook {
   }
 };
 
-} // namespace Connect4
 } // namespace GameSolver
-#endif
