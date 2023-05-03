@@ -16,17 +16,15 @@
  * along with Connect4 Game Solver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SOLVER_HPP
-#define SOLVER_HPP
+#pragma once
 
 #include <vector>
 #include <string>
-#include "Position.hpp"
-#include "TranspositionTable.hpp"
-#include "OpeningBook.hpp"
+#include "./Position.hpp"
+#include "./TranspositionTable.hpp"
+#include "./OpeningBook.hpp"
 
 namespace GameSolver {
-namespace Connect4 {
 
 class Solver {
  private:
@@ -50,7 +48,6 @@ class Solver {
   int negamax(const Position &P, int alpha, int beta);
 
  public:
-  static const int INVALID_MOVE = -1000;
 
   // Returns the score of a position
   int solve(const Position &P, bool weak = false);
@@ -75,6 +72,4 @@ class Solver {
   Solver(); // Constructor
 };
 
-} // namespace Connect4
 } // namespace GameSolver
-#endif

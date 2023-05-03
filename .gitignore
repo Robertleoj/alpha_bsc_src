@@ -1,5 +1,6 @@
 **/build/
 **/.vscode/
+**/*.egg
 .venv
 **/__pycache__/
 smallvoice/
@@ -20,6 +21,8 @@ cpp_src/*.so
 cpp_src/test
 saved_runs/
 logs/
+
+
 vault/*/*/models
 vault/*/*/evals
 vault/*/*/cached_data
@@ -28,6 +31,5 @@ vault/*/*/*.csv
 vault/*/*/training_data/
 vault/*/*.7z
 vault/*/*test*
-
 vault/*/*
 !vault/*/defaults

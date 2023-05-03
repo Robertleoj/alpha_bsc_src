@@ -16,13 +16,11 @@
  * along with Connect4 Game Solver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRANSPOSITION_TABLE_HPP
-#define TRANSPOSITION_TABLE_HPP
+#pragma once
 
 #include <cstring>
 
 namespace GameSolver {
-namespace Connect4 {
 
 /**
  * util functions to compute next prime at compile time
@@ -150,6 +148,4 @@ class TranspositionTable : public TableGetter<key_t, value_t> {
   }
 };
 
-} // namespace Connect4
 } // namespace GameSolver
-#endif

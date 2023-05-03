@@ -164,6 +164,7 @@ PYBIND11_MODULE(player, m){
 
     py::class_<VanillaPlayer>(m, "VanillaPlayer")
         .def(py::init<int, std::string>())
+        .def(py::init<int>())
         .def("get_and_make_move", &VanillaPlayer::get_and_make_move)
         .def("update", &VanillaPlayer::update);
 
@@ -175,6 +176,7 @@ PYBIND11_MODULE(player, m){
 
     py::class_<Connect4PerfectCompetitor>(m, "Connect4PerfectCompetitor")
         .def(py::init<int, std::string>())
+        .def(py::init<int>())
         .def("update", &Connect4PerfectCompetitor::update)
         .def("get_results", &Connect4PerfectCompetitor::get_results)
         .def("make_and_get_moves", &Connect4PerfectCompetitor::make_and_get_moves);

@@ -1,6 +1,5 @@
-#include <map>
 #include "./conn4_perfect.h"
-#include "./Solver.hpp"
+#include <map>
 
 int sign(int x){
     if(x > 0){
@@ -16,7 +15,7 @@ void Connect4PerfectCompetitor::evaluate_chunk(
     std::vector<std::string>* positions, 
     std::vector<int> *moves
 ){
-    using namespace GameSolver::Connect4;
+    using namespace GameSolver;
     Solver solver;
 
     solver.loadBook(book_path);
@@ -78,7 +77,7 @@ double outcome_to_value(out::Outcome oc){
 std::vector<std::string> Connect4PerfectCompetitor::compute_moves(
     std::vector<std::string>& move_strings
 ){
-    using namespace GameSolver::Connect4;
+    using namespace GameSolver;
 
     int THREADS = std::min(
         (int) std::thread::hardware_concurrency(),

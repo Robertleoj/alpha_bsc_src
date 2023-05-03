@@ -1,12 +1,12 @@
-#include "Position.hpp"
-#include "OpeningBook.hpp"
+#include "./Position.hpp"
+#include "./OpeningBook.hpp"
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 
-using namespace GameSolver::Connect4;
+using namespace GameSolver;
 
 std::unordered_set<uint64_t> visited;
 

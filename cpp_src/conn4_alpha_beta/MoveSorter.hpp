@@ -16,13 +16,10 @@
  * along with Connect4 Game Solver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MOVE_SORTER_HPP
-#define MOVE_SORTER_HPP
-
-#include "Position.hpp"
+#pragma once
+#include "./Position.hpp"
 
 namespace GameSolver {
-namespace Connect4 {
 
 /**
  * This class helps sorting the next moves
@@ -85,6 +82,4 @@ class MoveSorter {
   } entries[Position::WIDTH];
 };
 
-} // namespace Connect4
 } // namespace GameSolver
-#endif
