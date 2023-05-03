@@ -24,16 +24,30 @@ if(USERNAME STREQUAL "gimli")
 
 elseif(USERNAME STREQUAL "cluster")
     
-        message("On cluster. Using python version of libtorch.")
+    message("On cluster. Using python version of libtorch.")
+
+    set(LIBTORCH "/home/cluster/.local/lib/python3.10/site-packages/torch/share/cmake")
+
+    set(CUDNN_LIBRARY_PATH "/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
+
+    set(CUDNN_INCLUDE_PATH "/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/include")
+
+    link_directories(/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/)
     
-        set(LIBTORCH "/home/cluster/.local/lib/python3.10/site-packages/torch/share/cmake")
+elseif(USERNAME STREQUAL "bigbrainman")
+    message("You have a big brain")
 
-        set(CUDNN_LIBRARY_PATH "/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
+    # Assuming the CMakeLists.txt is located in the alpha_bsc_src/cpp_src directory
+    get_filename_component(ALPHA_BSC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 
-        set(CUDNN_INCLUDE_PATH "/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/include")
+    set(LIBTORCH "${ALPHA_BSC_SRC_DIR}/py_src/.venv/lib64/python3.10/site-packages/torch/share/cmake/")
 
-        link_directories(/home/cluster/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/)
-    
+    set(CUDNN_LIBRARY_PATH "${ALPHA_BSC_SRC_DIR}/py_src/.venv/lib64/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.8")
+
+    set(CUDNN_INCLUDE_PATH "${ALPHA_BSC_SRC_DIR}/py_src/.venv/lib/python3.10/site-packages/nvidia/cudnn/include")
+
+    link_directories(${ALPHA_BSC_SRC_DIR}/py_src/.venv/lib/python3.10/site-packages/nvidia/cudnn/lib/)
+
 else()
     message("On local. Using .libs/libtorch.")
     set(LIBTORCH ".libs/libtorch/")
@@ -112,8 +126,7 @@ set(FILES
     sqlite/sqlite3.h
     sqlite/sqlite3.c
     global.h
-    competitor/competitor.h
-    competitor/competitor.cpp
+
 )
 
 add_library(common_sources OBJECT
@@ -161,6 +174,20 @@ if(NOT USERNAME STREQUAL "gimli")
     #     ${FILES}
     # )
 
+    set(EXTRA_PYBINDS_FILES
+        competitor/competitor.h
+        competitor/competitor.cpp
+        competitor/conn4_perfect.h
+        competitor/conn4_perfect.cpp
+        conn4_alpha_beta/generator.cpp
+        conn4_alpha_beta/MoveSorter.hpp
+        conn4_alpha_beta/OpeningBook.hpp
+        conn4_alpha_beta/Position.hpp
+        conn4_alpha_beta/Solver.cpp
+        conn4_alpha_beta/Solver.hpp
+        conn4_alpha_beta/TranspositionTable.hpp
+    )
+
     execute_process(
         COMMAND "python3" -c "import pybind11; print(pybind11.get_cmake_dir())"
         OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
@@ -171,9 +198,13 @@ if(NOT USERNAME STREQUAL "gimli")
 
     find_package(pybind11 REQUIRED)
 
+    # print extra pybinds files
+    message(STATUS "Extra pybinds files: ${EXTRA_PYBINDS_FILES}")
+
     pybind11_add_module(player 
         pybinds.cpp
         ${FILES}
+        ${EXTRA_PYBINDS_FILES}
     )
 
     # target_link_libraries(player PRIVATE common_sources)

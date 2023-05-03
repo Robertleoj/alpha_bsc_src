@@ -12,11 +12,11 @@
 #include "./config/config.h"
 #include "./vanilla_MCTS/v_agent.h"
 #include "./competitor/competitor.h"
+#include "./competitor/conn4_perfect.h"
 
 
 bool DEBUG = false;
 
-namespace py = pybind11;
 
 std::string model_path(int gen){
     return utils::string_format("./models/%d.pt", gen);
@@ -151,6 +151,9 @@ private:
 };
 
 
+
+namespace py = pybind11;
+
 PYBIND11_MODULE(player, m){
     m.doc() = "Play with agent";
 
@@ -161,6 +164,7 @@ PYBIND11_MODULE(player, m){
 
     py::class_<VanillaPlayer>(m, "VanillaPlayer")
         .def(py::init<int, std::string>())
+        .def(py::init<int>())
         .def("get_and_make_move", &VanillaPlayer::get_and_make_move)
         .def("update", &VanillaPlayer::update);
 
@@ -169,4 +173,11 @@ PYBIND11_MODULE(player, m){
         .def("update", &Competitor::update)
         .def("get_results", &Competitor::get_results)
         .def("make_and_get_moves", &Competitor::make_and_get_moves);
+
+    py::class_<Connect4PerfectCompetitor>(m, "Connect4PerfectCompetitor")
+        .def(py::init<int, std::string>())
+        .def(py::init<int>())
+        .def("update", &Connect4PerfectCompetitor::update)
+        .def("get_results", &Connect4PerfectCompetitor::get_results)
+        .def("make_and_get_moves", &Connect4PerfectCompetitor::make_and_get_moves);
 }

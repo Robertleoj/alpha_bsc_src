@@ -43,7 +43,7 @@ def plot_competition_results(csv: pd.DataFrame, dir):
             plt.title(title)
     else:
         plt.title("Win Rates vs Playouts")
-    plt.show()
+    # plt.show()
 
     # save plot
     save_path = dir / "plot.png"
