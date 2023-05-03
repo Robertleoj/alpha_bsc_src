@@ -45,9 +45,19 @@ class Model:
         
         
     def get_optimizer(self) -> torch.optim.Optimizer:
+        lr = config['learning_rate']
+        if isinstance(lr, dict):
+            # get the highest key
+            key = str(max(
+                [int(g) for g in lr.keys() if int(g) <= self.generation], 
+                default=0
+            ))
+            lr = lr[key]
+            # set learning rate
+
         return torch.optim.Adam(
             self.nn.parameters(), 
-            lr=config['learning_rate'],
+            lr=lr,
             weight_decay=config['weight_decay']
         )
 
