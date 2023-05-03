@@ -49,11 +49,12 @@ class Model:
         if isinstance(lr, dict):
             # get the highest key
             key = str(max(
-                [int(g) for g in lr.keys() if int(g) <= self.generation], 
+                [int(g) for g in lr.keys() if int(g) <= self.generation + 1], 
                 default=0
             ))
             lr = lr[key]
             # set learning rate
+        print(f"Learning rate: {lr}")
 
         return torch.optim.Adam(
             self.nn.parameters(), 
