@@ -10,6 +10,7 @@ public:
 
     Connect4PerfectCompetitor(
         int num_agents,
+        bool random,
         std::string book_path="./7x6.book"
     );
 
@@ -19,12 +20,16 @@ public:
     std::vector<double> get_results();
 private:
 
+    void update_(std::vector<std::string>& moves, bool other_player);
     std::vector<std::string> compute_moves(std::vector<std::string>&);
     void evaluate_chunk(
         std::vector<std::string>* positions,
         std::vector<int> * moves
     );
 
+    int choose_move(std::vector<int> scores);
+
+    bool random;
     std::string book_path;
     std::vector<std::stringstream> moves;
     std::vector<double> results;

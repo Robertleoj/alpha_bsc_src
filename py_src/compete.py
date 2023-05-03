@@ -40,15 +40,23 @@ def compete(p1, p2, openings):
         current_player = 1 - current_player
         tq.update(1)
 
-def compete_result(game_name, playouts, run_name_1, gen_1, run_name_2, gen_2):
+def get_agent(run_name, game_name, gen, num_agents, playouts, perfect_random=None):
+    if run_name == "perfect":
+        assert game_name == 'connect4'
+        assert perfect_random is not None
+        return player.Connect4PerfectCompetitor(num_agents, perfect_random)
+    else:
+        return player.Competitor(run_name, game_name, gen, num_agents, playouts)
+
+def compete_result(game_name, playouts, run_name_1, gen_1, run_name_2, gen_2, perfect_random=None):
     openings = get_openings(game_name)
 
     print(f"Playing {len(openings)} openings on both sides")
 
     num_agents = len(openings)
 
-    p1 = player.Competitor(run_name_1, game_name, gen_1, num_agents, playouts)
-    p2 = player.Competitor(run_name_2, game_name, gen_2, num_agents, playouts)
+    p1 = get_agent(run_name_1, game_name, gen_1, num_agents, playouts, perfect_random)
+    p2 = get_agent(run_name_2, game_name, gen_2, num_agents, playouts, perfect_random)
 
     games1 = compete(p1, p2, openings)
 
@@ -63,8 +71,8 @@ def compete_result(game_name, playouts, run_name_1, gen_1, run_name_2, gen_2):
 
     print("Switching sides...")
 
-    p1 = player.Competitor(run_name_1, game_name, gen_1, num_agents, playouts)
-    p2 = player.Competitor(run_name_2, game_name, gen_2, num_agents, playouts)
+    p1 = get_agent(run_name_1, game_name, gen_1, num_agents, playouts, perfect_random)
+    p2 = get_agent(run_name_2, game_name, gen_2, num_agents, playouts, perfect_random)
 
     games2 = compete(p2, p1, openings)
     

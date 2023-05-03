@@ -11,6 +11,59 @@ int sign(int x){
     }
 }
 
+int Connect4PerfectCompetitor::choose_move(std::vector<int> scores){
+
+    if(this->random){
+        int best_score = -2;
+
+        for(int i = 0; i < scores.size(); i++){
+
+            if(scores[i] == -1000){
+                continue;
+            }
+
+            scores[i] = sign(scores[i]);
+            if(scores[i] > best_score){
+                best_score = scores[i];
+            }
+        }
+
+        // choose random move from best moves
+        std::vector<int> best_moves;
+        for(int i = 0; i < scores.size(); i++){
+            if(scores[i] == best_score){
+                best_moves.push_back(i);
+            }
+        }
+
+        if(best_moves.size() == 0){
+            throw std::runtime_error("No best moves");
+        }
+
+        int move = best_moves[rand() % best_moves.size()];
+    } else {
+        int best_score = -100;
+        int best_move = -1;
+
+        for(int i = 0; i < scores.size(); i++){
+            if(scores[i] == -1000){
+                continue;
+            }
+
+            if(scores[i] > best_score){
+                best_score = scores[i];
+                best_move = i;
+            }
+        }
+
+        if(best_move == -1){
+            throw std::runtime_error("No best move");
+        }
+
+        return best_move;
+    }
+}
+
 void Connect4PerfectCompetitor::evaluate_chunk(
     std::vector<std::string>* positions, 
     std::vector<int> *moves
@@ -28,33 +81,7 @@ void Connect4PerfectCompetitor::evaluate_chunk(
         } else {
             std::vector<int> scores = solver.analyze(P, false);
             // map scores to -1, 0, 1
-            int best_score = -2;
-
-            for(int i = 0; i < scores.size(); i++){
-
-                if(scores[i] == -1000){
-                    continue;
-                }
-
-                scores[i] = sign(scores[i]);
-                if(scores[i] > best_score){
-                    best_score = scores[i];
-                }
-            }
-
-            // choose random move from best moves
-            std::vector<int> best_moves;
-            for(int i = 0; i < scores.size(); i++){
-                if(scores[i] == best_score){
-                    best_moves.push_back(i);
-                }
-            }
-
-            if(best_moves.size() == 0){
-                throw std::runtime_error("No best moves");
-            }
-
-            int move = best_moves[rand() % best_moves.size()];
+            int move = this->choose_move(scores);
             moves->push_back(move + 1);
         }
     }
@@ -137,8 +164,10 @@ std::vector<std::string> Connect4PerfectCompetitor::compute_moves(
 
 Connect4PerfectCompetitor::Connect4PerfectCompetitor(
     int num_agents,
+    bool random,
     std::string book_path
 ) {
+    this->random = random;
     this->num_agents = num_agents;
     this->num_dead = 0;
     this->book_path = book_path;
@@ -152,6 +181,13 @@ Connect4PerfectCompetitor::Connect4PerfectCompetitor(
 
 void Connect4PerfectCompetitor::update(
     std::vector<std::string> moves
+) {
+    this->update_(moves, true);
+}
+
+void Connect4PerfectCompetitor::update_(
+    std::vector<std::string>& moves,
+    bool other_player
 ) {
     for(int i = 0; i < moves.size(); i++){
         auto move = moves[i];
@@ -170,7 +206,15 @@ void Connect4PerfectCompetitor::update(
                     this->games[i]->get_to_move()
                 );
 
-                this->results[i] = outcome_to_value(outcome);
+                double result;
+
+                if(other_player){
+                    result = outcome_to_value(outcome);
+                } else {
+                    result = -outcome_to_value(outcome);
+                }
+
+                this->results[i] = result;
 
                 this->dead[i] = true;
                 delete this->games[i];
@@ -204,7 +248,7 @@ std::vector<std::string> Connect4PerfectCompetitor::make_and_get_moves() {
         }
     }
     
-    this->update(moves);
+    this->update_(moves, false);
     return moves;
 }
 
