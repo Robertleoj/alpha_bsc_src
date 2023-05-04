@@ -36,20 +36,28 @@ class UniformSampler:
 
             if self.use_randomized_cap:
                 uid_name = chunk_path.stem
-                gen = chunk_path.dir
+                gen = chunk_path.parent.stem
 
 
                 c2_path = Path(f'./rand_cap_cache/{gen}/{uid_name}.pt')
 
                 if not c2_path.exists():
                     c2_path.parent.mkdir(parents=True, exist_ok=True)
-                    with bz2.open(c2_path, 'rb') as f:
+                    with bz2.open(chunk_path, 'rb') as f:
                         unfiltered_chunk = torch.load(f)
 
                     chunk = [c for c in unfiltered_chunk if c.weight > 0]
 
-                    with bz2.open(c2_path, 'wb') as f:
-                        torch.save(chunk, f)
+                    buffer = io.BytesIO()
+                    torch.save(chunk, buffer)
+                    with bz2.open(c2_path, "wb") as f:
+                        f.write(buffer.getvalue())
+
+                    # with bz2.open(c2_path, 'wb') as f:
+                        # torch.save(chunk, f)
+                else:
+                    with bz2.open(c2_path, 'rb') as f:
+                        chunk = torch.load(f)
 
             else:
                 with bz2.open(chunk_path, 'rb') as f:
