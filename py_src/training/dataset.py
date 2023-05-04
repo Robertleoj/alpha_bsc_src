@@ -56,8 +56,14 @@ class UniformSampler:
                     # with bz2.open(c2_path, 'wb') as f:
                         # torch.save(chunk, f)
                 else:
-                    with bz2.open(c2_path, 'rb') as f:
-                        chunk = torch.load(f)
+                    try:
+                        with bz2.open(c2_path, 'rb') as f:
+                            chunk = torch.load(f)
+                    except Exception as e:
+                        print(e.args)
+                        print(c2_path)
+                        print("Ignoring error.")
+                        continue
 
             else:
                 with bz2.open(chunk_path, 'rb') as f:
