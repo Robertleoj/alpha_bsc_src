@@ -13,7 +13,7 @@ from pathlib import Path
 
 class UniformSampler:
     def __init__(self, generations:int):
-        self.chunk_paths = []
+        self.chunk_paths:list[Path] = []
 
         self.use_randomized_cap = (
             config.cpp_conf_has_key('use_randomized_cap') 
@@ -24,6 +24,7 @@ class UniformSampler:
             for file in (Path('./cached_data')/f"{generation}/").glob('*.pt'):
                 self.chunk_paths.append(file)
 
+
         self.num_chunks = len(self.chunk_paths)
         self.buffer:list[Data] = []
 
@@ -31,9 +32,36 @@ class UniformSampler:
 
         for _ in range(config['cache_sample_chunks']):
             idx = random.randint(0, self.num_chunks - 1)
+            chunk_path = self.chunk_paths[idx]
 
-            with bz2.open(self.chunk_paths[idx], 'rb') as f:
-                chunk = torch.load(f)
+            if self.use_randomized_cap:
+                uid_name = chunk_path.stem
+                gen = chunk_path.parent.stem
+
+
+                c2_path = Path(f'./rand_cap_cache/{gen}/{uid_name}.pt')
+
+                if not c2_path.exists():
+                    c2_path.parent.mkdir(parents=True, exist_ok=True)
+                    with bz2.open(chunk_path, 'rb') as f:
+                        unfiltered_chunk = torch.load(f)
+
+                    chunk = [c for c in unfiltered_chunk if c.weight > 0]
+
+                    buffer = io.BytesIO()
+                    torch.save(chunk, buffer)
+                    with bz2.open(c2_path, "wb") as f:
+                        f.write(buffer.getvalue())
+
+                    # with bz2.open(c2_path, 'wb') as f:
+                        # torch.save(chunk, f)
+                else:
+                    with bz2.open(c2_path, 'rb') as f:
+                        chunk = torch.load(f)
+
+            else:
+                with bz2.open(chunk_path, 'rb') as f:
+                    chunk = torch.load(f)
 
             self.buffer.extend(chunk)
 
