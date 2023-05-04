@@ -35,7 +35,7 @@ class UniformSampler:
             with bz2.open(self.chunk_paths[idx], 'rb') as f:
                 chunk = torch.load(f)
 
-            self.buffer.extend(chunk)
+            self.buffer.extend([x for x in chunk if x.weight > 0])
 
         random.shuffle(self.buffer)
 
