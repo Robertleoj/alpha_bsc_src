@@ -51,7 +51,7 @@ def plot_competition_results(csv: pd.DataFrame, dir):
 
 
 def main():
-    runs = COMP_PATH.glob("**/results.csv")
+    runs = [result for result in COMP_PATH.glob("**/results.csv") if "perfect" not in str(result).split('/')]
     print(runs)
     
     for run in runs:
