@@ -245,14 +245,22 @@ def make_plots(evals: pd.DataFrame, max_gen=None, gen_every=1):
         plot_df = gen_avg(plot_df, gen_every, 'moves_left')
 
     
+    plt.figure(figsize=(7, 4))
     sns.lineplot(data=plot_df, x="moves_left", y="eval_error", hue="generation")
     plt.title("Moves left MSE")
+    plt.xlabel("Moves Left")
+    plt.ylabel("MSE")
+    plt.tight_layout()
     plt.savefig(fig_path / "eval_vs_moves_left_mse.png")
     plt.clf()
 
+    plt.figure(figsize=(7, 4))
     plot_df['eval_error'] = plot_df['eval_error']**0.5
     sns.lineplot(data=plot_df, x="moves_left", y="eval_error", hue="generation")
     plt.title("Moves Left RMSE")
+    plt.xlabel("Moves Left")
+    plt.ylabel("RMSE")
+    plt.tight_layout()
     plt.savefig(fig_path / "eval_vs_moves_left_rmse.png")
     plt.clf()
 
@@ -267,14 +275,22 @@ def make_plots(evals: pd.DataFrame, max_gen=None, gen_every=1):
 
 
     
+    plt.figure(figsize=(7, 4))
     sns.lineplot(data=plot_df, x="moves_played", y="eval_error", hue="generation")
     plt.title("Moves Played MSE")
+    plt.xlabel("Moves Played")
+    plt.ylabel("MSE")
+    plt.tight_layout()
     plt.savefig(fig_path / "eval_vs_moves_played_mse.png")
     plt.clf()
 
     plot_df['eval_error'] = plot_df['eval_error']**0.5
+    plt.figure(figsize=(7, 4))
     sns.lineplot(data=plot_df, x="moves_played", y="eval_error", hue="generation")
+    plt.xlabel("Moves Played")
     plt.title("Moves Played RMSE")
+    plt.ylabel("RMSE")
+    plt.tight_layout()
     plt.savefig(fig_path / "eval_vs_moves_played_rmse.png")
     plt.clf()
 

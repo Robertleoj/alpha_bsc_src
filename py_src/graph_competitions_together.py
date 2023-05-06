@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 
-# COMP_PATH = Path("../db/competitions/breakthrough")
 # PERFECT = True
 # GAME = 'Connect4'
 # COMP_PATH = Path("../db/competitions/perfect")
@@ -16,36 +15,64 @@ from scipy.stats import norm
 
 # runs_dirnames = {
 #     'Default': 'DEFAULT_high_lr_deterministic',
-#     'Monotone': 'MONOTONE_deterministic',
+#     'GIS': 'MONOTONE_deterministic',
 #     'Endgame': 'ENDGAME_normal_window_deterministic',
 #     'Endgame big window': 'ENDGAME_PLAYOUTS_BIG_WINDOW_deterministic',
-#     'Dynamic Window': 'DYN_WINDOW_high_lr_deterministic',
+#     'DTW': 'DYN_WINDOW_high_lr_deterministic',
+# }
+
+# color_map = {
+#     "Endgame": "purple",
+#     "Default": "blue",
+#     # "Endgame big window": "plum",
+#     "Endgame big window": "magenta",
+#     # Default bw: cyan
+#     # randomized_cap: green
+#     "DTW": "orange",
+#     "GIS": "red"
 # }
 
 
 
+
 PERFECT = False
-GAME = 'Breakghrough'
+GAME = 'Breakthrough'
 COMP_PATH = Path("../db/competitions/breakthrough")
 NUM_GAMES = 100
 VS = 'Default generation 100'
 
 
-# runs_dirnames = {
-#     "Default":"DEFAULT_5000_gamesvsDEFAULT_5000_games_const_100" ,
-#     "Dynamic Window":"DEFAULT_5000_gamesvsDYN_WINDOW_const_1.0", 
-#     "Endgame":"DEFAULT_5000_gamesvsENDGAME_PLAYOUTS_uniat100_few_games_const_100" ,
-#     "Monotone":"DEFAULT_5000_gamesvsMONOTONE_const_1.0" ,
-#     # "DEFAULT_5000_gamesvsrandomized_cap_const_1.0"
-# }
-
 runs_dirnames = {
-    "Default": "DEFAULT_5000_gamesvsDEFAULT_5000_games_const_100" ,
-    "Dynamic Window":"DEFAULT_5000_gamesvsDYN_WINDOW_const_1.0", 
+    "Default":"DEFAULT_5000_gamesvsDEFAULT_5000_games_const_100" ,
+    "DTW":"DEFAULT_5000_gamesvsDYN_WINDOW_const_1.0", 
     "Endgame":"DEFAULT_5000_gamesvsENDGAME_PLAYOUTS_uniat100_few_games_const_100" ,
-    "Monotone":"DEFAULT_5000_gamesvsMONOTONE_const_1.0" ,
+    "GIS":"DEFAULT_5000_gamesvsMONOTONE_const_100" ,
     # "DEFAULT_5000_gamesvsrandomized_cap_const_1.0"
 }
+
+
+
+color_map = {
+    "Endgame": "purple",
+    "Default": "blue",
+    # Default bw: cyan
+    # randomized_cap: green
+    "DTW": "orange",
+    "GIS": "red"
+}
+
+# "Endgame 20W": "purple",
+# "Endgame 40W": "plum",
+
+# "Default 20W": "blue",
+# "Default 40W": "cyan"
+
+# "randomized_cap": green
+
+# "dyn_window": orange
+
+# "monotone": red
+
 
 
 
@@ -73,33 +100,49 @@ def plot_competition_results(csv: pd.DataFrame, title):
         csv['win_rate'] = 1 - csv['r1_win_rate']
 
 
-    plt.figure(figsize=(15, 6))
+    plt.figure(figsize=(15, 4))
     p_key = 'playouts' if PERFECT else 'playouts2'
-    sns.lineplot(data=csv, x=p_key, y='win_rate', hue='run_name', style='run_name',markers=True, dashes=False)
+    sns.lineplot(
+        data=csv, 
+        x=p_key, 
+        y='win_rate', 
+        hue='run_name', 
+        style='run_name',
+        markers=True, 
+        dashes=False,
+        palette=color_map
+    )
 
     # name legend
     plt.legend(title='')
 
     # set y axis to 0-1
-    ytop = 0.5 if PERFECT else 1
-    plt.ylim(0, ytop)
+    if PERFECT:
+        ytop = 0.5
+        plt.ylim(0, 0.5)
+    else:
+        # only specify lower bound
+        plt.ylim(bottom=0)
 
 
     # add line for 50% win rate
-    plt.axhline(y=0.5, color='r', linestyle='-')
+    plt.axhline(y=0.5, color='grey', linestyle='-')
     # Make vertical line at playouts1
 
     # get first value of playouts1
     if not PERFECT:
         pl1 = csv['playouts1'][0].iloc[0]
         print(pl1)
-        plt.axvline(x=pl1, color='g', linestyle='-')
+        plt.axvline(x=pl1, color='blue', alpha=0.5, linestyle='-')
 
 
     plt.xlabel("Playouts")
     plt.ylabel("Win Rate")
     plt.title(title)
     plt.show()
+    plt.tight_layout()
+    # plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+
 
     # save plot
     plt.savefig(COMP_PATH / "together.png")

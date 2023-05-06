@@ -4,7 +4,7 @@ import numpy as np
 import math
 import matplotlib
 import pandas as pd
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 
 phi = (5 ** 0.5 + 1) / 2
 
@@ -65,7 +65,7 @@ def plot():
     df_melted = pd.melt(df, id_vars=['x'], value_vars=[str(gen) for gen in gens], var_name='line', value_name='weight')
 
     # Plot using Seaborn
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(7, 4))
     sns.lineplot(data=df_melted, x='x', y='weight', hue='line', style='line', dashes=False)
     # set ylim to 0 to 1
     plt.ylim(0, 1)
@@ -73,10 +73,10 @@ def plot():
     # sns.lineplot(x=xs, y=50/800, color='r', linestyle='-')
     plt.xlabel("Moves Played")
     plt.ylabel("Weight")
-    plt.title(f"Endgame Weighting for {game}")
+    plt.title(f"{game} weight function")
     plt.legend(title='Generation')
     # plt.show()
-
+    plt.tight_layout()
     plt.savefig(f"endgame_weighting_{game}.png")
 
 def main():
