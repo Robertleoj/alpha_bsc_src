@@ -3,33 +3,41 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-filenames = {
-    'Default 20W': 'default_hlr.csv',
-    'Default 40W': 'default_big_window.csv',
+# filenames = {
+#     'Default 20W': 'default_hlr.csv',
+#     'Default 40W': 'default_big_window.csv',
+#     'Endgame 20W': 'endgame_normal_window.csv',
+#     'Endgame 40W': 'endgame_big_window.csv',
+# }
 
-    'Endgame 20W': 'endgame_normal_window.csv',
-    'Endgame 40W': 'endgame_big_window.csv',
+
+# color_map = {
+#     "Endgame 20W": "purple",
+#     "Endgame 40W": "magenta",
+#     "Default 20W": "blue",
+#     "Default 40W": "cyan"
+    # randomized_cap: green
+    # "Dynamic Window": "orange",
+    # "Monotone": "purple"
+# }
+
+filenames = {
+    "Endgame 20W": "endgame_normal_window.csv",
+    "Endgame 40W": "endgame_big_window.csv",
+    "Default": "default_hlr.csv",
+    "DTW": "dyn_window_high_lr.csv",
+    "RPC": "random_cap_more_games.csv",
+    "GIS": "monotone.csv",
 }
 
 color_map = {
     "Endgame 20W": "purple",
     "Endgame 40W": "magenta",
-    "Default 20W": "blue",
-    "Default 40W": "cyan"
-    # randomized_cap: green
-    # "Dynamic Window": "orange",
-    # "Monotone": "purple"
+    "Default": "blue",
+    "RPC": "green",
+    "DTW": "orange",
+    "GIS": "red"
 }
-
-# color_map = {
-#     "Endgame": "red",
-#     # Endgame bw: pink
-#     "Default": "blue",
-#     # Default bw: cyan
-#     # randomized_cap: green
-#     "Dynamic Window": "orange",
-#     "Monotone": "purple"
-# }
 
 
 fig_path = Path("./squad_figures")
@@ -50,6 +58,7 @@ def plot_errors(df, x, val_col, title, fname) -> None:
         palette=color_map,
         linewidth=1
     )
+    plt.legend(title='')
 
     xlabel = "Generation" if x == "gen" else "Simulations"
     plt.xlabel(xlabel)

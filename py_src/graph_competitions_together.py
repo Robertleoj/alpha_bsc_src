@@ -14,20 +14,21 @@ from scipy.stats import norm
 # VS = 'Perfect Agent'
 
 # runs_dirnames = {
+#     'Endgame 20W': 'ENDGAME_normal_window_deterministic',
+#     'Endgame 40W': 'ENDGAME_PLAYOUTS_BIG_WINDOW_deterministic',
 #     'Default': 'DEFAULT_high_lr_deterministic',
-#     'GIS': 'MONOTONE_deterministic',
-#     'Endgame': 'ENDGAME_normal_window_deterministic',
-#     'Endgame big window': 'ENDGAME_PLAYOUTS_BIG_WINDOW_deterministic',
 #     'DTW': 'DYN_WINDOW_high_lr_deterministic',
+#     'RPC': "RANDOM_CAP_more_games_deterministic",
+#     'GIS': 'MONOTONE_deterministic',
 # }
 
 # color_map = {
-#     "Endgame": "purple",
+#     "Endgame 20W": "purple",
 #     "Default": "blue",
 #     # "Endgame big window": "plum",
-#     "Endgame big window": "magenta",
+#     "Endgame 40W": "magenta",
 #     # Default bw: cyan
-#     # randomized_cap: green
+#     "RPC": "green",
 #     "DTW": "orange",
 #     "GIS": "red"
 # }
@@ -43,9 +44,10 @@ VS = 'Default generation 100'
 
 
 runs_dirnames = {
+    "Endgame 25W": "DEFAULT_5000_gamesvsENDGAME_PLAYOUTS_uniat100_few_games_const_100" ,
+    "Endgame 40W": "DEFAULT_5000_gamesvsENDGAME_low_pow_const_100",
     "Default":"DEFAULT_5000_gamesvsDEFAULT_5000_games_const_100" ,
     "DTW":"DEFAULT_5000_gamesvsDYN_WINDOW_const_1.0", 
-    "Endgame":"DEFAULT_5000_gamesvsENDGAME_PLAYOUTS_uniat100_few_games_const_100" ,
     "GIS":"DEFAULT_5000_gamesvsMONOTONE_const_100" ,
     # "DEFAULT_5000_gamesvsrandomized_cap_const_1.0"
 }
@@ -53,7 +55,8 @@ runs_dirnames = {
 
 
 color_map = {
-    "Endgame": "purple",
+    "Endgame 25W": "purple",
+    "Endgame 40W": "magenta",
     "Default": "blue",
     # Default bw: cyan
     # randomized_cap: green
