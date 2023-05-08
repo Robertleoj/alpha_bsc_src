@@ -49,6 +49,7 @@ runs_dirnames = {
     "Default":"DEFAULT_5000_gamesvsDEFAULT_5000_games_const_100" ,
     "DTW":"DEFAULT_5000_gamesvsDYN_WINDOW_const_1.0", 
     "GIS":"DEFAULT_5000_gamesvsMONOTONE_const_100" ,
+    "RPC": 'DEFAULT_5000_gamesvsRANDOM_CAP_more_games_const_100'
     # "DEFAULT_5000_gamesvsrandomized_cap_const_1.0"
 }
 
@@ -61,7 +62,8 @@ color_map = {
     # Default bw: cyan
     # randomized_cap: green
     "DTW": "orange",
-    "GIS": "red"
+    "GIS": "red",
+    "RPC": "green"
 }
 
 # "Endgame 20W": "purple",
