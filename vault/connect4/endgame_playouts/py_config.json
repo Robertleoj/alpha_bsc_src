@@ -24,7 +24,5 @@
     "dl_prefetch_factor": 10,
     "dl_num_workers" :8,
     "log_loss_interval":100,
-    "endgame_sampling_q_size": 100000,
-    "cache_chunk_size": 512,
-    "cache_sample_chunks": 20
+    "endgame_sampling_q_size": 100000
 }

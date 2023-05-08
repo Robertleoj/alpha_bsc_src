@@ -23,10 +23,7 @@
     "endgame_playout_uniform_generation": 100.0,
     "endgame_playout_b": 0.595,
     "endgame_playout_power": 2.0,
-    "endgame_min_playouts": 20,
-    "use_inc_mcts": false,
-    "monotone_min_w": 0.1,
-    "monotone_uniform_generation": 100
+    "endgame_min_playouts": 20
 }
 
 
