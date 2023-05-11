@@ -1,6 +1,7 @@
 **/build/
 **/.vscode/
 **/*.egg
+**/*.egg-info
 .venv
 **/__pycache__/
 smallvoice/

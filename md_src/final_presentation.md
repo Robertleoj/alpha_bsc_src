@@ -1,9 +1,220 @@
 
+# Pointers from galaxy brains
+
+* Assume background in CS
+
+- follow structure of the paper
+    - Abstract
+    - Introduction
+    - Background
+    - Methods
+    - Results
+    - Conclusion and future work
+    - Q&A
+
+* Start with an introduction of the project
+    - People will get later information in context
+
+* More visual
+    - Explain the steps of MCTS with pictures
+    - Show endgame playouts visually
+    - just always try to be visual
+
+* Look alive
+    - Be animated
+    - Be excited
+    - Be confident
+
+* REHERSE
+
+## Title Slide
+Introduce ourselves.
+Our project is Expediting Self-Play Learning in AlphaZero-style Agents.
+
+# Abstract
+
+AI & Machine learning is a very hot topic today. A recent major success is the AlphaZero algorithm, which reaches superhuman levels in abstract board games such as chess and go only given the rules of the games.
+
+However, the algorithm requires a massive amount of computing resources to train. We propose a method to reduce the computational cost of training an AlphaZero-like agent with a method we call Late-to-early simulation focus, and we show that our method improves the performance of the agent in two games: Connect4 and Breakthrough.
+
+# Introduction
+
+AlphaZero is a deep-reinforcement learning algorithm that learns to play abstract board games by playing against itself, often reaching superhuman playing strength. One of the main appeals of this approach is that it requires no pre-coded expert domain knowledge nor human involvement during the learning process. However, this approach comes at a cost, particularly access to massive computing resources. For example, AlphaZero played 40 million chess games with the help of 5,000 special-purpose computing units (TPUs) to reach state-of-the-art performance in the game of chess.
+
+The most computationally time-consuming component of the learning process is generating the training data, i.e., the games, via self-play. So, a natural question is whether one can achieve similar expertise by using significantly less computing resources.
+Several avenues of research have addressed this, most notably model improvements, and more efficient generation and use of the training data. Here, we are only concerned with the latter. 
+
+Our main contribution is an improved strategy for generating training data via self-play, resulting in higher-quality training samples, especially in earlier training phases. The new strategy, which we call Late-To-Early Simulation Focus, abbreviated LATE, 
+
+The method seeks inspiration from curriculum learning, a training strategy that trains machine learning models from more straightforward to more complex examples, thereby imitating the meaningful learning order in human curricula. 
+
+In early training, the approach emphasizes training experiences gathered from the late stages (i.e., endgame) of individual games. However, as the training progresses, it expands its focus to consider entire games. In our test domains, agents using our approach for training reach superior playing strength faster than counterpart agents using a standard training approach, requiring significantly less training time. 
+
+We also empirically show and quantify the quality improvement in the training data when using our new approach and compare its effectiveness to that of several other recently published approaches.
+
+The presentation's organization is as follows. 
+- Background (AZ, other methods)
+- Methods (LATE)
+- Results
+- Conclusion and future work
+
+# Background
+
+## Overview
+Here we provide the necessary preliminaries. We start by giving an overview of the workings of AlphaZero-style game-playing agents and their training, followed by a summary of recent related approaches.
+> Should we include this? 
+
+## AlphaZero-style game-playing agents
+
+At a high level, AlphaZero uses a neural-network guided Monte-Carlo Tree Search to choose moves.
+
+
+### Neural network
+The neural network function accepts a state as input, and outputs both a value estimate of the state, and a probability distribution over the possible moves in the state, which we call the policy prior.
+
+$$
+(\boldsymbol{p_\theta}, v_\theta) = f_{\boldsymbol{\theta}}(s).   
+$$
+
+The value estimate is the neural-network's prediction of the probability of winning the game and the policy prior predicts which moves are likely to be good.
+
+> Make a nice diagram of the neural network
+> Done
+
+### MCTS
+
+Now we'll show how the MCTS is performed with the help of the neural network. 
+
+The algorithm builds a tree, where nodes in the tree are board states and the edges are actions (or moves). The root node is the current board state, and each node stores a value estimate and a policy prior.
+> Show base MCTS image
+
+At first, the tree consists only of the root node, and is then expanded by performing *simulations*.
+
+A simulation consists of three phases: selection, evaluation-and-expansion, and back-propagation.
+> Show selection phases image
+In the selection phase, we traverse down the tree, where in each node we choose the action that maximizes this formula, where the value estimate and policy prior are used.
+> point at this formula, but do not explain it
+$$
+    \PUCT(s, a, s') = V(s') + c_{\PUCT} \cdot p_\boldsymbol{\theta}(s, a) \frac{\sqrt{N(s)}}{N(s') + 1},
+$$
+The selection phase ends when we reach a node that is not in the tree, or is a terminal node, that is, a node where the game ends.
+
+In the evaluation-and-expansion phase, we evaluate the node we reached in the selection phase using the neural network. We add the node to the tree, and store the value estimate and policy prior in the node.
+> Show evaluation-and-expansion phase image
+
+In the back-propagation phase, we update the value estimate of all the nodes we visited in the selection phase. We do this by propagating the value estimate of the node we reached in the evaluation-and-expansion phase up the tree.
+> Show back-propagation phase image
+
+After some number of simulations, we stop the search and choose the move corresponding to the root-child with the most visits.
+
+
+### Training
+
+The neural network is trained using data gathered during agents' self-play. 
+
+Initially, an agent plays a fixed number of games against itself using an untrained network. For each game, all occurring states are recorded and labeled with the game outcome, and the normalized MCTS visit counts of the available actions.
+
+This results in labeled samples for training the next-generation network for the agent. This process repeats and with each generation the agent should improve in playing strength.
+
+For those familiar with machine learning, the training objective is to minimize this loss function
+$$
+    L(\boldsymbol{\theta}, s, z, \boldsymbol{\pi}) = (v_{\boldsymbol{\theta}}(s) - z)^2 - \boldsymbol{\pi}^\top \log(\boldsymbol{p}_{\boldsymbol{\theta}}(s)) + c||{\boldsymbol{\theta}}||^2
+$$
+> put in hints of what the variables are
+
+The training process keeps relevant training samples in a so-called replay buffer during training, from which it samples batches for updating the network. The buffer stores training samples from one or more previous generations. 
+> Visualize the buffer?
+
+In early generations, valuable signals from the training games may be sparse as the agents act more or less randomly. As the agents improve the games become more representative of expert-level play. The premise behind our method, as well as the others we review, is avoiding spending much computing resources on generating and training with samples having low-quality target signals.
+
+## Related work
+There are many methods that try to improve the AlphaZero algorithm. The ones that we look at are the following.
+
+The first is Dynamic Training Window (DTW), which is used in OLIVAW, an AlphaZero-style agent. In DTW, instead of using a fixes-size window, it gradually increases in size as training progresses. This is done to avoid using training samples from early generations, which are of low quality, while still maintaining data diversity in later generations.
+
+The second improvement is Gradually Increasing Simulations (GIS), which also comes from OLIVAW. In GIS, the number of MCTS simulations performed per state during self-play starts small, and is gradually increased as training progresses. This is done to avoid wasting simulations in early generations, where the agent is not very good, and the simulations are not very useful.
+
+The third improvement is Randomized Playout Cap (RPC), which is used in KataGo, another AlphaZero-style agent. In RPC, the number of MCTS simulations performed per move are either very few, or many. Only states where many number of simulations are performed are used for training. The reduced average number of simulations per move allows us to play more games per generation. The improvement is designed to add more diversity to the training data.
+
+
+# Methods
+
+In early training generations, the gameplay is poor, with both sides making many mistakes. Because of this, the target labels are inaccurate and only loosely related to the actual merits of moves and states. 
+
+However, the gameplay generally improves quickly between early training generations, improving the target labels. 
+
+The previous strategies capitalize on this. 
+
+However, another factor is also at play -- the labeling quality also differs within a game. Our method capitalizes on this.
+
+The think-ahead process of MCTS can reliably look some moves ahead. 
+
+So, when close to terminal states, it quickly zooms in on the correct moves, resulting in the value and policy target labels both being reasonably accurate.
+
+As a result, the labels tend to be significantly more accurate in later game phases than earlier ones. We confirm this later in this presentation. This observation is a central premise behind the enhancement we propose.
+
+
+## LATE
+
+In the Late-To-Early Simulation Focus (LATE) enhancement, we vary the number of MCTS simulations performed during self-play based on *the current training generation and the number of moves played within the game*, according to a weight function.
+
+> Point at the plot of the weight function
+> Also the very cool and nice gif and explain.
+
+In addition to controlling the number of playouts, the weight also controls the contribution of the training samples to the neural network's learning. That is, samples with low weight contribute less to the training of the neural network. 
+
+For those versed in machine learning, this is done by weighting the loss function with the weight function.
+
+
+This method avoids wasting much search on generating the noisy training data that is prevalent in the early phases in the game. Additionally, noisy samples are assigned less weight in the training process, further reducing their impact on the training process.
+
+
+As training progresses, the weight function gradually shifts the search effort towards the start of the game, as the training data becomes more accurate.
+
+
+# Results
+Now we will go over our research methodology and empirical results.
+
+## Games
+We use the two-player board games *Connect4* and *Breakthrough* as our test domains.
+
+### Connect4
+Connect4 is a well known game, depicted here. The players take turns dropping their disks, with the goal being to get four of your disks in a row. The game is a draw if neither player manages this before the grid fills.
+
+The main reason for us including this game in our testbed is that it is strongly solved --- we know the actual outcome of all possible game states. Having this information as ground truth allows us to systematically compute and compare the quality of the training samples generated by different self-play strategies. 
+
+### Breakthrough
+The other game we use is Breakthrough. It is played on a chess-like board.
+
+The initial board state can be seen here. As in chess, white plays first. The pieces move one square straight or diagonally forward, but only capture diagonally. The goal of the game is to get one of your pieces to the opponent's back rank, or to capture all of the opponent's pieces. One player always wins, there are no draws.
+
+The strategic complexity of the game is rich enough to require non-trivial strategies to play well while simultaneously being small enough to allow us to train an expert-level agent in a reasonable time frame using moderate computing resources.
+
+
+## Experimental methodology
+
+Connect4 is a strongly solved game, which allows us to evaluate the quality of the generated training data by comparing the labels of the training data to ground truth. We consider the game outcome, in $(-1, 0, 1)$ assuming optimal play to be the ground truth. Then, given positions and comparison evaluations, we simply measure the RMSE error. 
+
+This allows us to measure the quality of the target value labels in the training data.
+
+Throughout our experiments, we employ the cumulative number of simulations as a proxy to approximate the computational resources expended in training an agent. This approach is justified as the vast majority of computational resources dedicated to training an agent are consumed by the simulations conducted during self-play. Given that the number of simulations executed per generation varies across the different agents we train, the cumulative number of simulations serves as the most suitable and consistent measure.
+
+## Quality Assessment using ground truth
+Our ground-truth information for Connect4 allows us to monitor the quality of the generated training data and our agents at different stages during training, thus gaining added insights. Here, we look at the value estimate quality (for brevity, we omit discussing the policy quality, but later playing-strength experiments indirectly demonstrate improved policy quality).
+
+
+# Conclusion and future work
+
+# Q&A
+
+## Our Project
+
+
+
 
 
 
 # Introduce ourselves
-
 
 # Open by introducing AlphaZero 
 - machine learning algorithm to play games such as chess and go
